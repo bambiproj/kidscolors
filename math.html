@@ -115,25 +115,20 @@
       text-align: center;
     }
 
-    .hint-row {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-    }
-
-    .ball-col {
+    .hint-col {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
     }
 
     .ball-group {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      flex-wrap: wrap;
       gap: 6px;
+      justify-content: center;
+      max-width: 200px;
     }
 
     .ball {
@@ -477,16 +472,12 @@
       if (hintVisible) {
         box.innerHTML = `
           <div class="hint-label">ספור את הכדורים!</div>
-          <div class="hint-row">
-            <div class="ball-col">
-              <div class="ball-group">${buildBalls(currentA, 'ball-a')}</div>
-              <div class="ball-count a">${currentA}</div>
-            </div>
+          <div class="hint-col">
+            <div class="ball-group">${buildBalls(currentA, 'ball-a')}</div>
+            <div class="ball-count a">${currentA}</div>
             <div class="hint-plus">+</div>
-            <div class="ball-col">
-              <div class="ball-group">${buildBalls(currentB, 'ball-b')}</div>
-              <div class="ball-count b">${currentB}</div>
-            </div>
+            <div class="ball-group">${buildBalls(currentB, 'ball-b')}</div>
+            <div class="ball-count b">${currentB}</div>
           </div>`;
         box.classList.add('show');
       } else {
