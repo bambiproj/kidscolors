@@ -258,7 +258,14 @@
     .success-name {
       font-size: 1.1rem;
       font-weight: 700;
-      color: #555;
+      color: #444;
+    }
+
+    .success-en {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #aaa;
+      margin-top: -6px;
     }
 
     @keyframes popIn {
@@ -353,6 +360,7 @@
     <div class="success-overlay" id="successOverlay">
       <img class="success-img" id="successImg" src="" alt="" />
       <div class="success-name" id="successName"></div>
+      <div class="success-en" id="successEn"></div>
       <div class="success-msg" id="successMsg"></div>
       <button class="next-btn" onclick="nextRound()">הבא ←</button>
     </div>
@@ -361,36 +369,36 @@
   <script>
     const BASE = 'https://resource.pokemon-home.com/battledata/img/pokei128/icon';
     const CREATURES = [
-      { num: '0001', name: 'בולבסאור' },
-      { num: '0004', name: 'שרמנדר' },
-      { num: '0007', name: 'סקווירטל' },
-      { num: '0025', name: 'פיקאצ׳ו' },
-      { num: '0035', name: 'קלפיירי' },
-      { num: '0039', name: 'ג׳יגלי פאף' },
-      { num: '0052', name: 'מיאות׳' },
-      { num: '0054', name: 'סייידאק' },
-      { num: '0094', name: 'גנגאר' },
-      { num: '0129', name: 'מאגיקרפ' },
-      { num: '0131', name: 'לפראס' },
-      { num: '0133', name: 'איווי' },
-      { num: '0143', name: 'סנורלקס' },
-      { num: '0149', name: 'דרגוניט' },
-      { num: '0150', name: 'מיוטו' },
-      { num: '0151', name: 'מיו' },
-      { num: '0155', name: 'סינדאקוויל' },
-      { num: '0175', name: 'טוגפי' },
-      { num: '0196', name: 'אספאון' },
-      { num: '0197', name: 'אמברון' },
-      { num: '0249', name: 'לוג׳יה' },
-      { num: '0250', name: 'הו-אוה' },
-      { num: '0255', name: 'טורצ׳יק' },
-      { num: '0258', name: 'מאדקיפ' },
-      { num: '0385', name: 'ג׳יראצ׳י' },
-      { num: '0448', name: 'לוקריו' },
-      { num: '0658', name: 'גרנינג׳ה' },
-      { num: '0700', name: 'סילווייאון' },
-      { num: '0813', name: 'סקורבאני' },
-      { num: '0909', name: 'פואקוקו' },
+      { num: '0001', name: 'בולבסאור',   en: 'Bulbasaur'  },
+      { num: '0004', name: 'שרמנדר',     en: 'Charmander' },
+      { num: '0007', name: 'סקווירטל',   en: 'Squirtle'   },
+      { num: '0025', name: 'פיקאצ׳ו',    en: 'Pikachu'    },
+      { num: '0035', name: 'קלפיירי',    en: 'Clefairy'   },
+      { num: '0039', name: 'ג׳יגלי פאף', en: 'Jigglypuff' },
+      { num: '0052', name: 'מיאות׳',     en: 'Meowth'     },
+      { num: '0054', name: 'סייידאק',    en: 'Psyduck'    },
+      { num: '0094', name: 'גנגאר',      en: 'Gengar'     },
+      { num: '0129', name: 'מאגיקרפ',    en: 'Magikarp'   },
+      { num: '0131', name: 'לפראס',      en: 'Lapras'     },
+      { num: '0133', name: 'איווי',      en: 'Eevee'      },
+      { num: '0143', name: 'סנורלקס',    en: 'Snorlax'    },
+      { num: '0149', name: 'דרגוניט',    en: 'Dragonite'  },
+      { num: '0150', name: 'מיוטו',      en: 'Mewtwo'     },
+      { num: '0151', name: 'מיו',        en: 'Mew'        },
+      { num: '0155', name: 'סינדאקוויל', en: 'Cyndaquil'  },
+      { num: '0175', name: 'טוגפי',      en: 'Togepi'     },
+      { num: '0196', name: 'אספאון',     en: 'Espeon'     },
+      { num: '0197', name: 'אמברון',     en: 'Umbreon'    },
+      { num: '0249', name: 'לוג׳יה',     en: 'Lugia'      },
+      { num: '0250', name: 'הו-אוה',     en: 'Ho-Oh'      },
+      { num: '0255', name: 'טורצ׳יק',    en: 'Torchic'    },
+      { num: '0258', name: 'מאדקיפ',     en: 'Mudkip'     },
+      { num: '0385', name: 'ג׳יראצ׳י',   en: 'Jirachi'    },
+      { num: '0448', name: 'לוקריו',     en: 'Lucario'    },
+      { num: '0658', name: 'גרנינג׳ה',   en: 'Greninja'   },
+      { num: '0700', name: 'סילווייאון', en: 'Sylveon'    },
+      { num: '0813', name: 'סקורבאני',   en: 'Scorbunny'  },
+      { num: '0909', name: 'פואקוקו',    en: 'Fuecoco'    },
     ];
 
     const SUCCESS_MSGS = ['!כל הכבוד','!מדהים','!מצוין','!וואו','!נהדר','!אלוף'];
@@ -422,7 +430,44 @@
     }
 
     function buildBalls(n, cls) {
-      return Array(n).fill(null).map(() => `<div class="ball ${cls}"></div>`).join('');
+      return Array(n).fill(null).map((_, i) =>
+        `<div class="ball ${cls}" style="transform:translateX(${i * 7}px)"></div>`
+      ).join('');
+    }
+
+    let audioCtx = null;
+    function getCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playSuccess() {
+      const ctx = getCtx();
+      [523, 659, 784].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.13;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.18, t + 0.04);
+        gain.gain.linearRampToValueAtTime(0, t + 0.28);
+        osc.start(t); osc.stop(t + 0.3);
+      });
+    }
+
+    function playError() {
+      const ctx = getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(280, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(180, ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.32);
     }
 
     function toggleHint() {
@@ -499,16 +544,19 @@
           const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
           const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
           document.getElementById('successImg').src = BASE + creature.num + '_f00_s0.png';
-          document.getElementById('successImg').alt = creature.name;
+          document.getElementById('successImg').alt = creature.en;
           document.getElementById('successName').textContent = creature.name;
+          document.getElementById('successEn').textContent = creature.en;
           document.getElementById('successMsg').textContent = msg;
           document.getElementById('successOverlay').classList.add('show');
+          playSuccess();
         }, 350);
       } else {
         btn.classList.add('wrong');
         allBtns.forEach(b => {
           if (parseInt(b.textContent) === correct) b.classList.add('correct');
         });
+        playError();
         const feedback = document.getElementById('feedback');
         feedback.textContent = `לא נכון 😢  התשובה הנכונה: ${correct}`;
         feedback.className = 'feedback wrong';
