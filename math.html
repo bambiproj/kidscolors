@@ -249,9 +249,10 @@
     }
 
     .success-img {
-      font-size: 6rem;
+      width: 128px;
+      height: 128px;
+      image-rendering: pixelated;
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      line-height: 1.1;
     }
 
     .success-name {
@@ -350,7 +351,7 @@
     <button class="next-btn-inline" id="nextBtn" onclick="nextRound()">הבא ←</button>
 
     <div class="success-overlay" id="successOverlay">
-      <div class="success-img" id="successImg"></div>
+      <img class="success-img" id="successImg" src="" alt="" />
       <div class="success-name" id="successName"></div>
       <div class="success-msg" id="successMsg"></div>
       <button class="next-btn" onclick="nextRound()">הבא ←</button>
@@ -358,22 +359,38 @@
   </div>
 
   <script>
+    const BASE = 'https://resource.pokemon-home.com/battledata/img/pokei128/icon';
     const CREATURES = [
-      { emoji: '⚡🐭', name: 'פיקאצ׳ו' },
-      { emoji: '🔥🦎', name: 'שרמנדר' },
-      { emoji: '💧🐢', name: 'סקווירטל' },
-      { emoji: '🌿🦕', name: 'בולבסאור' },
-      { emoji: '🌊🐬', name: 'לפראס' },
-      { emoji: '🔥🐴', name: 'פוניטה' },
-      { emoji: '❄️🐦', name: 'ארטיקונו' },
-      { emoji: '⚡🐦', name: 'זאפדוס' },
-      { emoji: '🔥🐦', name: 'מולטרס' },
-      { emoji: '🌙🐱', name: 'מיאוט׳' },
-      { emoji: '💤🐻', name: 'סנורלקס' },
-      { emoji: '🌀👾', name: 'מיוטו' },
-      { emoji: '🌸🦋', name: 'בוטרפרי' },
-      { emoji: '🪨🐊', name: 'ריהורן' },
-      { emoji: '🌊🐟', name: 'מאגיקרפ' },
+      { num: '0001', name: 'בולבסאור' },
+      { num: '0004', name: 'שרמנדר' },
+      { num: '0007', name: 'סקווירטל' },
+      { num: '0025', name: 'פיקאצ׳ו' },
+      { num: '0035', name: 'קלפיירי' },
+      { num: '0039', name: 'ג׳יגלי פאף' },
+      { num: '0052', name: 'מיאות׳' },
+      { num: '0054', name: 'סייידאק' },
+      { num: '0094', name: 'גנגאר' },
+      { num: '0129', name: 'מאגיקרפ' },
+      { num: '0131', name: 'לפראס' },
+      { num: '0133', name: 'איווי' },
+      { num: '0143', name: 'סנורלקס' },
+      { num: '0149', name: 'דרגוניט' },
+      { num: '0150', name: 'מיוטו' },
+      { num: '0151', name: 'מיו' },
+      { num: '0155', name: 'סינדאקוויל' },
+      { num: '0175', name: 'טוגפי' },
+      { num: '0196', name: 'אספאון' },
+      { num: '0197', name: 'אמברון' },
+      { num: '0249', name: 'לוג׳יה' },
+      { num: '0250', name: 'הו-אוה' },
+      { num: '0255', name: 'טורצ׳יק' },
+      { num: '0258', name: 'מאדקיפ' },
+      { num: '0385', name: 'ג׳יראצ׳י' },
+      { num: '0448', name: 'לוקריו' },
+      { num: '0658', name: 'גרנינג׳ה' },
+      { num: '0700', name: 'סילווייאון' },
+      { num: '0813', name: 'סקורבאני' },
+      { num: '0909', name: 'פואקוקו' },
     ];
 
     const SUCCESS_MSGS = ['!כל הכבוד','!מדהים','!מצוין','!וואו','!נהדר','!אלוף'];
@@ -481,7 +498,8 @@
         setTimeout(() => {
           const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
           const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
-          document.getElementById('successImg').textContent = creature.emoji;
+          document.getElementById('successImg').src = BASE + creature.num + '_f00_s0.png';
+          document.getElementById('successImg').alt = creature.name;
           document.getElementById('successName').textContent = creature.name;
           document.getElementById('successMsg').textContent = msg;
           document.getElementById('successOverlay').classList.add('show');
