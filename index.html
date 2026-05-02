@@ -18,6 +18,30 @@
       padding: 20px;
     }
 
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      padding: 10px 28px;
+      border-radius: 50px;
+      border: 2px solid rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn.active, .tab-btn:hover {
+      background: rgba(255,255,255,0.35);
+      border-color: #fff;
+    }
+
     h1 {
       color: #fff;
       font-size: clamp(1.6rem, 5vw, 2.4rem);
@@ -171,6 +195,10 @@
   </style>
 </head>
 <body>
+  <nav class="tabs">
+    <a class="tab-btn active" href="index.html">🎨 צבעים</a>
+    <a class="tab-btn" href="math.html">➕ חשבון</a>
+  </nav>
   <h1>🎨 ללמוד צבעים!</h1>
 
   <div class="card">

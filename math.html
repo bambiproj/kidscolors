@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>חשבון לילדים</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      padding: 10px 28px;
+      border-radius: 50px;
+      border: 2px solid rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn.active, .tab-btn:hover {
+      background: rgba(255,255,255,0.35);
+      border-color: #fff;
+    }
+
+    h1 {
+      color: #fff;
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      margin-bottom: 30px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      letter-spacing: 2px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 32px 28px 28px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    .equation {
+      font-size: clamp(2.8rem, 12vw, 4.5rem);
+      font-weight: 900;
+      color: #333;
+      margin: 10px 0 32px;
+      letter-spacing: 4px;
+      line-height: 1.1;
+    }
+
+    .equation .question-mark {
+      color: #f7971e;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .option-btn {
+      padding: 20px 10px;
+      border: 3px solid #e0e0e0;
+      border-radius: 16px;
+      background: #fafafa;
+      font-size: clamp(1.6rem, 6vw, 2.2rem);
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.2s, background 0.2s;
+      color: #333;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      border-color: #f7971e;
+      background: #fff8e1;
+    }
+
+    .option-btn:disabled { cursor: default; }
+
+    .option-btn.correct {
+      background: #d4f8d4;
+      border-color: #4caf50;
+      animation: bounce 0.4s ease;
+    }
+
+    .option-btn.wrong {
+      background: #fde8e8;
+      border-color: #f44336;
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes bounce {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.12); }
+      70%  { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%   { transform: translateX(0); }
+      25%  { transform: translateX(-8px); }
+      50%  { transform: translateX(8px); }
+      75%  { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+
+    .feedback {
+      margin-top: 22px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      min-height: 2rem;
+      transition: opacity 0.3s;
+    }
+
+    .feedback.correct { color: #4caf50; }
+    .feedback.wrong   { color: #f44336; }
+    .feedback.hidden  { opacity: 0; }
+
+    /* Success overlay */
+    .success-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.96);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border-radius: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .success-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .success-img {
+      font-size: 7rem;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      0%   { transform: scale(0); }
+      80%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .success-msg {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #4caf50;
+    }
+
+    .next-btn {
+      margin-top: 14px;
+      padding: 14px 40px;
+      background: linear-gradient(135deg, #f7971e, #ffd200);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(247,151,30,0.4);
+    }
+
+    .next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(247,151,30,0.5); }
+
+    .next-btn-inline {
+      margin-top: 20px;
+      padding: 14px 40px;
+      background: linear-gradient(135deg, #f7971e, #ffd200);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(247,151,30,0.4);
+    }
+
+    .next-btn-inline:hover { transform: translateY(-2px); }
+    .next-btn-inline.visible { display: inline-block; }
+
+    .stars {
+      font-size: 1.8rem;
+      letter-spacing: 4px;
+      min-height: 2.2rem;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: #eee;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #f7971e, #ffd200);
+      border-radius: 8px;
+      transition: width 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+  <nav class="tabs">
+    <a class="tab-btn" href="index.html">🎨 צבעים</a>
+    <a class="tab-btn active" href="math.html">➕ חשבון</a>
+  </nav>
+  <h1>➕ ללמוד חשבון!</h1>
+
+  <div class="card">
+    <div class="score" id="score">שאלה 1</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="equation" id="equation"></div>
+    <div class="options" id="options"></div>
+    <div class="stars" id="stars"></div>
+    <div class="feedback hidden" id="feedback"></div>
+    <button class="next-btn-inline" id="nextBtn" onclick="nextRound()">הבא ←</button>
+
+    <!-- success overlay shown briefly on correct answer -->
+    <div class="success-overlay" id="successOverlay">
+      <div class="success-img" id="successImg"></div>
+      <div class="success-msg" id="successMsg"></div>
+      <button class="next-btn" onclick="hideSuccess()">הבא ←</button>
+    </div>
+  </div>
+
+  <script>
+    const SUCCESS_IMAGES = ['🎉','🌟','🏆','🎊','🥳','🦄','🌈','🎯','🐸','🦁','🐯','🚀'];
+    const SUCCESS_MSGS   = ['!כל הכבוד','!מדהים','!מצוין','!וואו','!נהדר','!אלוף'];
+
+    let score = 0;
+    let total = 0;
+    let correct = null;
+    let answered = false;
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function uniqueOptions(answer) {
+      const set = new Set([answer]);
+      while (set.size < 4) {
+        const delta = rand(-4, 4);
+        const v = answer + delta;
+        if (v >= 0 && v !== answer) set.add(v);
+      }
+      return shuffle([...set]);
+    }
+
+    function shuffle(arr) {
+      return [...arr].sort(() => Math.random() - 0.5);
+    }
+
+    function nextRound() {
+      document.getElementById('successOverlay').classList.remove('show');
+      answered = false;
+      document.getElementById('feedback').className = 'feedback hidden';
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('nextBtn').classList.remove('visible');
+      document.getElementById('stars').textContent = '';
+
+      const a = rand(1, 9);
+      const b = rand(1, 9);
+      correct = a + b;
+
+      total++;
+      document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
+      document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
+
+      document.getElementById('equation').innerHTML =
+        `${a} + ${b} = <span class="question-mark">?</span>`;
+
+      const container = document.getElementById('options');
+      container.innerHTML = '';
+
+      uniqueOptions(correct).forEach(val => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = val;
+        btn.onclick = () => pick(btn, val);
+        container.appendChild(btn);
+      });
+    }
+
+    function pick(btn, val) {
+      if (answered) return;
+      answered = true;
+
+      const allBtns = document.querySelectorAll('.option-btn');
+      allBtns.forEach(b => b.disabled = true);
+
+      if (val === correct) {
+        score++;
+        btn.classList.add('correct');
+        document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
+        document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
+
+        setTimeout(() => {
+          document.getElementById('successImg').textContent =
+            SUCCESS_IMAGES[Math.floor(Math.random() * SUCCESS_IMAGES.length)];
+          document.getElementById('successMsg').textContent =
+            SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
+          document.getElementById('successOverlay').classList.add('show');
+        }, 350);
+      } else {
+        btn.classList.add('wrong');
+        allBtns.forEach(b => {
+          if (parseInt(b.textContent) === correct) b.classList.add('correct');
+        });
+        const feedback = document.getElementById('feedback');
+        feedback.textContent = `לא נכון 😢  התשובה הנכונה: ${correct}`;
+        feedback.className = 'feedback wrong';
+        document.getElementById('nextBtn').classList.add('visible');
+      }
+    }
+
+    function hideSuccess() {
+      nextRound();
+    }
+
+    nextRound();
+  </script>
+</body>
+</html>
