@@ -495,11 +495,12 @@
       document.getElementById('hintBox').classList.remove('show');
       document.getElementById('hintBox').innerHTML = '';
 
-      currentA = rand(1, 9);
-      currentB = rand(1, 9);
+      total++;
+      const max = total <= 5 ? 4 : 9;
+      currentA = rand(1, max);
+      currentB = rand(1, max);
       correct = currentA + currentB;
 
-      total++;
       document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
       document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
 
@@ -519,18 +520,16 @@
     }
 
     function pick(btn, val) {
-      if (answered) return;
-      answered = true;
-
-      const allBtns = document.querySelectorAll('.option-btn');
-      allBtns.forEach(b => b.disabled = true);
+      if (answered || btn.disabled) return;
 
       if (val === correct) {
-        score++;
+        answered = true;
+        document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         btn.classList.add('correct');
+        score++;
         document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
         document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
-
+        document.getElementById('feedback').className = 'feedback hidden';
         setTimeout(() => {
           const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
           const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
@@ -544,14 +543,11 @@
         }, 350);
       } else {
         btn.classList.add('wrong');
-        allBtns.forEach(b => {
-          if (parseInt(b.textContent) === correct) b.classList.add('correct');
-        });
+        btn.disabled = true;
         playError();
         const feedback = document.getElementById('feedback');
-        feedback.textContent = `לא נכון 😢  התשובה הנכונה: ${correct}`;
+        feedback.textContent = '!נסה שוב 💪';
         feedback.className = 'feedback wrong';
-        document.getElementById('nextBtn').classList.add('visible');
       }
     }
 
