@@ -430,8 +430,8 @@
     }
 
     function buildBalls(n, cls) {
-      return Array(n).fill(null).map((_, i) =>
-        `<div class="ball ${cls}" style="transform:translateX(${i * 7}px)"></div>`
+      return Array(n).fill(null).map(() =>
+        `<div class="ball ${cls}"></div>`
       ).join('');
     }
 
