@@ -94,12 +94,10 @@
     .hint-box {
       display: none;
       margin: 0 0 20px;
-      padding: 12px 18px;
+      padding: 14px 18px;
       background: #fffbe6;
       border: 2px dashed #f7971e;
       border-radius: 16px;
-      direction: ltr;
-      unicode-bidi: embed;
       animation: fadeIn 0.25s ease;
     }
 
@@ -113,43 +111,59 @@
     .hint-label {
       font-size: 0.75rem;
       color: #aaa;
-      margin-bottom: 6px;
-      direction: rtl;
-    }
-
-    .tally-group {
-      display: inline-flex;
-      align-items: flex-end;
-      gap: 3px;
-      font-size: clamp(1.6rem, 6vw, 2.2rem);
-      font-weight: 900;
-      line-height: 1;
-    }
-
-    .tally-sep {
-      font-size: clamp(1.4rem, 5vw, 2rem);
-      color: #888;
-      margin: 0 6px;
-      font-weight: 700;
-    }
-
-    .tally-a { color: #1e88e5; }
-    .tally-b { color: #e53935; }
-
-    .tally-count {
-      font-size: 0.7rem;
-      font-weight: 700;
-      margin-top: 4px;
+      margin-bottom: 10px;
       text-align: center;
     }
 
-    .tally-count.tally-a { color: #1e88e5; }
-    .tally-count.tally-b { color: #e53935; }
+    .hint-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
 
-    .tally-col {
-      display: inline-flex;
+    .ball-col {
+      display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 4px;
+    }
+
+    .ball-group {
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 6px;
+      max-height: 150px;
+    }
+
+    .ball {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      flex-shrink: 0;
+    }
+
+    .ball-a { background: radial-gradient(circle at 35% 35%, #90caf9, #1565c0); }
+    .ball-b { background: radial-gradient(circle at 35% 35%, #ef9a9a, #c62828); }
+
+    .ball-count {
+      font-size: 0.72rem;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    .ball-count.a { color: #1565c0; }
+    .ball-count.b { color: #c62828; }
+
+    .hint-plus {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #ccc;
+      line-height: 1;
     }
 
     .options {
@@ -393,10 +407,8 @@
       return [...arr].sort(() => Math.random() - 0.5);
     }
 
-    function buildTally(n, cls) {
-      return Array(n).fill(null).map(() =>
-        `<span class="tally-a ${cls}" style="margin:0 1px">|</span>`
-      ).join('');
+    function buildBalls(n, cls) {
+      return Array(n).fill(null).map(() => `<div class="ball ${cls}"></div>`).join('');
     }
 
     function toggleHint() {
@@ -404,20 +416,18 @@
       const box = document.getElementById('hintBox');
       hintVisible = !hintVisible;
       if (hintVisible) {
-        const aMarks = buildTally(currentA, 'tally-a');
-        const bMarks = buildTally(currentB, 'tally-b');
         box.innerHTML = `
-          <div class="hint-label">ספור את הקווים!</div>
-          <div style="direction:ltr;unicode-bidi:embed;font-size:clamp(1.4rem,5vw,2rem);letter-spacing:2px;font-weight:900">
-            <span class="tally-col">
-              ${aMarks}
-              <span class="tally-count tally-a">${currentA}</span>
-            </span>
-            <span class="tally-sep"> + </span>
-            <span class="tally-col">
-              ${bMarks}
-              <span class="tally-count tally-b">${currentB}</span>
-            </span>
+          <div class="hint-label">ספור את הכדורים!</div>
+          <div class="hint-row">
+            <div class="ball-col">
+              <div class="ball-group">${buildBalls(currentA, 'ball-a')}</div>
+              <div class="ball-count a">${currentA}</div>
+            </div>
+            <div class="hint-plus">+</div>
+            <div class="ball-col">
+              <div class="ball-group">${buildBalls(currentB, 'ball-b')}</div>
+              <div class="ball-count b">${currentB}</div>
+            </div>
           </div>`;
         box.classList.add('show');
       } else {
