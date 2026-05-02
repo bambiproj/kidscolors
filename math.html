@@ -72,13 +72,84 @@
       font-size: clamp(2.8rem, 12vw, 4.5rem);
       font-weight: 900;
       color: #333;
-      margin: 10px 0 32px;
+      margin: 10px 0 16px;
       letter-spacing: 4px;
       line-height: 1.1;
+      direction: ltr;
+      unicode-bidi: embed;
     }
 
-    .equation .question-mark {
+    .question-mark {
       color: #f7971e;
+      cursor: pointer;
+      border-bottom: 3px dotted #f7971e;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+
+    .question-mark:hover {
+      transform: scale(1.2);
+    }
+
+    .hint-box {
+      display: none;
+      margin: 0 0 20px;
+      padding: 12px 18px;
+      background: #fffbe6;
+      border: 2px dashed #f7971e;
+      border-radius: 16px;
+      direction: ltr;
+      unicode-bidi: embed;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .hint-box.show { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hint-label {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-bottom: 6px;
+      direction: rtl;
+    }
+
+    .tally-group {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 3px;
+      font-size: clamp(1.6rem, 6vw, 2.2rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .tally-sep {
+      font-size: clamp(1.4rem, 5vw, 2rem);
+      color: #888;
+      margin: 0 6px;
+      font-weight: 700;
+    }
+
+    .tally-a { color: #1e88e5; }
+    .tally-b { color: #e53935; }
+
+    .tally-count {
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .tally-count.tally-a { color: #1e88e5; }
+    .tally-count.tally-b { color: #e53935; }
+
+    .tally-col {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .options {
@@ -146,16 +217,15 @@
     .feedback.wrong   { color: #f44336; }
     .feedback.hidden  { opacity: 0; }
 
-    /* Success overlay */
     .success-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(255,255,255,0.96);
+      background: rgba(255,255,255,0.97);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       border-radius: 24px;
       opacity: 0;
       pointer-events: none;
@@ -168,14 +238,21 @@
     }
 
     .success-img {
-      font-size: 7rem;
+      font-size: 6rem;
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      line-height: 1.1;
+    }
+
+    .success-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #555;
     }
 
     @keyframes popIn {
-      0%   { transform: scale(0); }
-      80%  { transform: scale(1.15); }
-      100% { transform: scale(1); }
+      0%   { transform: scale(0) rotate(-10deg); }
+      70%  { transform: scale(1.2) rotate(3deg); }
+      100% { transform: scale(1) rotate(0deg); }
     }
 
     .success-msg {
@@ -185,7 +262,7 @@
     }
 
     .next-btn {
-      margin-top: 14px;
+      margin-top: 10px;
       padding: 14px 40px;
       background: linear-gradient(135deg, #f7971e, #ffd200);
       color: #fff;
@@ -218,12 +295,6 @@
     .next-btn-inline:hover { transform: translateY(-2px); }
     .next-btn-inline.visible { display: inline-block; }
 
-    .stars {
-      font-size: 1.8rem;
-      letter-spacing: 4px;
-      min-height: 2.2rem;
-    }
-
     .progress-bar-wrap {
       width: 100%;
       height: 8px;
@@ -239,6 +310,13 @@
       border-radius: 8px;
       transition: width 0.4s ease;
     }
+
+    .hint-tip {
+      font-size: 0.72rem;
+      color: #bbb;
+      margin-bottom: 14px;
+      direction: rtl;
+    }
   </style>
 </head>
 <body>
@@ -251,28 +329,51 @@
   <div class="card">
     <div class="score" id="score">שאלה 1</div>
     <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+
     <div class="equation" id="equation"></div>
+    <div class="hint-tip">לחץ על <strong style="color:#f7971e">?</strong> לרמז</div>
+    <div class="hint-box" id="hintBox"></div>
+
     <div class="options" id="options"></div>
-    <div class="stars" id="stars"></div>
     <div class="feedback hidden" id="feedback"></div>
     <button class="next-btn-inline" id="nextBtn" onclick="nextRound()">הבא ←</button>
 
-    <!-- success overlay shown briefly on correct answer -->
     <div class="success-overlay" id="successOverlay">
       <div class="success-img" id="successImg"></div>
+      <div class="success-name" id="successName"></div>
       <div class="success-msg" id="successMsg"></div>
-      <button class="next-btn" onclick="hideSuccess()">הבא ←</button>
+      <button class="next-btn" onclick="nextRound()">הבא ←</button>
     </div>
   </div>
 
   <script>
-    const SUCCESS_IMAGES = ['🎉','🌟','🏆','🎊','🥳','🦄','🌈','🎯','🐸','🦁','🐯','🚀'];
-    const SUCCESS_MSGS   = ['!כל הכבוד','!מדהים','!מצוין','!וואו','!נהדר','!אלוף'];
+    const CREATURES = [
+      { emoji: '⚡🐭', name: 'פיקאצ׳ו' },
+      { emoji: '🔥🦎', name: 'שרמנדר' },
+      { emoji: '💧🐢', name: 'סקווירטל' },
+      { emoji: '🌿🦕', name: 'בולבסאור' },
+      { emoji: '🌊🐬', name: 'לפראס' },
+      { emoji: '🔥🐴', name: 'פוניטה' },
+      { emoji: '❄️🐦', name: 'ארטיקונו' },
+      { emoji: '⚡🐦', name: 'זאפדוס' },
+      { emoji: '🔥🐦', name: 'מולטרס' },
+      { emoji: '🌙🐱', name: 'מיאוט׳' },
+      { emoji: '💤🐻', name: 'סנורלקס' },
+      { emoji: '🌀👾', name: 'מיוטו' },
+      { emoji: '🌸🦋', name: 'בוטרפרי' },
+      { emoji: '🪨🐊', name: 'ריהורן' },
+      { emoji: '🌊🐟', name: 'מאגיקרפ' },
+    ];
+
+    const SUCCESS_MSGS = ['!כל הכבוד','!מדהים','!מצוין','!וואו','!נהדר','!אלוף'];
 
     let score = 0;
     let total = 0;
     let correct = null;
+    let currentA = 0;
+    let currentB = 0;
     let answered = false;
+    let hintVisible = false;
 
     function rand(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -292,24 +393,58 @@
       return [...arr].sort(() => Math.random() - 0.5);
     }
 
+    function buildTally(n, cls) {
+      return Array(n).fill(null).map(() =>
+        `<span class="tally-a ${cls}" style="margin:0 1px">|</span>`
+      ).join('');
+    }
+
+    function toggleHint() {
+      if (answered) return;
+      const box = document.getElementById('hintBox');
+      hintVisible = !hintVisible;
+      if (hintVisible) {
+        const aMarks = buildTally(currentA, 'tally-a');
+        const bMarks = buildTally(currentB, 'tally-b');
+        box.innerHTML = `
+          <div class="hint-label">ספור את הקווים!</div>
+          <div style="direction:ltr;unicode-bidi:embed;font-size:clamp(1.4rem,5vw,2rem);letter-spacing:2px;font-weight:900">
+            <span class="tally-col">
+              ${aMarks}
+              <span class="tally-count tally-a">${currentA}</span>
+            </span>
+            <span class="tally-sep"> + </span>
+            <span class="tally-col">
+              ${bMarks}
+              <span class="tally-count tally-b">${currentB}</span>
+            </span>
+          </div>`;
+        box.classList.add('show');
+      } else {
+        box.classList.remove('show');
+      }
+    }
+
     function nextRound() {
       document.getElementById('successOverlay').classList.remove('show');
       answered = false;
+      hintVisible = false;
       document.getElementById('feedback').className = 'feedback hidden';
       document.getElementById('feedback').textContent = '';
       document.getElementById('nextBtn').classList.remove('visible');
-      document.getElementById('stars').textContent = '';
+      document.getElementById('hintBox').classList.remove('show');
+      document.getElementById('hintBox').innerHTML = '';
 
-      const a = rand(1, 9);
-      const b = rand(1, 9);
-      correct = a + b;
+      currentA = rand(1, 9);
+      currentB = rand(1, 9);
+      correct = currentA + currentB;
 
       total++;
       document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
       document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
 
       document.getElementById('equation').innerHTML =
-        `${a} + ${b} = <span class="question-mark">?</span>`;
+        `${currentA} + ${currentB} = <span class="question-mark" onclick="toggleHint()">?</span>`;
 
       const container = document.getElementById('options');
       container.innerHTML = '';
@@ -337,10 +472,11 @@
         document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
 
         setTimeout(() => {
-          document.getElementById('successImg').textContent =
-            SUCCESS_IMAGES[Math.floor(Math.random() * SUCCESS_IMAGES.length)];
-          document.getElementById('successMsg').textContent =
-            SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
+          const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
+          const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
+          document.getElementById('successImg').textContent = creature.emoji;
+          document.getElementById('successName').textContent = creature.name;
+          document.getElementById('successMsg').textContent = msg;
           document.getElementById('successOverlay').classList.add('show');
         }, 350);
       } else {
@@ -353,10 +489,6 @@
         feedback.className = 'feedback wrong';
         document.getElementById('nextBtn').classList.add('visible');
       }
-    }
-
-    function hideSuccess() {
-      nextRound();
     }
 
     nextRound();
