@@ -250,6 +250,13 @@
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
+    .success-emoji {
+      font-size: 5rem;
+      line-height: 1;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: none;
+    }
+
     .success-name {
       font-size: 1.1rem;
       font-weight: 700;
@@ -354,6 +361,7 @@
 
     <div class="success-overlay" id="successOverlay">
       <img class="success-img" id="successImg" src="" alt="" />
+      <div class="success-emoji" id="successEmoji"></div>
       <div class="success-name" id="successName"></div>
       <div class="success-en" id="successEn"></div>
       <div class="success-msg" id="successMsg"></div>
@@ -532,25 +540,28 @@
         document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
         document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
         document.getElementById('feedback').className = 'feedback hidden';
-        if (firstTry) {
-          setTimeout(() => {
+        setTimeout(() => {
+          if (firstTry) {
             const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
             const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
             document.getElementById('successImg').src = BASE + creature.num + '_f00_s0.png';
             document.getElementById('successImg').alt = creature.en;
+            document.getElementById('successImg').style.display = '';
+            document.getElementById('successEmoji').style.display = 'none';
             document.getElementById('successName').textContent = creature.name;
             document.getElementById('successEn').textContent = creature.en;
             document.getElementById('successMsg').textContent = msg;
-            document.getElementById('successOverlay').classList.add('show');
-            playSuccess();
-          }, 350);
-        } else {
+          } else {
+            document.getElementById('successImg').style.display = 'none';
+            document.getElementById('successEmoji').style.display = 'block';
+            document.getElementById('successEmoji').textContent = '👍';
+            document.getElementById('successName').textContent = '';
+            document.getElementById('successEn').textContent = '';
+            document.getElementById('successMsg').textContent = 'נכון!';
+          }
+          document.getElementById('successOverlay').classList.add('show');
           playSuccess();
-          const feedback = document.getElementById('feedback');
-          feedback.textContent = '👍 נכון!';
-          feedback.className = 'feedback correct';
-          document.getElementById('nextBtn').classList.add('visible');
-        }
+        }, 350);
       } else {
         firstTry = false;
         btn.classList.add('wrong');
