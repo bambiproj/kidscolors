@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - gh-pages
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy to DigitalOcean droplet
         uses: appleboy/ssh-action@v1.0.3
@@ -15,11 +17,12 @@ jobs:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
+          port: 22
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             git fetch origin
             git checkout gh-pages
             git pull origin gh-pages
-            sudo chown -R deploy:www-data ${{ secrets.DEPLOY_PATH }}
-            sudo nginx -t
-            sudo systemctl reload nginx
+            sudo /usr/bin/chown -R deploy:www-data ${{ secrets.DEPLOY_PATH }}
+            sudo /usr/sbin/nginx -t
+            sudo /usr/bin/systemctl reload nginx
