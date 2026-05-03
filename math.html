@@ -405,6 +405,7 @@
     let currentB = 0;
     let answered = false;
     let hintVisible = false;
+    let firstTry = true;
 
     function rand(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -489,6 +490,7 @@
       document.getElementById('successOverlay').classList.remove('show');
       answered = false;
       hintVisible = false;
+      firstTry = true;
       document.getElementById('feedback').className = 'feedback hidden';
       document.getElementById('feedback').textContent = '';
       document.getElementById('nextBtn').classList.remove('visible');
@@ -530,18 +532,27 @@
         document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
         document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
         document.getElementById('feedback').className = 'feedback hidden';
-        setTimeout(() => {
-          const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
-          const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
-          document.getElementById('successImg').src = BASE + creature.num + '_f00_s0.png';
-          document.getElementById('successImg').alt = creature.en;
-          document.getElementById('successName').textContent = creature.name;
-          document.getElementById('successEn').textContent = creature.en;
-          document.getElementById('successMsg').textContent = msg;
-          document.getElementById('successOverlay').classList.add('show');
+        if (firstTry) {
+          setTimeout(() => {
+            const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
+            const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
+            document.getElementById('successImg').src = BASE + creature.num + '_f00_s0.png';
+            document.getElementById('successImg').alt = creature.en;
+            document.getElementById('successName').textContent = creature.name;
+            document.getElementById('successEn').textContent = creature.en;
+            document.getElementById('successMsg').textContent = msg;
+            document.getElementById('successOverlay').classList.add('show');
+            playSuccess();
+          }, 350);
+        } else {
           playSuccess();
-        }, 350);
+          const feedback = document.getElementById('feedback');
+          feedback.textContent = '👍 נכון!';
+          feedback.className = 'feedback correct';
+          document.getElementById('nextBtn').classList.add('visible');
+        }
       } else {
+        firstTry = false;
         btn.classList.add('wrong');
         btn.disabled = true;
         playError();
