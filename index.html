@@ -382,18 +382,16 @@
     }
 
     function pick(btn, color) {
-      if (answered) return;
-      answered = true;
-
-      const allBtns = document.querySelectorAll('.option-btn');
-      allBtns.forEach(b => b.disabled = true);
+      if (answered || btn.disabled) return;
 
       const feedback = document.getElementById('feedback');
 
       if (color.he === correct.he) {
-        score++;
+        answered = true;
+        document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         btn.classList.add('correct');
         document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
+        feedback.className = 'feedback hidden';
         setTimeout(() => {
           const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
           const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
@@ -408,12 +406,9 @@
       } else {
         playError();
         btn.classList.add('wrong');
-        allBtns.forEach(b => {
-          if (b.dataset.color === correct.he) b.classList.add('correct');
-        });
-        feedback.textContent = `לא נכון 😢`;
+        btn.disabled = true;
+        feedback.textContent = '!נסה שוב 💪';
         feedback.className = 'feedback wrong';
-        document.getElementById('nextBtn').classList.add('visible');
       }
     }
 
