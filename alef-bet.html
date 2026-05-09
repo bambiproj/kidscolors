@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>חשבון לילדים</title>
+  <title>א-ב</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-      background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+      background: linear-gradient(135deg, #e96c2f 0%, #f7c948 100%);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -22,10 +22,11 @@
       display: flex;
       gap: 10px;
       margin-bottom: 24px;
+      flex-wrap: nowrap;
     }
 
     .tab-btn {
-      padding: 10px 28px;
+      padding: 10px 20px;
       border-radius: 50px;
       border: 2px solid rgba(255,255,255,0.6);
       background: rgba(255,255,255,0.15);
@@ -43,9 +44,9 @@
       border-color: #fff;
     }
 
-    @media (max-width: 440px) {
+    @media (max-width: 500px) {
       .tabs { gap: 6px; }
-      .tab-btn { padding: 8px 10px; font-size: 0.82rem; }
+      .tab-btn { padding: 8px 9px; font-size: 0.78rem; }
     }
 
     h1 {
@@ -71,97 +72,27 @@
     .score {
       font-size: 0.9rem;
       color: #888;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
-    .equation {
-      font-size: clamp(2.8rem, 12vw, 4.5rem);
+    .letter-display {
+      font-size: clamp(5rem, 22vw, 8rem);
       font-weight: 900;
       color: #333;
-      margin: 10px 0 16px;
-      letter-spacing: 4px;
-      line-height: 1.1;
-      direction: ltr;
-      unicode-bidi: embed;
-    }
-
-    .question-mark {
-      color: #f7971e;
-      cursor: pointer;
-      border-bottom: 3px dotted #f7971e;
-      transition: transform 0.2s;
-      display: inline-block;
-    }
-
-    .question-mark:hover {
-      transform: scale(1.2);
-    }
-
-    .hint-box {
-      display: none;
-      margin: 0 0 20px;
-      padding: 14px 18px;
-      background: #fffbe6;
-      border: 2px dashed #f7971e;
-      border-radius: 16px;
-      animation: fadeIn 0.25s ease;
-    }
-
-    .hint-box.show { display: block; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .hint-label {
-      font-size: 0.75rem;
-      color: #aaa;
-      margin-bottom: 10px;
-      text-align: center;
-    }
-
-    .hint-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .ball-group {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 6px;
-      justify-content: center;
-      max-width: 200px;
-    }
-
-    .ball {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      flex-shrink: 0;
-    }
-
-    .ball-a { background: radial-gradient(circle at 35% 35%, #90caf9, #1565c0); }
-    .ball-b { background: radial-gradient(circle at 35% 35%, #ef9a9a, #c62828); }
-
-    .ball-count {
-      font-size: 0.72rem;
-      font-weight: 800;
-      margin-top: 2px;
-    }
-
-    .ball-count.a { color: #1565c0; }
-    .ball-count.b { color: #c62828; }
-
-    .hint-plus {
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: #ccc;
+      margin: 0 0 8px;
       line-height: 1;
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      0%   { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    .question-label {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 24px;
     }
 
     .options {
@@ -171,21 +102,22 @@
     }
 
     .option-btn {
-      padding: 20px 10px;
+      padding: 18px 10px;
       border: 3px solid #e0e0e0;
       border-radius: 16px;
       background: #fafafa;
-      font-size: clamp(1.6rem, 6vw, 2.2rem);
+      font-size: clamp(2rem, 8vw, 3rem);
       font-weight: 900;
       cursor: pointer;
       transition: transform 0.15s, border-color 0.2s, background 0.2s;
       color: #333;
+      line-height: 1;
     }
 
     .option-btn:hover:not(:disabled) {
       transform: translateY(-3px);
-      border-color: #f7971e;
-      background: #fff8e1;
+      border-color: #e96c2f;
+      background: #fff8f0;
     }
 
     .option-btn:disabled { cursor: default; }
@@ -205,7 +137,7 @@
     @keyframes bounce {
       0%   { transform: scale(1); }
       40%  { transform: scale(1.12); }
-      70%  { transform: scale(0.95); }
+      70%  { transform: scale(0.96); }
       100% { transform: scale(1); }
     }
 
@@ -218,16 +150,14 @@
     }
 
     .feedback {
-      margin-top: 22px;
-      font-size: 1.25rem;
+      margin-top: 20px;
+      font-size: 1.2rem;
       font-weight: 700;
       min-height: 2rem;
-      transition: opacity 0.3s;
     }
 
-    .feedback.correct { color: #4caf50; }
-    .feedback.wrong   { color: #f44336; }
-    .feedback.hidden  { opacity: 0; }
+    .feedback.wrong  { color: #f44336; }
+    .feedback.hidden { opacity: 0; }
 
     .success-overlay {
       position: absolute;
@@ -253,45 +183,30 @@
       width: 128px;
       height: 128px;
       image-rendering: pixelated;
-      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: popInBig 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .success-emoji {
       font-size: 5rem;
       line-height: 1;
-      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: popInBig 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       display: none;
     }
 
-    .success-name {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #444;
-    }
-
-    .success-en {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: #aaa;
-      margin-top: -6px;
-    }
-
-    @keyframes popIn {
+    @keyframes popInBig {
       0%   { transform: scale(0) rotate(-10deg); }
       70%  { transform: scale(1.2) rotate(3deg); }
       100% { transform: scale(1) rotate(0deg); }
     }
 
-    .success-msg {
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: #4caf50;
-    }
+    .success-name { font-size: 1.1rem; font-weight: 700; color: #444; }
+    .success-en   { font-size: 0.85rem; font-weight: 500; color: #aaa; margin-top: -6px; }
+    .success-msg  { font-size: 1.6rem; font-weight: 900; color: #4caf50; }
 
     .next-btn {
       margin-top: 10px;
       padding: 14px 40px;
-      background: linear-gradient(135deg, #f7971e, #ffd200);
+      background: linear-gradient(135deg, #e96c2f, #f7c948);
       color: #fff;
       border: none;
       border-radius: 50px;
@@ -299,73 +214,27 @@
       font-weight: 700;
       cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 4px 16px rgba(247,151,30,0.4);
+      box-shadow: 0 4px 16px rgba(233,108,47,0.4);
     }
 
-    .next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(247,151,30,0.5); }
-
-    .next-btn-inline {
-      margin-top: 20px;
-      padding: 14px 40px;
-      background: linear-gradient(135deg, #f7971e, #ffd200);
-      color: #fff;
-      border: none;
-      border-radius: 50px;
-      font-size: 1.15rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: none;
-      transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 4px 16px rgba(247,151,30,0.4);
-    }
-
-    .next-btn-inline:hover { transform: translateY(-2px); }
-    .next-btn-inline.visible { display: inline-block; }
-
-    .progress-bar-wrap {
-      width: 100%;
-      height: 8px;
-      background: #eee;
-      border-radius: 8px;
-      margin-bottom: 18px;
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #f7971e, #ffd200);
-      border-radius: 8px;
-      transition: width 0.4s ease;
-    }
-
-    .hint-tip {
-      font-size: 0.72rem;
-      color: #bbb;
-      margin-bottom: 14px;
-      direction: rtl;
-    }
+    .next-btn:hover { transform: translateY(-2px); }
   </style>
 </head>
 <body>
   <nav class="tabs">
     <a class="tab-btn" href="index.html">🎨 צבעים</a>
-    <a class="tab-btn active" href="math.html">➕ חשבון</a>
+    <a class="tab-btn" href="math.html">➕ חשבון</a>
     <a class="tab-btn" href="words.html">📖 מילים</a>
-    <a class="tab-btn" href="alef-bet.html">א-ב</a>
+    <a class="tab-btn active" href="alef-bet.html">א-ב</a>
   </nav>
-  <h1>➕ ללמוד חשבון!</h1>
+  <h1>א-ב-ג ללמוד אותיות!</h1>
 
   <div class="card">
     <div class="score" id="score">שאלה 1</div>
-    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-
-    <div class="equation" id="equation"></div>
-    <div class="hint-tip">לחץ על <strong style="color:#f7971e">?</strong> לרמז</div>
-    <div class="hint-box" id="hintBox"></div>
-
+    <div class="letter-display" id="letterDisplay"></div>
+    <div class="question-label">?מה האות הבאה</div>
     <div class="options" id="options"></div>
     <div class="feedback hidden" id="feedback"></div>
-    <button class="next-btn-inline" id="nextBtn" onclick="nextRound()">הבא ←</button>
 
     <div class="success-overlay" id="successOverlay">
       <img class="success-img" id="successImg" src="" alt="" />
@@ -378,6 +247,8 @@
   </div>
 
   <script>
+    const ALEFBET = ['א','ב','ג','ד','ה','ו','ז','ח','ט','י','כ','ל','מ','נ','ס','ע','פ','צ','ק','ר','ש','ת'];
+
     const BASE = 'https://resource.pokemon-home.com/battledata/img/pokei128/icon';
     const CREATURES = [
       { num: '0001', name: 'בולבסאור',   en: 'Bulbasaur'  },
@@ -411,41 +282,13 @@
       { num: '0813', name: 'סקורבאני',   en: 'Scorbunny'  },
       { num: '0909', name: 'פואקוקו',    en: 'Fuecoco'    },
     ];
-
     const SUCCESS_MSGS = ['!כל הכבוד','!מדהים','!מצוין','!וואו','!נהדר','!אלוף'];
 
     let score = 0;
     let total = 0;
-    let correct = null;
-    let currentA = 0;
-    let currentB = 0;
+    let correctLetter = '';
     let answered = false;
-    let hintVisible = false;
     let firstTry = true;
-
-    function rand(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    function uniqueOptions(answer) {
-      const set = new Set([answer]);
-      while (set.size < 4) {
-        const delta = rand(-4, 4);
-        const v = answer + delta;
-        if (v >= 0 && v !== answer) set.add(v);
-      }
-      return shuffle([...set]);
-    }
-
-    function shuffle(arr) {
-      return [...arr].sort(() => Math.random() - 0.5);
-    }
-
-    function buildBalls(n, cls) {
-      return Array(n).fill(null).map(() =>
-        `<div class="ball ${cls}"></div>`
-      ).join('');
-    }
 
     let audioCtx = null;
     function getCtx() {
@@ -482,83 +325,68 @@
       osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.32);
     }
 
-    function toggleHint() {
-      if (answered) return;
-      const box = document.getElementById('hintBox');
-      hintVisible = !hintVisible;
-      if (hintVisible) {
-        box.innerHTML = `
-          <div class="hint-label">ספור את הכדורים!</div>
-          <div class="hint-col">
-            <div class="ball-group">${buildBalls(currentA, 'ball-a')}</div>
-            <div class="ball-count a">${currentA}</div>
-            <div class="hint-plus">+</div>
-            <div class="ball-group">${buildBalls(currentB, 'ball-b')}</div>
-            <div class="ball-count b">${currentB}</div>
-          </div>`;
-        box.classList.add('show');
-      } else {
-        box.classList.remove('show');
-      }
+    function shuffle(arr) {
+      return [...arr].sort(() => Math.random() - 0.5);
     }
 
     function nextRound() {
       document.getElementById('successOverlay').classList.remove('show');
       answered = false;
-      hintVisible = false;
       firstTry = true;
       document.getElementById('feedback').className = 'feedback hidden';
       document.getElementById('feedback').textContent = '';
-      document.getElementById('nextBtn').classList.remove('visible');
-      document.getElementById('hintBox').classList.remove('show');
-      document.getElementById('hintBox').innerHTML = '';
+
+      const idx = Math.floor(Math.random() * (ALEFBET.length - 1));
+      const shownLetter = ALEFBET[idx];
+      correctLetter = ALEFBET[idx + 1];
 
       total++;
-      const max = total <= 5 ? 4 : 9;
-      currentA = rand(1, max);
-      currentB = rand(1, max);
-      correct = currentA + currentB;
-
       document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
-      document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
 
-      document.getElementById('equation').innerHTML =
-        `${currentA} + ${currentB} = <span class="question-mark" onclick="toggleHint()">?</span>`;
+      const letterEl = document.getElementById('letterDisplay');
+      letterEl.textContent = shownLetter;
+      letterEl.style.animation = 'none';
+      void letterEl.offsetWidth;
+      letterEl.style.animation = '';
+
+      const pool = ALEFBET.filter(l => l !== shownLetter && l !== correctLetter);
+      const wrongs = shuffle(pool).slice(0, 3);
+      const options = shuffle([correctLetter, ...wrongs]);
 
       const container = document.getElementById('options');
       container.innerHTML = '';
-
-      uniqueOptions(correct).forEach(val => {
+      options.forEach(letter => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = val;
-        btn.onclick = () => pick(btn, val);
+        btn.textContent = letter;
+        btn.onclick = () => pick(btn, letter);
         container.appendChild(btn);
       });
     }
 
-    function pick(btn, val) {
+    function pick(btn, letter) {
       if (answered || btn.disabled) return;
 
-      if (val === correct) {
+      const feedback = document.getElementById('feedback');
+
+      if (letter === correctLetter) {
         answered = true;
         document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         btn.classList.add('correct');
         score++;
         document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
-        document.getElementById('progressBar').style.width = Math.min((score / 10) * 100, 100) + '%';
-        document.getElementById('feedback').className = 'feedback hidden';
+        feedback.className = 'feedback hidden';
+
         setTimeout(() => {
           if (firstTry) {
             const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
-            const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
             document.getElementById('successImg').src = BASE + creature.num + '_f00_s0.png';
             document.getElementById('successImg').alt = creature.en;
             document.getElementById('successImg').style.display = '';
             document.getElementById('successEmoji').style.display = 'none';
             document.getElementById('successName').textContent = creature.name;
             document.getElementById('successEn').textContent = creature.en;
-            document.getElementById('successMsg').textContent = msg;
+            document.getElementById('successMsg').textContent = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
           } else {
             document.getElementById('successImg').style.display = 'none';
             document.getElementById('successEmoji').style.display = 'block';
@@ -575,7 +403,6 @@
         btn.classList.add('wrong');
         btn.disabled = true;
         playError();
-        const feedback = document.getElementById('feedback');
         feedback.textContent = '!נסה שוב 💪';
         feedback.className = 'feedback wrong';
       }

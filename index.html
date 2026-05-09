@@ -35,11 +35,17 @@
       cursor: pointer;
       text-decoration: none;
       transition: background 0.2s, border-color 0.2s;
+      white-space: nowrap;
     }
 
     .tab-btn.active, .tab-btn:hover {
       background: rgba(255,255,255,0.35);
       border-color: #fff;
+    }
+
+    @media (max-width: 440px) {
+      .tabs { gap: 6px; }
+      .tab-btn { padding: 8px 10px; font-size: 0.82rem; }
     }
 
     h1 {
@@ -58,7 +64,77 @@
       width: 100%;
       box-shadow: 0 20px 60px rgba(0,0,0,0.25);
       text-align: center;
+      position: relative;
+      overflow: hidden;
     }
+
+    .success-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.97);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .success-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .success-img {
+      width: 128px;
+      height: 128px;
+      image-rendering: pixelated;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .success-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #444;
+    }
+
+    .success-en {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #aaa;
+      margin-top: -6px;
+    }
+
+    .success-msg {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #4caf50;
+    }
+
+    @keyframes popIn {
+      0%   { transform: scale(0) rotate(-10deg); }
+      70%  { transform: scale(1.2) rotate(3deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .reward-next-btn {
+      margin-top: 10px;
+      padding: 14px 40px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(118,75,162,0.4);
+    }
+
+    .reward-next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(118,75,162,0.5); }
 
     .score {
       font-size: 0.9rem;
@@ -66,61 +142,39 @@
       margin-bottom: 18px;
     }
 
-    .color-swatch {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      margin: 0 auto 10px;
-      border: 6px solid #f0f0f0;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.15);
-      transition: transform 0.3s;
-    }
-
-    .color-swatch.pulse {
-      animation: pulse 0.5s ease;
-    }
-
-    @keyframes pulse {
-      0%   { transform: scale(1); }
-      50%  { transform: scale(1.12); }
-      100% { transform: scale(1); }
-    }
-
-    .question {
-      font-size: clamp(1.4rem, 5vw, 2rem);
-      font-weight: 700;
+    .color-word {
+      font-size: clamp(3rem, 14vw, 5rem);
+      font-weight: 900;
       color: #333;
-      margin: 18px 0 24px;
-      min-height: 2.4rem;
+      margin: 10px 0 28px;
+      letter-spacing: 4px;
+      line-height: 1.1;
     }
 
     .options {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      gap: 16px;
     }
 
     .option-btn {
-      padding: 18px 10px;
-      border: 3px solid #e0e0e0;
-      border-radius: 16px;
+      aspect-ratio: 1;
+      border: 4px solid #e0e0e0;
+      border-radius: 20px;
       background: #fafafa;
-      font-size: clamp(1.1rem, 4vw, 1.35rem);
-      font-weight: 700;
       cursor: pointer;
-      transition: transform 0.15s, border-color 0.2s, background 0.2s;
+      transition: transform 0.15s, border-color 0.2s;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      position: relative;
+      justify-content: center;
+      padding: 12px;
     }
 
-    .option-btn .swatch-mini {
-      width: 40px;
-      height: 40px;
+    .option-btn .color-circle {
+      width: 100%;
+      aspect-ratio: 1;
       border-radius: 50%;
-      border: 3px solid #ddd;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     .option-btn:hover:not(:disabled) {
@@ -186,32 +240,69 @@
 
     .next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(118,75,162,0.5); }
     .next-btn.visible { display: inline-block; }
-
-    .stars {
-      font-size: 1.6rem;
-      letter-spacing: 4px;
-      min-height: 2rem;
-    }
   </style>
 </head>
 <body>
   <nav class="tabs">
     <a class="tab-btn active" href="index.html">🎨 צבעים</a>
     <a class="tab-btn" href="math.html">➕ חשבון</a>
+    <a class="tab-btn" href="words.html">📖 מילים</a>
+    <a class="tab-btn" href="alef-bet.html">א-ב</a>
   </nav>
   <h1>🎨 ללמוד צבעים!</h1>
 
   <div class="card">
     <div class="score" id="score">שאלה 1</div>
-    <div class="color-swatch" id="swatch"></div>
-    <div class="stars" id="stars"></div>
-    <div class="question" id="question">?איזה צבע זה</div>
+    <div class="color-word" id="colorWord"></div>
     <div class="options" id="options"></div>
     <div class="feedback hidden" id="feedback"></div>
     <button class="next-btn" id="nextBtn" onclick="nextRound()">הבא ←</button>
+
+    <div class="success-overlay" id="successOverlay">
+      <img class="success-img" id="successImg" src="" alt="" />
+      <div class="success-name" id="successName"></div>
+      <div class="success-en" id="successEn"></div>
+      <div class="success-msg" id="successMsg"></div>
+      <button class="reward-next-btn" onclick="nextRound()">הבא ←</button>
+    </div>
   </div>
 
   <script>
+    const BASE = 'https://resource.pokemon-home.com/battledata/img/pokei128/icon';
+    const CREATURES = [
+      { num: '0001', name: 'בולבסאור',   en: 'Bulbasaur'  },
+      { num: '0004', name: 'שרמנדר',     en: 'Charmander' },
+      { num: '0007', name: 'סקווירטל',   en: 'Squirtle'   },
+      { num: '0025', name: 'פיקאצ׳ו',    en: 'Pikachu'    },
+      { num: '0035', name: 'קלפיירי',    en: 'Clefairy'   },
+      { num: '0039', name: 'ג׳יגלי פאף', en: 'Jigglypuff' },
+      { num: '0052', name: 'מיאות׳',     en: 'Meowth'     },
+      { num: '0054', name: 'סייידאק',    en: 'Psyduck'    },
+      { num: '0094', name: 'גנגאר',      en: 'Gengar'     },
+      { num: '0129', name: 'מאגיקרפ',    en: 'Magikarp'   },
+      { num: '0131', name: 'לפראס',      en: 'Lapras'     },
+      { num: '0133', name: 'איווי',      en: 'Eevee'      },
+      { num: '0143', name: 'סנורלקס',    en: 'Snorlax'    },
+      { num: '0149', name: 'דרגוניט',    en: 'Dragonite'  },
+      { num: '0150', name: 'מיוטו',      en: 'Mewtwo'     },
+      { num: '0151', name: 'מיו',        en: 'Mew'        },
+      { num: '0155', name: 'סינדאקוויל', en: 'Cyndaquil'  },
+      { num: '0175', name: 'טוגפי',      en: 'Togepi'     },
+      { num: '0196', name: 'אספאון',     en: 'Espeon'     },
+      { num: '0197', name: 'אמברון',     en: 'Umbreon'    },
+      { num: '0249', name: 'לוג׳יה',     en: 'Lugia'      },
+      { num: '0250', name: 'הו-אוה',     en: 'Ho-Oh'      },
+      { num: '0255', name: 'טורצ׳יק',    en: 'Torchic'    },
+      { num: '0258', name: 'מאדקיפ',     en: 'Mudkip'     },
+      { num: '0385', name: 'ג׳יראצ׳י',   en: 'Jirachi'    },
+      { num: '0448', name: 'לוקריו',     en: 'Lucario'    },
+      { num: '0658', name: 'גרנינג׳ה',   en: 'Greninja'   },
+      { num: '0700', name: 'סילווייאון', en: 'Sylveon'    },
+      { num: '0813', name: 'סקורבאני',   en: 'Scorbunny'  },
+      { num: '0909', name: 'פואקוקו',    en: 'Fuecoco'    },
+    ];
+    const SUCCESS_MSGS = ['!כל הכבוד','!מדהים','!מצוין','!וואו','!נהדר','!אלוף'];
+
     const COLORS = [
       { he: 'אָדֹם',   en: 'Red',    hex: '#e53935' },
       { he: 'כָּחֹל',  en: 'Blue',   hex: '#1e88e5' },
@@ -231,16 +322,51 @@
     let correct = null;
     let answered = false;
 
+    let audioCtx = null;
+    function getCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playSuccess() {
+      const ctx = getCtx();
+      [523, 659, 784].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.13;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.18, t + 0.04);
+        gain.gain.linearRampToValueAtTime(0, t + 0.28);
+        osc.start(t); osc.stop(t + 0.3);
+      });
+    }
+
+    function playError() {
+      const ctx = getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(280, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(180, ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.32);
+    }
+
     function shuffle(arr) {
       return [...arr].sort(() => Math.random() - 0.5);
     }
 
     function nextRound() {
+      document.getElementById('successOverlay').classList.remove('show');
       answered = false;
       document.getElementById('feedback').className = 'feedback hidden';
       document.getElementById('feedback').textContent = '';
       document.getElementById('nextBtn').classList.remove('visible');
-      document.getElementById('stars').textContent = '';
 
       const shuffled = shuffle(COLORS);
       correct = shuffled[0];
@@ -248,14 +374,7 @@
 
       total++;
       document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
-
-      const swatch = document.getElementById('swatch');
-      swatch.style.background = correct.hex;
-      swatch.classList.remove('pulse');
-      void swatch.offsetWidth;
-      swatch.classList.add('pulse');
-
-      document.getElementById('question').textContent = '?איזה צבע זה';
+      document.getElementById('colorWord').textContent = correct.he;
 
       const container = document.getElementById('options');
       container.innerHTML = '';
@@ -263,49 +382,43 @@
       shuffle(options).forEach(color => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.innerHTML = `
-          <span class="swatch-mini" style="background:${color.hex}"></span>
-          <span>${color.he}</span>
-        `;
+        btn.dataset.color = color.he;
+        btn.innerHTML = `<span class="color-circle" style="background:${color.hex}"></span>`;
         btn.onclick = () => pick(btn, color);
         container.appendChild(btn);
       });
     }
 
     function pick(btn, color) {
-      if (answered) return;
-      answered = true;
-
-      const allBtns = document.querySelectorAll('.option-btn');
-      allBtns.forEach(b => b.disabled = true);
+      if (answered || btn.disabled) return;
 
       const feedback = document.getElementById('feedback');
 
       if (color.he === correct.he) {
-        score++;
+        answered = true;
+        document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         btn.classList.add('correct');
-        feedback.textContent = '!כל הכבוד 🌟 נכון מאוד';
-        feedback.className = 'feedback correct';
-        document.getElementById('stars').textContent = randomStars();
+        score++;
         document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
+        feedback.className = 'feedback hidden';
+        setTimeout(() => {
+          const creature = CREATURES[Math.floor(Math.random() * CREATURES.length)];
+          const msg = SUCCESS_MSGS[Math.floor(Math.random() * SUCCESS_MSGS.length)];
+          document.getElementById('successImg').src = BASE + creature.num + '_f00_s0.png';
+          document.getElementById('successImg').alt = creature.en;
+          document.getElementById('successName').textContent = creature.name;
+          document.getElementById('successEn').textContent = creature.en;
+          document.getElementById('successMsg').textContent = msg;
+          document.getElementById('successOverlay').classList.add('show');
+          playSuccess();
+        }, 350);
       } else {
+        playError();
         btn.classList.add('wrong');
-        // highlight correct answer
-        allBtns.forEach(b => {
-          if (b.querySelector('span:last-child').textContent.trim() === correct.he) {
-            b.classList.add('correct');
-          }
-        });
-        feedback.textContent = `לא נכון 😢  התשובה הנכונה: ${correct.he}`;
+        btn.disabled = true;
+        feedback.textContent = '!נסה שוב 💪';
         feedback.className = 'feedback wrong';
       }
-
-      document.getElementById('nextBtn').classList.add('visible');
-    }
-
-    function randomStars() {
-      const n = Math.floor(Math.random() * 3) + 3;
-      return '⭐'.repeat(n);
     }
 
     nextRound();
