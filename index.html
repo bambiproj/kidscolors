@@ -240,6 +240,7 @@
   <nav class="tabs">
     <a class="tab-btn active" href="index.html">🎨 צבעים</a>
     <a class="tab-btn" href="math.html">➕ חשבון</a>
+    <a class="tab-btn" href="words.html">📖 מילים</a>
   </nav>
   <h1>🎨 ללמוד צבעים!</h1>
 
@@ -390,6 +391,7 @@
         answered = true;
         document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         btn.classList.add('correct');
+        score++;
         document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
         feedback.className = 'feedback hidden';
         setTimeout(() => {
