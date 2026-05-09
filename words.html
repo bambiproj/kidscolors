@@ -35,11 +35,17 @@
       cursor: pointer;
       text-decoration: none;
       transition: background 0.2s, border-color 0.2s;
+      white-space: nowrap;
     }
 
     .tab-btn.active, .tab-btn:hover {
       background: rgba(255,255,255,0.35);
       border-color: #fff;
+    }
+
+    @media (max-width: 440px) {
+      .tabs { gap: 6px; }
+      .tab-btn { padding: 8px 10px; font-size: 0.82rem; }
     }
 
     h1 {
@@ -72,10 +78,39 @@
       font-size: clamp(2.4rem, 10vw, 3.8rem);
       font-weight: 900;
       color: #333;
-      margin: 10px 0 28px;
+      margin: 10px 0 16px;
       letter-spacing: 3px;
       line-height: 1.2;
     }
+
+    .pokemon-word span {
+      display: inline-block;
+      transition: color 0.15s, transform 0.15s;
+    }
+
+    .pokemon-word span.active-letter {
+      color: #11998e;
+      transform: scale(1.35);
+    }
+
+    .play-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #11998e, #38ef7d);
+      border: none;
+      color: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(17,153,142,0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+      margin: 0 auto 20px;
+      display: block;
+      line-height: 1;
+    }
+
+    .play-btn:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 6px 18px rgba(17,153,142,0.5); }
+    .play-btn:disabled { opacity: 0.45; cursor: default; transform: none; }
 
     .options {
       display: grid;
@@ -234,6 +269,7 @@
   <div class="card">
     <div class="score" id="score">שאלה 1</div>
     <div class="pokemon-word" id="pokemonWord"></div>
+    <button class="play-btn" id="playBtn" title="השמע אות">▶</button>
     <div class="options" id="options"></div>
     <div class="feedback hidden" id="feedback"></div>
 
@@ -288,6 +324,8 @@
     let correct = null;
     let answered = false;
     let firstTry = true;
+    let letterIndex = -1;
+    let wordLetters = [];
 
     let audioCtx = null;
     function getCtx() {
@@ -324,16 +362,72 @@
       osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.32);
     }
 
+    function splitToLetters(word) {
+      const groups = [];
+      for (const ch of word) {
+        if ((ch === '׳' || ch === '׳') && groups.length > 0) {
+          groups[groups.length - 1] += ch;
+        } else {
+          groups.push(ch);
+        }
+      }
+      return groups;
+    }
+
+    function speak(text, onEnd) {
+      if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = 'he-IL';
+      utt.rate = 0.8;
+      if (onEnd) utt.onend = onEnd;
+      window.speechSynthesis.speak(utt);
+    }
+
+    function playNextLetter() {
+      const btn = document.getElementById('playBtn');
+      btn.disabled = true;
+
+      document.querySelectorAll('#pokemonWord span').forEach(s => s.classList.remove('active-letter'));
+
+      letterIndex++;
+
+      if (letterIndex < wordLetters.length) {
+        const span = document.querySelector(`#pokemonWord span[data-idx="${letterIndex}"]`);
+        if (span) span.classList.add('active-letter');
+        const letter = wordLetters[letterIndex];
+        const speakable = letter.replace(/[\s\-׳]/g, '');
+        if (speakable) {
+          speak(speakable, () => { btn.disabled = false; });
+        } else {
+          btn.disabled = false;
+        }
+      } else {
+        letterIndex = -1;
+        btn.textContent = '🔁';
+        speak(correct.name, () => {
+          btn.textContent = '▶';
+          btn.disabled = false;
+        });
+      }
+    }
+
     function shuffle(arr) {
       return [...arr].sort(() => Math.random() - 0.5);
     }
 
     function nextRound() {
       document.getElementById('successOverlay').classList.remove('show');
+      window.speechSynthesis && window.speechSynthesis.cancel();
       answered = false;
       firstTry = true;
+      letterIndex = -1;
       document.getElementById('feedback').className = 'feedback hidden';
       document.getElementById('feedback').textContent = '';
+
+      const btn = document.getElementById('playBtn');
+      btn.textContent = '▶';
+      btn.disabled = false;
 
       const shuffled = shuffle(CREATURES);
       correct = shuffled[0];
@@ -341,7 +435,11 @@
 
       total++;
       document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
-      document.getElementById('pokemonWord').textContent = correct.name;
+
+      wordLetters = splitToLetters(correct.name);
+      document.getElementById('pokemonWord').innerHTML = wordLetters
+        .map((ch, i) => `<span data-idx="${i}">${ch}</span>`)
+        .join('');
 
       const container = document.getElementById('options');
       container.innerHTML = '';
@@ -363,7 +461,10 @@
 
       if (creature.num === correct.num) {
         answered = true;
+        window.speechSynthesis && window.speechSynthesis.cancel();
+        document.getElementById('playBtn').disabled = true;
         document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+        document.querySelectorAll('#pokemonWord span').forEach(s => s.classList.remove('active-letter'));
         btn.classList.add('correct');
         score++;
         document.getElementById('score').textContent = `שאלה ${total}  |  ✅ ${score}`;
@@ -399,6 +500,7 @@
       }
     }
 
+    document.getElementById('playBtn').onclick = playNextLetter;
     nextRound();
   </script>
 </body>

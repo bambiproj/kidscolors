@@ -35,11 +35,17 @@
       cursor: pointer;
       text-decoration: none;
       transition: background 0.2s, border-color 0.2s;
+      white-space: nowrap;
     }
 
     .tab-btn.active, .tab-btn:hover {
       background: rgba(255,255,255,0.35);
       border-color: #fff;
+    }
+
+    @media (max-width: 440px) {
+      .tabs { gap: 6px; }
+      .tab-btn { padding: 8px 10px; font-size: 0.82rem; }
     }
 
     h1 {
