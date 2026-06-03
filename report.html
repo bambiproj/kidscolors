@@ -3,32 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meta Campaign Report – Last 14 Days</title>
+  <title>Tandem Report – Last 14 Days</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       min-height: 100vh;
       color: #1a1a2e;
     }
 
     header {
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
       backdrop-filter: blur(10px);
       padding: 1rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid rgba(255,255,255,0.2);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
     header h1 { color: #fff; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.3px; }
+    header h1 span { color: #e94560; }
 
     #login-area { display: flex; align-items: center; gap: 1rem; }
-    #user-info { color: rgba(255,255,255,0.9); font-size: 0.85rem; }
+    #user-info { color: rgba(255,255,255,0.8); font-size: 0.85rem; }
 
     .btn {
       display: inline-flex; align-items: center; gap: 0.4rem;
@@ -39,51 +40,52 @@
     .btn:hover { opacity: 0.88; transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
     .btn-fb   { background: #1877f2; color: #fff; }
-    .btn-out  { background: rgba(255,255,255,0.2); color: #fff; }
-    .btn-load { background: #6c63ff; color: #fff; }
+    .btn-out  { background: rgba(255,255,255,0.15); color: #fff; }
+    .btn-load { background: #e94560; color: #fff; }
 
     main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem 4rem; }
 
     /* ── selectors ──────────────────────────────────── */
     #selectors {
-      display: none;
-      background: rgba(255,255,255,0.95);
+      background: rgba(255,255,255,0.97);
       border-radius: 14px;
       padding: 1.25rem 1.5rem;
       margin-bottom: 1.5rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
     }
-    #selectors h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-bottom: 0.75rem; }
+    #selectors h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: #999; margin-bottom: 0.75rem; }
     .selector-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
-    .selector-row label { font-size: 0.8rem; color: #555; font-weight: 600; display: block; margin-bottom: 0.3rem; }
+    .selector-row label { font-size: 0.78rem; color: #555; font-weight: 600; display: block; margin-bottom: 0.3rem; }
     .selector-row select {
       padding: 0.5rem 0.8rem; border: 1.5px solid #ddd; border-radius: 8px;
-      font-size: 0.9rem; min-width: 220px; background: #fff; cursor: pointer;
+      font-size: 0.9rem; min-width: 240px; background: #fff; cursor: pointer;
     }
-    .selector-row select:focus { outline: none; border-color: #6c63ff; }
+    .selector-row select:focus { outline: none; border-color: #e94560; }
 
     /* ── summary cards ──────────────────────────────── */
     #summary { display: none; margin-bottom: 2rem; }
     #summary h2, #daily-section h2 {
-      color: #fff; font-size: 1.05rem; font-weight: 700;
-      margin-bottom: 0.9rem; text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      color: #fff; font-size: 1rem; font-weight: 700;
+      margin-bottom: 0.9rem; text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
     .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
       gap: 1rem;
     }
     .card {
       background: rgba(255,255,255,0.97);
       border-radius: 14px;
       padding: 1.1rem 1.2rem;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.25);
       transition: transform 0.15s;
+      border-top: 3px solid #e94560;
     }
     .card:hover { transform: translateY(-3px); }
-    .card .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-bottom: 0.4rem; }
-    .card .value { font-size: 1.6rem; font-weight: 800; color: #2d2d7a; line-height: 1; }
-    .card .sub   { font-size: 0.75rem; color: #aaa; margin-top: 0.3rem; }
+    .card .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 0.4rem; }
+    .card .value { font-size: 1.55rem; font-weight: 800; color: #0f3460; line-height: 1; }
+    .card .sub   { font-size: 0.72rem; color: #bbb; margin-top: 0.3rem; }
 
     /* ── daily section ──────────────────────────────── */
     #daily-section { display: none; }
@@ -92,7 +94,7 @@
       background: rgba(255,255,255,0.97);
       border-radius: 14px;
       padding: 1.25rem;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.25);
       margin-bottom: 1.5rem;
     }
 
@@ -100,38 +102,37 @@
       background: rgba(255,255,255,0.97);
       border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.25);
     }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    thead tr { background: #f3f0ff; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    thead tr { background: #f7f7fb; }
     th {
-      padding: 0.75rem 1rem; text-align: right; font-size: 0.75rem;
-      text-transform: uppercase; letter-spacing: 0.05em; color: #6c63ff; font-weight: 700;
+      padding: 0.75rem 1rem; text-align: right; font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 0.05em; color: #e94560; font-weight: 700;
     }
     th:first-child { text-align: left; }
     td { padding: 0.65rem 1rem; border-top: 1px solid #f0f0f0; text-align: right; }
     td:first-child { text-align: left; font-weight: 600; color: #333; }
-    tbody tr:hover { background: #fafafe; }
-    .neg { color: #c0392b; }
-    .pos { color: #27ae60; }
+    tbody tr:hover { background: #fdf5f7; }
 
-    /* ── states ─────────────────────────────────────── */
+    /* ── login prompt ────────────────────────────────── */
     #login-prompt {
       text-align: center; padding: 5rem 1rem;
-      background: rgba(255,255,255,0.12); backdrop-filter: blur(8px);
-      border-radius: 20px; color: #fff;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px; color: #fff; margin-top: 1rem;
     }
     #login-prompt h2 { font-size: 1.8rem; margin-bottom: 0.6rem; }
-    #login-prompt p  { opacity: 0.8; margin-bottom: 1.8rem; }
+    #login-prompt p  { opacity: 0.6; margin-bottom: 1.8rem; font-size: 0.95rem; }
 
     #spinner {
       display: none; text-align: center; padding: 3rem;
-      color: rgba(255,255,255,0.85); font-size: 1rem;
+      color: rgba(255,255,255,0.7); font-size: 1rem;
     }
     .spin {
-      display: inline-block; width: 28px; height: 28px;
-      border: 3px solid rgba(255,255,255,0.4);
-      border-top-color: #fff; border-radius: 50%;
+      display: inline-block; width: 26px; height: 26px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #e94560; border-radius: 50%;
       animation: spin 0.8s linear infinite; margin-right: 0.6rem; vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -141,32 +142,18 @@
       color: #721c24; border-radius: 10px; padding: 0.9rem 1.2rem;
       margin-bottom: 1rem; font-size: 0.88rem;
     }
-
-    /* ── config notice ───────────────────────────────── */
-    #config-notice {
-      background: #fff3cd; border: 1px solid #ffc107;
-      border-radius: 10px; padding: 0.9rem 1.2rem;
-      margin-bottom: 1.5rem; font-size: 0.85rem; color: #856404;
-    }
-    #config-notice strong { font-weight: 700; }
-    #config-notice code { background: #ffe8a1; padding: 0.1em 0.4em; border-radius: 4px; }
   </style>
 </head>
 <body>
 
-<!-- ╔══════════════ CONFIG — EDIT BEFORE USE ══════════════╗ -->
 <script>
-  // ▶ Replace with your actual Meta App ID from developers.facebook.com
   const META_APP_ID = '1775776353390485';
-
-  // ▶ Replace with the exact campaign ID you want to track
-  //   (leave empty '' to show a dropdown of all campaigns for the selected account)
+  const DEFAULT_ACCOUNT_ID = 'act_891924867203358'; // Tandem2026
   const DEFAULT_CAMPAIGN_ID = '';
 </script>
-<!-- ╚══════════════════════════════════════════════════════╝ -->
 
 <header>
-  <h1>📊 Meta Campaign Report — Last 14 Days</h1>
+  <h1>Tandem <span>Report</span></h1>
   <div id="login-area">
     <span id="user-info"></span>
     <button id="btn-login"  class="btn btn-fb"  onclick="fbLogin()">Login with Facebook</button>
@@ -175,14 +162,9 @@
 </header>
 
 <main>
-  <div id="config-notice" style="display:none">
-    ⚠️ <strong>Setup required:</strong> Open <code>report.html</code> and set
-    <code>META_APP_ID</code> to your Facebook App ID at the top of the file.
-  </div>
-
   <div id="login-prompt">
     <h2>Meta Campaign Report</h2>
-    <p>Connect your Meta Ads account to see spend, events, and cost data for the last 14 days.</p>
+    <p>Last 14 days — spend, events, and cost per day</p>
     <button class="btn btn-fb" onclick="fbLogin()">Login with Facebook</button>
   </div>
 
@@ -194,11 +176,11 @@
     <div class="selector-row">
       <div>
         <label for="sel-account">Ad Account</label>
-        <select id="sel-account" onchange="onAccountChange()"><option>— loading —</option></select>
+        <select id="sel-account" onchange="onAccountChange()"><option>Loading…</option></select>
       </div>
       <div>
         <label for="sel-campaign">Campaign</label>
-        <select id="sel-campaign"><option>— select account first —</option></select>
+        <select id="sel-campaign"><option>Select account first</option></select>
       </div>
       <div style="padding-bottom:1px">
         <button class="btn btn-load" onclick="loadReport()">Load Report</button>
@@ -238,7 +220,6 @@
   </div>
 </main>
 
-<!-- Facebook JS SDK -->
 <script>
   window.fbAsyncInit = function () {
     FB.init({ appId: META_APP_ID, cookie: true, xfbml: false, version: 'v19.0' });
@@ -253,11 +234,9 @@
 </script>
 
 <script>
-  /* ── globals ───────────────────────────────────────── */
   let accessToken = null;
   let chartInstance = null;
 
-  /* ── FB auth ───────────────────────────────────────── */
   function statusChangeCallback(resp) {
     if (resp.status === 'connected') {
       accessToken = resp.authResponse.accessToken;
@@ -268,9 +247,6 @@
   }
 
   function fbLogin() {
-    if (META_APP_ID === 'YOUR_META_APP_ID') {
-      showConfigNotice(); return;
-    }
     FB.login(statusChangeCallback, { scope: 'ads_read' });
   }
 
@@ -297,7 +273,6 @@
     hide('selectors'); hide('summary'); hide('daily-section');
   }
 
-  /* ── data fetching ─────────────────────────────────── */
   async function graphGet(path, params = {}) {
     const url = new URL(`https://graph.facebook.com/v19.0${path}`);
     url.searchParams.set('access_token', accessToken);
@@ -309,22 +284,23 @@
   }
 
   async function fetchAccounts() {
+    console.log('fetchAccounts called');
     showSpinner();
     try {
-      const data = await graphGet('/me/adaccounts', {
-        fields: 'id,name,account_id',
-        limit: 50
-      });
+      const data = await graphGet('/me/adaccounts', { fields: 'id,name,account_id', limit: 50 });
       const sel = document.getElementById('sel-account');
       sel.innerHTML = '';
       data.data.forEach(acc => {
         const o = document.createElement('option');
         o.value = acc.id;
         o.textContent = `${acc.name} (${acc.account_id})`;
+        if (acc.id === DEFAULT_ACCOUNT_ID) o.selected = true;
         sel.appendChild(o);
       });
+      console.log('Accounts loaded:', data.data.length, 'showing selectors');
       show('selectors');
-      await fetchCampaigns(sel.value);
+      const selectedAccount = sel.value || data.data[0].id;
+      await fetchCampaigns(selectedAccount);
     } catch (e) {
       showError(e.message);
     } finally {
@@ -333,18 +309,14 @@
   }
 
   async function onAccountChange() {
-    const accountId = document.getElementById('sel-account').value;
-    await fetchCampaigns(accountId);
+    await fetchCampaigns(document.getElementById('sel-account').value);
   }
 
   async function fetchCampaigns(accountId) {
     const sel = document.getElementById('sel-campaign');
     sel.innerHTML = '<option>Loading…</option>';
     try {
-      const data = await graphGet(`/${accountId}/campaigns`, {
-        fields: 'id,name,status',
-        limit: 100
-      });
+      const data = await graphGet(`/${accountId}/campaigns`, { fields: 'id,name,status', limit: 100 });
       sel.innerHTML = '';
       data.data.forEach(c => {
         const o = document.createElement('option');
@@ -354,7 +326,7 @@
         sel.appendChild(o);
       });
     } catch (e) {
-      sel.innerHTML = '<option>Error loading campaigns</option>';
+      sel.innerHTML = '<option>Error</option>';
       showError(e.message);
     }
   }
@@ -362,38 +334,18 @@
   async function loadReport() {
     const campaignId = document.getElementById('sel-campaign').value;
     if (!campaignId) return;
-    clearError();
-    showSpinner();
+    clearError(); showSpinner();
     hide('summary'); hide('daily-section');
 
-    const fields = [
-      'spend', 'impressions', 'clicks', 'reach',
-      'ctr', 'cpc', 'cpm', 'actions', 'cost_per_action_type',
-      'date_start', 'date_stop'
-    ].join(',');
+    const fields = 'spend,impressions,clicks,reach,ctr,cpc,cpm,actions,cost_per_action_type,date_start,date_stop';
 
     try {
       const [summaryData, dailyData] = await Promise.all([
-        graphGet(`/${campaignId}/insights`, {
-          fields,
-          date_preset: 'last_14d',
-          level: 'campaign'
-        }),
-        graphGet(`/${campaignId}/insights`, {
-          fields,
-          date_preset: 'last_14d',
-          time_increment: 1,
-          level: 'campaign',
-          limit: 14
-        })
+        graphGet(`/${campaignId}/insights`, { fields, date_preset: 'last_14d', level: 'campaign' }),
+        graphGet(`/${campaignId}/insights`, { fields, date_preset: 'last_14d', time_increment: 1, level: 'campaign', limit: 14 })
       ]);
 
-      if (summaryData.data && summaryData.data.length > 0) {
-        renderSummary(summaryData.data[0]);
-      } else {
-        renderSummary(null);
-      }
-
+      renderSummary(summaryData.data?.[0] ?? null);
       renderDaily(dailyData.data || []);
     } catch (e) {
       showError(e.message);
@@ -402,22 +354,20 @@
     }
   }
 
-  /* ── rendering ─────────────────────────────────────── */
   function renderSummary(d) {
     const totalActions = sumActions(d?.actions);
-    const costPerAction = d && totalActions > 0
-      ? (parseFloat(d.spend) / totalActions).toFixed(2) : '—';
+    const cpa = d && totalActions > 0 ? `$${(parseFloat(d.spend) / totalActions).toFixed(2)}` : '—';
 
     const cards = [
-      { label: 'Total Spend',    value: d ? `$${fmt2(d.spend)}`      : '—', sub: 'USD' },
-      { label: 'Impressions',    value: d ? fmtN(d.impressions)       : '—', sub: 'total views' },
-      { label: 'Clicks',         value: d ? fmtN(d.clicks)            : '—', sub: 'link clicks' },
-      { label: 'Reach',          value: d ? fmtN(d.reach)             : '—', sub: 'unique people' },
-      { label: 'CTR',            value: d ? `${fmt2(d.ctr)}%`         : '—', sub: 'click-through rate' },
-      { label: 'Avg CPC',        value: d ? `$${fmt2(d.cpc)}`         : '—', sub: 'cost per click' },
-      { label: 'CPM',            value: d ? `$${fmt2(d.cpm)}`         : '—', sub: 'cost per 1k impr.' },
-      { label: 'Total Actions',  value: fmtN(totalActions),               sub: 'all event types' },
-      { label: 'Cost / Action',  value: `$${costPerAction}`,              sub: 'avg across events' },
+      { label: 'Total Spend',   value: d ? `$${fmt2(d.spend)}`   : '—', sub: 'USD last 14 days' },
+      { label: 'Impressions',   value: d ? fmtN(d.impressions)   : '—', sub: 'total views' },
+      { label: 'Clicks',        value: d ? fmtN(d.clicks)        : '—', sub: 'link clicks' },
+      { label: 'Reach',         value: d ? fmtN(d.reach)         : '—', sub: 'unique people' },
+      { label: 'CTR',           value: d ? `${fmt2(d.ctr)}%`     : '—', sub: 'click-through rate' },
+      { label: 'Avg CPC',       value: d ? `$${fmt2(d.cpc)}`     : '—', sub: 'cost per click' },
+      { label: 'CPM',           value: d ? `$${fmt2(d.cpm)}`     : '—', sub: 'per 1,000 impressions' },
+      { label: 'Total Actions', value: fmtN(totalActions),              sub: 'all event types' },
+      { label: 'Cost / Action', value: cpa,                             sub: 'avg across events' },
     ];
 
     document.getElementById('cards').innerHTML = cards.map(c => `
@@ -432,8 +382,6 @@
 
   function renderDaily(rows) {
     if (!rows.length) return;
-
-    // sort ascending by date
     rows.sort((a, b) => a.date_start.localeCompare(b.date_start));
 
     const labels  = rows.map(r => r.date_start);
@@ -441,42 +389,15 @@
     const actions = rows.map(r => sumActions(r.actions));
     const cpas    = rows.map((r, i) => actions[i] > 0 ? +(spends[i] / actions[i]).toFixed(2) : 0);
 
-    // destroy old chart
     if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(document.getElementById('daily-chart'), {
       data: {
         labels,
         datasets: [
-          {
-            type: 'bar',
-            label: 'Spend ($)',
-            data: spends,
-            backgroundColor: 'rgba(108,99,255,0.7)',
-            yAxisID: 'ySpend',
-            order: 2
-          },
-          {
-            type: 'line',
-            label: 'Actions',
-            data: actions,
-            borderColor: '#e74c3c',
-            backgroundColor: 'rgba(231,76,60,0.12)',
-            tension: 0.3,
-            yAxisID: 'yActions',
-            order: 1
-          },
-          {
-            type: 'line',
-            label: 'Cost / Action ($)',
-            data: cpas,
-            borderColor: '#f39c12',
-            backgroundColor: 'rgba(243,156,18,0.1)',
-            tension: 0.3,
-            borderDash: [5, 3],
-            yAxisID: 'ySpend',
-            order: 0
-          }
+          { type: 'bar',  label: 'Spend ($)',        data: spends,  backgroundColor: 'rgba(233,69,96,0.7)', yAxisID: 'ySpend',   order: 2 },
+          { type: 'line', label: 'Actions',           data: actions, borderColor: '#0f3460', backgroundColor: 'rgba(15,52,96,0.1)', tension: 0.3, yAxisID: 'yActions', order: 1 },
+          { type: 'line', label: 'Cost / Action ($)', data: cpas,    borderColor: '#f5a623', backgroundColor: 'rgba(245,166,35,0.1)', tension: 0.3, borderDash: [5,3], yAxisID: 'ySpend', order: 0 }
         ]
       },
       options: {
@@ -484,71 +405,45 @@
         interaction: { mode: 'index', intersect: false },
         plugins: { legend: { position: 'top' } },
         scales: {
-          ySpend: {
-            type: 'linear', position: 'left',
-            title: { display: true, text: 'Spend / CPA ($)' }
-          },
-          yActions: {
-            type: 'linear', position: 'right',
-            title: { display: true, text: 'Actions' },
-            grid: { drawOnChartArea: false }
-          }
+          ySpend:   { type: 'linear', position: 'left',  title: { display: true, text: 'Spend / CPA ($)' } },
+          yActions: { type: 'linear', position: 'right', title: { display: true, text: 'Actions' }, grid: { drawOnChartArea: false } }
         }
       }
     });
 
-    // table
     document.getElementById('daily-body').innerHTML = rows.map((r, i) => {
-      const spend  = parseFloat(r.spend || 0);
-      const acts   = actions[i];
-      const cpa    = acts > 0 ? `$${(spend / acts).toFixed(2)}` : '—';
-      return `
-        <tr>
-          <td>${r.date_start}</td>
-          <td>$${fmt2(r.spend)}</td>
-          <td>${fmtN(r.impressions)}</td>
-          <td>${fmtN(r.clicks)}</td>
-          <td>${fmtN(r.reach)}</td>
-          <td>${fmt2(r.ctr)}%</td>
-          <td>$${fmt2(r.cpc)}</td>
-          <td>$${fmt2(r.cpm)}</td>
-          <td>${fmtN(acts)}</td>
-          <td>${cpa}</td>
-        </tr>`;
+      const spend = parseFloat(r.spend || 0);
+      const acts  = actions[i];
+      return `<tr>
+        <td>${r.date_start}</td>
+        <td>$${fmt2(r.spend)}</td>
+        <td>${fmtN(r.impressions)}</td>
+        <td>${fmtN(r.clicks)}</td>
+        <td>${fmtN(r.reach)}</td>
+        <td>${fmt2(r.ctr)}%</td>
+        <td>$${fmt2(r.cpc)}</td>
+        <td>$${fmt2(r.cpm)}</td>
+        <td>${fmtN(acts)}</td>
+        <td>${acts > 0 ? '$' + (spend / acts).toFixed(2) : '—'}</td>
+      </tr>`;
     }).join('');
 
     show('daily-section');
   }
 
-  /* ── helpers ───────────────────────────────────────── */
   function sumActions(actions) {
-    if (!actions || !actions.length) return 0;
+    if (!actions?.length) return 0;
     return actions.reduce((s, a) => s + parseInt(a.value || 0, 10), 0);
   }
 
-  function fmt2(v)  { return v ? parseFloat(v).toFixed(2) : '0.00'; }
-  function fmtN(v)  { return v ? parseInt(v).toLocaleString() : '0'; }
-
-  function show(id)  { document.getElementById(id).style.display = ''; }
-  function hide(id)  { document.getElementById(id).style.display = 'none'; }
+  function fmt2(v) { return v ? parseFloat(v).toFixed(2) : '0.00'; }
+  function fmtN(v) { return v ? parseInt(v).toLocaleString() : '0'; }
+  function show(id) { document.getElementById(id).style.display = 'block'; }
+  function hide(id) { document.getElementById(id).style.display = 'none'; }
   function showSpinner() { document.getElementById('spinner').style.display = ''; }
   function hideSpinner() { document.getElementById('spinner').style.display = 'none'; }
-  function showError(msg) {
-    const el = document.getElementById('error-msg');
-    el.textContent = '⚠️ ' + msg;
-    el.style.display = '';
-  }
+  function showError(msg) { const el = document.getElementById('error-msg'); el.textContent = '⚠️ ' + msg; el.style.display = ''; }
   function clearError() { document.getElementById('error-msg').style.display = 'none'; }
-
-  function showConfigNotice() {
-    document.getElementById('config-notice').style.display = '';
-    document.getElementById('login-prompt').style.display  = 'none';
-  }
-
-  // show config notice if app ID not set
-  window.addEventListener('load', () => {
-    if (META_APP_ID === 'YOUR_META_APP_ID') showConfigNotice();
-  });
 </script>
 </body>
 </html>
