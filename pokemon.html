@@ -80,8 +80,8 @@
     }
 
     .pokemon-img {
-      height: 105px;
-      width: 105px;
+      height: 116px;
+      width: 116px;
       object-fit: contain;
       image-rendering: pixelated;
       display: block;
@@ -124,8 +124,8 @@
     }
 
     .option-btn img {
-      width: 70px;
-      height: 70px;
+      width: 77px;
+      height: 77px;
       object-fit: contain;
       image-rendering: pixelated;
     }
@@ -335,6 +335,41 @@
       return HE_NAMES[id] || engName;
     }
 
+    let audioCtx = null;
+    function getCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playSuccess() {
+      const ctx = getCtx();
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.12;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.2, t + 0.04);
+        gain.gain.linearRampToValueAtTime(0, t + 0.25);
+        osc.start(t); osc.stop(t + 0.28);
+      });
+    }
+
+    function playError() {
+      const ctx = getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.38);
+    }
+
     function randId() {
       return Math.floor(Math.random() * TOTAL) + 1;
     }
@@ -401,6 +436,7 @@
 
         if (firstTry) score++;
         document.getElementById('score').textContent = `שאלה ${total} | ✅ ${score}`;
+        playSuccess();
 
         // Show success popup
         document.getElementById('successImg').src = correctPokemon.sprite;
@@ -415,6 +451,7 @@
         btn.classList.add('wrong');
         btn.disabled = true;
         firstTry = false;
+        playError();
         document.getElementById('feedback').textContent = '!נסה שוב 💪';
         setTimeout(() => {
           btn.classList.remove('wrong');
