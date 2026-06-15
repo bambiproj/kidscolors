@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Who's That Pokémon?</title>
+  <title>פוקימון - מי זה?</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -15,7 +15,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 12px;
     }
 
     nav {
@@ -23,21 +23,22 @@
       top: 0; left: 0; right: 0;
       background: rgba(0,0,0,0.3);
       display: flex;
-      gap: 8px;
-      padding: 8px 16px;
+      gap: 5px;
+      padding: 6px 10px;
       z-index: 10;
-      flex-wrap: wrap;
+      justify-content: center;
+      flex-wrap: nowrap;
     }
 
     nav a {
       color: #fff;
       text-decoration: none;
       font-weight: 700;
-      font-size: 0.88rem;
-      padding: 5px 12px;
+      font-size: 0.78rem;
+      padding: 4px 9px;
       border-radius: 20px;
       background: rgba(255,255,255,0.15);
-      border: 2px solid rgba(255,255,255,0.3);
+      border: 2px solid rgba(255,255,255,0.25);
       transition: background 0.2s;
       white-space: nowrap;
     }
@@ -47,46 +48,47 @@
 
     h1 {
       color: #fff;
-      font-size: clamp(1.2rem, 4vw, 1.7rem);
-      margin: 58px 0 12px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      font-size: clamp(1rem, 3.5vw, 1.4rem);
+      margin: 50px 0 8px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
       text-align: center;
     }
 
     .card {
       background: #fff;
-      border-radius: 24px;
-      padding: 16px 16px 16px;
-      max-width: 460px;
+      border-radius: 20px;
+      padding: 12px 14px 14px;
+      max-width: 440px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      box-shadow: 0 16px 50px rgba(0,0,0,0.25);
       text-align: center;
+      position: relative;
     }
 
     .score {
-      font-size: 0.9rem;
-      color: #888;
-      margin-bottom: 14px;
+      font-size: 0.82rem;
+      color: #999;
+      margin-bottom: 8px;
     }
 
     .silhouette-wrap {
       background: #1a1a2e;
-      border-radius: 16px;
-      padding: 10px;
+      border-radius: 14px;
+      padding: 8px;
       display: inline-block;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .pokemon-img {
-      height: 100px;
-      width: 100px;
+      height: 90px;
+      width: 90px;
       object-fit: contain;
       image-rendering: pixelated;
       display: block;
       transition: filter 0.7s ease;
     }
 
-    .pokemon-img.silhouette { filter: brightness(0) invert(0); }
+    .pokemon-img.silhouette { filter: brightness(0); }
     .pokemon-img.revealed   { filter: none; animation: popIn 0.5s ease; }
 
     @keyframes popIn {
@@ -96,10 +98,10 @@
     }
 
     .question {
-      font-size: clamp(1rem, 4vw, 1.3rem);
+      font-size: clamp(0.9rem, 3vw, 1.05rem);
       font-weight: 700;
-      color: #333;
-      margin: 10px 0 18px;
+      color: #444;
+      margin: 4px 0 10px;
     }
 
     .options {
@@ -110,49 +112,49 @@
 
     .option-btn {
       border: 3px solid #e0e0e0;
-      border-radius: 14px;
+      border-radius: 12px;
       background: #fafafa;
       cursor: pointer;
-      padding: 8px 6px;
+      padding: 7px 5px;
       transition: transform 0.15s, border-color 0.2s, background 0.2s;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
 
     .option-btn img {
-      width: 60px;
-      height: 60px;
+      width: 55px;
+      height: 55px;
       object-fit: contain;
       image-rendering: pixelated;
     }
 
     .option-btn .poke-name {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 700;
       color: #555;
       text-transform: capitalize;
     }
 
     .option-btn:hover:not(:disabled) {
-      transform: translateY(-3px);
+      transform: translateY(-2px);
       border-color: #aaa;
       background: #f0f0f0;
     }
 
     .option-btn:disabled { cursor: default; }
 
-    .option-btn.correct {
-      background: #d4f8d4;
-      border-color: #4caf50;
-      animation: bounce 0.4s ease;
-    }
-
     .option-btn.wrong {
       background: #fde8e8;
       border-color: #f44336;
       animation: shake 0.4s ease;
+    }
+
+    .option-btn.correct {
+      background: #d4f8d4;
+      border-color: #4caf50;
+      animation: bounce 0.4s ease;
     }
 
     @keyframes bounce {
@@ -171,45 +173,79 @@
     }
 
     .feedback {
-      margin-top: 16px;
-      font-size: 1.15rem;
+      margin-top: 8px;
+      font-size: 1rem;
       font-weight: 700;
-      min-height: 1.6rem;
+      min-height: 1.4rem;
+      color: #f44336;
+    }
+
+    /* Success popup overlay */
+    .success-popup {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.96);
+      border-radius: 20px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      z-index: 5;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .success-popup.show { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .success-popup img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      animation: popIn 0.5s ease;
+    }
+
+    .success-popup .success-msg {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #4caf50;
+    }
+
+    .success-popup .reward-emoji {
+      font-size: 2rem;
+    }
+
+    .success-popup .poke-label {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #555;
       text-transform: capitalize;
     }
 
-    .feedback.correct { color: #4caf50; }
-    .feedback.wrong   { color: #f44336; }
-    .feedback.hidden  { opacity: 0; }
-
-    .reward {
-      font-size: 1.8rem;
-      margin-top: 4px;
-      min-height: 2rem;
-    }
-
     .next-btn {
-      margin-top: 16px;
-      padding: 12px 36px;
+      padding: 11px 34px;
       background: linear-gradient(135deg, #f5a623, #e8372b);
       color: #fff;
       border: none;
       border-radius: 50px;
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
-      display: none;
-      box-shadow: 0 4px 16px rgba(232,55,43,0.4);
+      box-shadow: 0 4px 14px rgba(232,55,43,0.4);
       transition: transform 0.15s;
     }
 
     .next-btn:hover { transform: translateY(-2px); }
-    .next-btn.visible { display: inline-block; }
 
     .loading {
       color: #aaa;
-      font-size: 1rem;
-      padding: 30px 0;
+      font-size: 0.95rem;
+      padding: 20px 0;
       grid-column: span 2;
     }
 
@@ -231,24 +267,31 @@
     <a href="pokemon.html" class="active">⚡ פוקימון</a>
   </nav>
 
-  <h1>⚡ Who's That Pokémon?</h1>
+  <h1>⚡ מי הפוקימון הזה?</h1>
 
   <div class="card">
-    <div class="score" id="score">Question 1 | ✅ 0</div>
+    <div class="score" id="score">שאלה 1 | ✅ 0</div>
 
     <div class="silhouette-wrap">
-      <img class="pokemon-img silhouette" id="pokemonImg" src="" alt="silhouette" />
+      <img class="pokemon-img silhouette" id="pokemonImg" src="" alt="צללית" />
     </div>
 
-    <div class="question">Match the shadow to the right Pokémon!</div>
+    <div class="question">התאם את הצל לפוקימון הנכון!</div>
 
     <div class="options" id="options">
-      <div class="loading"><span class="pokeball-spin">⚪</span> Loading...</div>
+      <div class="loading"><span class="pokeball-spin">⚪</span> טוען...</div>
     </div>
 
-    <div class="feedback hidden" id="feedback"></div>
-    <div class="reward" id="reward"></div>
-    <button class="next-btn" id="nextBtn" onclick="nextRound()">Next →</button>
+    <div class="feedback" id="feedback"></div>
+
+    <!-- Success popup shown on correct answer -->
+    <div class="success-popup" id="successPopup">
+      <img id="successImg" src="" alt="" />
+      <div class="success-msg">!כל הכבוד 🎉</div>
+      <div class="reward-emoji" id="rewardEmoji"></div>
+      <div class="poke-label" id="successLabel"></div>
+      <button class="next-btn" onclick="nextRound()">הבא ←</button>
+    </div>
   </div>
 
   <script>
@@ -256,7 +299,7 @@
     let score = 0;
     let total = 0;
     let correctPokemon = null;
-    let answered = false;
+    let firstTry = true;
 
     function randId() {
       return Math.floor(Math.random() * TOTAL) + 1;
@@ -283,19 +326,17 @@
     }
 
     async function nextRound() {
-      answered = false;
-      document.getElementById('feedback').className = 'feedback hidden';
+      firstTry = true;
       document.getElementById('feedback').textContent = '';
-      document.getElementById('reward').textContent = '';
-      document.getElementById('nextBtn').classList.remove('visible');
-      document.getElementById('options').innerHTML = '<div class="loading"><span class="pokeball-spin">⚪</span> Loading...</div>';
+      document.getElementById('successPopup').classList.remove('show');
+      document.getElementById('options').innerHTML = '<div class="loading"><span class="pokeball-spin">⚪</span> טוען...</div>';
 
       const img = document.getElementById('pokemonImg');
       img.src = '';
       img.className = 'pokemon-img silhouette';
 
       total++;
-      document.getElementById('score').textContent = `Question ${total} | ✅ ${score}`;
+      document.getElementById('score').textContent = `שאלה ${total} | ✅ ${score}`;
 
       const ids = uniqueIds(4);
       const pokemons = await Promise.all(ids.map(fetchPokemon));
@@ -321,34 +362,35 @@
     }
 
     function pick(btn, pokemon) {
-      if (answered) return;
-      answered = true;
-
-      document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
-
-      const img = document.getElementById('pokemonImg');
-      img.className = 'pokemon-img revealed';
-
-      const feedback = document.getElementById('feedback');
-      const reward = document.getElementById('reward');
+      if (btn.disabled) return;
 
       if (pokemon.name === correctPokemon.name) {
-        score++;
+        // Correct!
+        document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         btn.classList.add('correct');
-        feedback.textContent = `Yes! It's ${capitalize(correctPokemon.name)}! 🎉`;
-        feedback.className = 'feedback correct';
-        reward.textContent = randomReward();
-        document.getElementById('score').textContent = `Question ${total} | ✅ ${score}`;
-      } else {
-        btn.classList.add('wrong');
-        document.querySelectorAll('.option-btn').forEach(b => {
-          if (b.dataset.name === correctPokemon.name) b.classList.add('correct');
-        });
-        feedback.textContent = `It was ${capitalize(correctPokemon.name)}! 😢`;
-        feedback.className = 'feedback wrong';
-      }
 
-      document.getElementById('nextBtn').classList.add('visible');
+        if (firstTry) score++;
+        document.getElementById('score').textContent = `שאלה ${total} | ✅ ${score}`;
+
+        // Show success popup
+        document.getElementById('successImg').src = correctPokemon.sprite;
+        document.getElementById('successLabel').textContent = capitalize(correctPokemon.name);
+        document.getElementById('rewardEmoji').textContent = firstTry ? randomReward() : '👍';
+        setTimeout(() => {
+          document.getElementById('successPopup').classList.add('show');
+        }, 300);
+
+      } else {
+        // Wrong — shake, disable this button, allow retry
+        btn.classList.add('wrong');
+        btn.disabled = true;
+        firstTry = false;
+        document.getElementById('feedback').textContent = '!נסה שוב 💪';
+        setTimeout(() => {
+          btn.classList.remove('wrong');
+          document.getElementById('feedback').textContent = '';
+        }, 800);
+      }
     }
 
     function randomReward() {
