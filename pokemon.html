@@ -45,7 +45,7 @@
     h1 {
       color: #fff;
       font-size: clamp(1.5rem, 5vw, 2.2rem);
-      margin: 70px 0 24px;
+      margin: 70px 0 20px;
       text-shadow: 0 2px 8px rgba(0,0,0,0.3);
       text-align: center;
     }
@@ -53,7 +53,7 @@
     .card {
       background: #fff;
       border-radius: 24px;
-      padding: 28px 24px 24px;
+      padding: 24px 20px 20px;
       max-width: 480px;
       width: 100%;
       box-shadow: 0 20px 60px rgba(0,0,0,0.25);
@@ -63,41 +63,40 @@
     .score {
       font-size: 0.9rem;
       color: #888;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
-    .pokemon-stage {
-      position: relative;
-      height: 180px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 8px;
+    .silhouette-wrap {
+      background: #1a1a2e;
+      border-radius: 16px;
+      padding: 10px;
+      display: inline-block;
+      margin-bottom: 10px;
     }
 
     .pokemon-img {
-      height: 160px;
-      width: 160px;
+      height: 150px;
+      width: 150px;
       object-fit: contain;
       image-rendering: pixelated;
-      transition: filter 0.6s ease;
+      display: block;
+      transition: filter 0.7s ease;
     }
 
-    .pokemon-img.silhouette { filter: brightness(0); }
-    .pokemon-img.revealed   { filter: brightness(1); animation: popIn 0.5s ease; }
+    .pokemon-img.silhouette { filter: brightness(0) invert(0); }
+    .pokemon-img.revealed   { filter: none; animation: popIn 0.5s ease; }
 
     @keyframes popIn {
       0%   { transform: scale(0.7); opacity: 0.3; }
       60%  { transform: scale(1.15); }
-      100% { transform: scale(1);   opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
     }
 
     .question {
-      font-size: clamp(1.2rem, 4vw, 1.6rem);
+      font-size: clamp(1rem, 4vw, 1.3rem);
       font-weight: 700;
       color: #333;
-      margin: 12px 0 20px;
-      min-height: 2rem;
+      margin: 10px 0 18px;
     }
 
     .options {
@@ -107,20 +106,36 @@
     }
 
     .option-btn {
-      padding: 14px 8px;
       border: 3px solid #e0e0e0;
       border-radius: 16px;
       background: #fafafa;
-      font-size: clamp(0.9rem, 3.5vw, 1.05rem);
-      font-weight: 700;
       cursor: pointer;
+      padding: 10px;
       transition: transform 0.15s, border-color 0.2s, background 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .option-btn img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .option-btn .poke-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #555;
       text-transform: capitalize;
     }
 
     .option-btn:hover:not(:disabled) {
       transform: translateY(-3px);
       border-color: #aaa;
+      background: #f0f0f0;
     }
 
     .option-btn:disabled { cursor: default; }
@@ -153,11 +168,10 @@
     }
 
     .feedback {
-      margin-top: 18px;
-      font-size: 1.2rem;
+      margin-top: 16px;
+      font-size: 1.15rem;
       font-weight: 700;
-      min-height: 1.8rem;
-      transition: opacity 0.3s;
+      min-height: 1.6rem;
       text-transform: capitalize;
     }
 
@@ -166,44 +180,38 @@
     .feedback.hidden  { opacity: 0; }
 
     .reward {
-      font-size: 2rem;
-      margin-top: 6px;
-      min-height: 2.4rem;
-      animation: fadeIn 0.5s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.5); }
-      to   { opacity: 1; transform: scale(1); }
+      font-size: 1.8rem;
+      margin-top: 4px;
+      min-height: 2rem;
     }
 
     .next-btn {
-      margin-top: 18px;
-      padding: 13px 38px;
+      margin-top: 16px;
+      padding: 12px 36px;
       background: linear-gradient(135deg, #f5a623, #e8372b);
       color: #fff;
       border: none;
       border-radius: 50px;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       cursor: pointer;
       display: none;
-      transition: transform 0.15s, box-shadow 0.15s;
       box-shadow: 0 4px 16px rgba(232,55,43,0.4);
+      transition: transform 0.15s;
     }
 
-    .next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232,55,43,0.5); }
+    .next-btn:hover { transform: translateY(-2px); }
     .next-btn.visible { display: inline-block; }
 
     .loading {
       color: #aaa;
       font-size: 1rem;
-      padding: 40px 0;
+      padding: 30px 0;
+      grid-column: span 2;
     }
 
     .pokeball-spin {
       display: inline-block;
-      font-size: 2rem;
       animation: spin 1s linear infinite;
     }
 
@@ -222,24 +230,23 @@
   <div class="card">
     <div class="score" id="score">Question 1 | ✅ 0</div>
 
-    <div class="pokemon-stage">
-      <img class="pokemon-img silhouette" id="pokemonImg" src="" alt="Pokemon silhouette" />
+    <div class="silhouette-wrap">
+      <img class="pokemon-img silhouette" id="pokemonImg" src="" alt="silhouette" />
     </div>
 
-    <div class="reward" id="reward"></div>
-    <div class="question" id="question">Who's that Pokémon?</div>
+    <div class="question">Match the shadow to the right Pokémon!</div>
+
     <div class="options" id="options">
       <div class="loading"><span class="pokeball-spin">⚪</span> Loading...</div>
     </div>
 
     <div class="feedback hidden" id="feedback"></div>
+    <div class="reward" id="reward"></div>
     <button class="next-btn" id="nextBtn" onclick="nextRound()">Next →</button>
   </div>
 
   <script>
-    // First 151 Pokémon
     const TOTAL = 151;
-
     let score = 0;
     let total = 0;
     let correctPokemon = null;
@@ -259,23 +266,22 @@
       return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
+    function spriteUrl(id) {
+      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+    }
+
     async function fetchPokemon(id) {
       const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
       const data = await res.json();
-      return {
-        id,
-        name: data.name,
-        sprite: data.sprites.other['official-artwork'].front_default
-                || data.sprites.front_default,
-      };
+      return { id, name: data.name, sprite: spriteUrl(id) };
     }
 
     async function nextRound() {
       answered = false;
       document.getElementById('feedback').className = 'feedback hidden';
       document.getElementById('feedback').textContent = '';
-      document.getElementById('nextBtn').classList.remove('visible');
       document.getElementById('reward').textContent = '';
+      document.getElementById('nextBtn').classList.remove('visible');
       document.getElementById('options').innerHTML = '<div class="loading"><span class="pokeball-spin">⚪</span> Loading...</div>';
 
       const img = document.getElementById('pokemonImg');
@@ -284,15 +290,12 @@
 
       total++;
       document.getElementById('score').textContent = `Question ${total} | ✅ ${score}`;
-      document.getElementById('question').textContent = "Who's that Pokémon?";
 
       const ids = uniqueIds(4);
       const pokemons = await Promise.all(ids.map(fetchPokemon));
-
       correctPokemon = pokemons[Math.floor(Math.random() * pokemons.length)];
 
       img.src = correctPokemon.sprite;
-      img.className = 'pokemon-img silhouette';
 
       const container = document.getElementById('options');
       container.innerHTML = '';
@@ -301,8 +304,11 @@
       shuffled.forEach(p => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = capitalize(p.name);
         btn.dataset.name = p.name;
+        btn.innerHTML = `
+          <img src="${p.sprite}" alt="${p.name}" loading="lazy" />
+          <span class="poke-name">${capitalize(p.name)}</span>
+        `;
         btn.onclick = () => pick(btn, p);
         container.appendChild(btn);
       });
@@ -312,15 +318,13 @@
       if (answered) return;
       answered = true;
 
-      const allBtns = document.querySelectorAll('.option-btn');
-      allBtns.forEach(b => b.disabled = true);
+      document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
 
       const img = document.getElementById('pokemonImg');
+      img.className = 'pokemon-img revealed';
+
       const feedback = document.getElementById('feedback');
       const reward = document.getElementById('reward');
-
-      // Reveal the Pokémon
-      img.className = 'pokemon-img revealed';
 
       if (pokemon.name === correctPokemon.name) {
         score++;
@@ -331,7 +335,7 @@
         document.getElementById('score').textContent = `Question ${total} | ✅ ${score}`;
       } else {
         btn.classList.add('wrong');
-        allBtns.forEach(b => {
+        document.querySelectorAll('.option-btn').forEach(b => {
           if (b.dataset.name === correctPokemon.name) b.classList.add('correct');
         });
         feedback.textContent = `It was ${capitalize(correctPokemon.name)}! 😢`;
@@ -342,8 +346,8 @@
     }
 
     function randomReward() {
-      const rewards = ['🏆', '⭐⭐⭐', '🎖️', '🌟🌟', '🏅', '👑', '💫💫💫'];
-      return rewards[Math.floor(Math.random() * rewards.length)];
+      const r = ['🏆', '⭐⭐⭐', '🎖️', '🌟🌟', '👑', '💫💫💫', '🥇'];
+      return r[Math.floor(Math.random() * r.length)];
     }
 
     nextRound();
