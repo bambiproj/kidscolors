@@ -54,6 +54,26 @@
       text-align: center;
     }
 
+    /* Floating points counter */
+    .points-banner {
+      position: fixed;
+      top: 46px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      color: #ffd700;
+      font-weight: 900;
+      font-size: 1.1rem;
+      padding: 4px 18px;
+      border-radius: 20px;
+      z-index: 9;
+      display: none;
+      white-space: nowrap;
+      letter-spacing: 1px;
+    }
+
+    .points-banner.visible { display: block; }
+
     .card {
       background: #fff;
       border-radius: 20px;
@@ -65,19 +85,46 @@
       position: relative;
     }
 
+    /* Timer toggle button */
+    .timer-toggle {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      background: #f9f9f9;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .timer-toggle.active {
+      background: #f5a623;
+      border-color: #e8372b;
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.3);
+    }
+
     .score {
       font-size: 0.82rem;
       color: #999;
       margin-bottom: 8px;
     }
 
+    /* Silhouette with reveal cover */
     .silhouette-wrap {
-      background: transparent;
       border-radius: 14px;
       border: 3px solid #ddd;
       padding: 8px;
       display: inline-block;
       margin-bottom: 8px;
+      position: relative;
+      overflow: hidden;
     }
 
     .pokemon-img {
@@ -91,6 +138,36 @@
 
     .pokemon-img.silhouette { filter: brightness(0); }
     .pokemon-img.revealed   { filter: none; animation: popIn 0.5s ease; }
+
+    /* White cover that slides right to reveal the Pokémon from left to right */
+    .reveal-cover {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 0%; right: 0;
+      background: #fff;
+      pointer-events: none;
+      transition: none;
+    }
+
+    /* Progress bar under silhouette in timer mode */
+    .timer-bar-wrap {
+      height: 5px;
+      background: #eee;
+      border-radius: 3px;
+      margin: 4px 0 6px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .timer-bar-wrap.visible { display: block; }
+
+    .timer-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #4caf50, #f5a623, #e8372b);
+      transform-origin: left;
+      transition: none;
+    }
 
     @keyframes popIn {
       0%   { transform: scale(0.7); opacity: 0.3; }
@@ -135,7 +212,6 @@
       font-size: 0.72rem;
       font-weight: 700;
       color: #555;
-      text-transform: capitalize;
     }
 
     .option-btn:hover:not(:disabled) {
@@ -181,7 +257,7 @@
       color: #f44336;
     }
 
-    /* Success popup overlay */
+    /* Success popup */
     .success-popup {
       display: none;
       position: absolute;
@@ -191,7 +267,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       z-index: 5;
       animation: fadeIn 0.3s ease;
     }
@@ -212,23 +288,38 @@
     }
 
     .success-popup .success-msg {
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: 900;
       color: #4caf50;
     }
 
-    .success-popup .reward-emoji {
-      font-size: 2rem;
-    }
+    .success-popup .reward-emoji { font-size: 1.8rem; }
 
     .success-popup .poke-label {
       font-size: 0.95rem;
       font-weight: 700;
       color: #555;
-      text-transform: capitalize;
+    }
+
+    .success-popup .time-points {
+      font-size: 0.88rem;
+      color: #888;
+      font-weight: 600;
+    }
+
+    .success-popup .earned-points {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #f5a623;
+    }
+
+    .success-popup .total-pts {
+      font-size: 0.8rem;
+      color: #aaa;
     }
 
     .next-btn {
+      margin-top: 4px;
       padding: 11px 34px;
       background: linear-gradient(135deg, #f5a623, #e8372b);
       color: #fff;
@@ -268,13 +359,24 @@
     <a href="pokemon.html" class="active">⚡ פוקימון</a>
   </nav>
 
+  <!-- Floating points available countdown (timer mode only) -->
+  <div class="points-banner" id="pointsBanner">⭐ <span id="ptCountdown">30</span> נקודות</div>
+
   <h1>⚡ מי הפוקימון הזה?</h1>
 
   <div class="card">
-    <div class="score" id="score">שאלה 1 | ✅ 0</div>
+    <!-- Timer mode toggle -->
+    <button class="timer-toggle" id="timerToggle" title="מצב טיימר" onclick="toggleTimerMode()">⏱</button>
 
-    <div class="silhouette-wrap">
+    <div class="score" id="score">שאלה 1 | ✅ 0 | 🏅 0</div>
+
+    <div class="silhouette-wrap" id="silhouetteWrap">
       <img class="pokemon-img silhouette" id="pokemonImg" src="" alt="צללית" />
+      <div class="reveal-cover" id="revealCover" style="display:none"></div>
+    </div>
+
+    <div class="timer-bar-wrap" id="timerBarWrap">
+      <div class="timer-bar" id="timerBar"></div>
     </div>
 
     <div class="question">התאם את הצל לפוקימון הנכון!</div>
@@ -285,12 +387,15 @@
 
     <div class="feedback" id="feedback"></div>
 
-    <!-- Success popup shown on correct answer -->
+    <!-- Success popup -->
     <div class="success-popup" id="successPopup">
       <img id="successImg" src="" alt="" />
       <div class="success-msg">!כל הכבוד 🎉</div>
       <div class="reward-emoji" id="rewardEmoji"></div>
       <div class="poke-label" id="successLabel"></div>
+      <div class="time-points" id="timeInfo" style="display:none"></div>
+      <div class="earned-points" id="earnedPoints" style="display:none"></div>
+      <div class="total-pts" id="totalPts" style="display:none"></div>
       <button class="next-btn" onclick="nextRound()">הבא ←</button>
     </div>
   </div>
@@ -299,8 +404,15 @@
     const TOTAL = 151;
     let score = 0;
     let total = 0;
+    let totalPoints = 0;
     let correctPokemon = null;
     let firstTry = true;
+
+    // Timer mode state
+    let timerMode = false;
+    let timerStart = null;
+    let timerRAF = null;
+    const TIMER_DURATION = 30000; // 30 seconds in ms
 
     const HE_NAMES = {
       1:'בולבסאור',2:'איוויזאור',3:'ונוזאור',4:'שרמנדר',5:'שרמליאון',6:'שרמיזון',
@@ -332,10 +444,9 @@
       150:'מיוטו',151:'מיו'
     };
 
-    function heName(id, engName) {
-      return HE_NAMES[id] || engName;
-    }
+    function heName(id, engName) { return HE_NAMES[id] || engName; }
 
+    // ── Audio ──────────────────────────────────────────────
     let audioCtx = null;
     function getCtx() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -345,11 +456,9 @@
     function playSuccess() {
       const ctx = getCtx();
       [523, 659, 784, 1047].forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
         osc.connect(gain); gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.value = freq;
+        osc.type = 'sine'; osc.frequency.value = freq;
         const t = ctx.currentTime + i * 0.12;
         gain.gain.setValueAtTime(0, t);
         gain.gain.linearRampToValueAtTime(0.2, t + 0.04);
@@ -360,8 +469,7 @@
 
     function playError() {
       const ctx = getCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(300, ctx.currentTime);
@@ -371,9 +479,68 @@
       osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.38);
     }
 
-    function randId() {
-      return Math.floor(Math.random() * TOTAL) + 1;
+    // ── Timer mode ─────────────────────────────────────────
+    function toggleTimerMode() {
+      timerMode = !timerMode;
+      const btn = document.getElementById('timerToggle');
+      btn.classList.toggle('active', timerMode);
+      if (!timerMode) stopTimer();
+      nextRound();
     }
+
+    function startTimer() {
+      stopTimer();
+      timerStart = performance.now();
+      document.getElementById('revealCover').style.display = 'block';
+      document.getElementById('revealCover').style.left = '0%';
+      document.getElementById('timerBarWrap').classList.add('visible');
+      document.getElementById('timerBar').style.transform = 'scaleX(1)';
+      document.getElementById('pointsBanner').classList.add('visible');
+      document.getElementById('ptCountdown').textContent = '30';
+
+      function tick(now) {
+        const elapsed = now - timerStart;
+        const progress = Math.min(elapsed / TIMER_DURATION, 1);
+        const secsLeft = Math.max(0, 30 - Math.floor(elapsed / 1000));
+
+        // Reveal cover: left goes from 0% → 100% (reveals left to right)
+        document.getElementById('revealCover').style.left = (progress * 100) + '%';
+
+        // Bar shrinks right to left as time runs out
+        document.getElementById('timerBar').style.transform = `scaleX(${1 - progress})`;
+
+        // Points countdown
+        document.getElementById('ptCountdown').textContent = secsLeft;
+
+        if (progress < 1) {
+          timerRAF = requestAnimationFrame(tick);
+        } else {
+          // Time up — fully revealed silhouette, cover gone
+          document.getElementById('revealCover').style.display = 'none';
+        }
+      }
+
+      timerRAF = requestAnimationFrame(tick);
+    }
+
+    function stopTimer() {
+      if (timerRAF) { cancelAnimationFrame(timerRAF); timerRAF = null; }
+      document.getElementById('revealCover').style.display = 'none';
+      document.getElementById('timerBarWrap').classList.remove('visible');
+      document.getElementById('pointsBanner').classList.remove('visible');
+    }
+
+    function getElapsedSeconds() {
+      if (!timerStart) return 0;
+      return Math.min(30, (performance.now() - timerStart) / 1000);
+    }
+
+    function pointsForTime(elapsedSec) {
+      return Math.max(0, 30 - Math.floor(elapsedSec));
+    }
+
+    // ── Helpers ────────────────────────────────────────────
+    function randId() { return Math.floor(Math.random() * TOTAL) + 1; }
 
     function uniqueIds(count) {
       const ids = new Set();
@@ -391,64 +558,81 @@
       return { id, name: data.name, heName: heName(id, data.name), sprite: spriteUrl(id) };
     }
 
+    // ── Game rounds ────────────────────────────────────────
     async function nextRound() {
+      stopTimer();
       firstTry = true;
       document.getElementById('feedback').textContent = '';
       document.getElementById('successPopup').classList.remove('show');
       document.getElementById('options').innerHTML = '<div class="loading"><span class="pokeball-spin">⚪</span> טוען...</div>';
 
       const img = document.getElementById('pokemonImg');
-      img.src = '';
-      img.className = 'pokemon-img silhouette';
+      img.src = ''; img.className = 'pokemon-img silhouette';
 
       total++;
-      document.getElementById('score').textContent = `שאלה ${total} | ✅ ${score}`;
+      updateScore();
 
       const ids = uniqueIds(4);
       const pokemons = await Promise.all(ids.map(fetchPokemon));
       correctPokemon = pokemons[Math.floor(Math.random() * pokemons.length)];
-
       img.src = correctPokemon.sprite;
 
       const container = document.getElementById('options');
       container.innerHTML = '';
-
       const shuffled = [...pokemons].sort(() => Math.random() - 0.5);
       shuffled.forEach(p => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
         btn.dataset.name = p.name;
-        btn.innerHTML = `
-          <img src="${p.sprite}" alt="${p.heName}" loading="lazy" />
-          <span class="poke-name">${p.heName}</span>
-        `;
+        btn.innerHTML = `<img src="${p.sprite}" alt="${p.heName}" loading="lazy" /><span class="poke-name">${p.heName}</span>`;
         btn.onclick = () => pick(btn, p);
         container.appendChild(btn);
       });
+
+      // Wait for image to load then start timer
+      if (timerMode) {
+        img.onload = () => startTimer();
+        if (img.complete) startTimer();
+      }
     }
 
     function pick(btn, pokemon) {
       if (btn.disabled) return;
 
       if (pokemon.name === correctPokemon.name) {
-        // Correct!
         document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         btn.classList.add('correct');
+        stopTimer();
 
-        if (firstTry) score++;
-        document.getElementById('score').textContent = `שאלה ${total} | ✅ ${score}`;
+        const elapsedSec = getElapsedSeconds();
+        const earned = timerMode ? pointsForTime(elapsedSec) : 0;
+
+        if (firstTry) { score++; totalPoints += earned; }
+        updateScore();
         playSuccess();
 
-        // Show success popup
+        // Populate popup
         document.getElementById('successImg').src = correctPokemon.sprite;
         document.getElementById('successLabel').textContent = correctPokemon.heName;
         document.getElementById('rewardEmoji').textContent = firstTry ? randomReward() : '👍';
-        setTimeout(() => {
-          document.getElementById('successPopup').classList.add('show');
-        }, 300);
+
+        if (timerMode && firstTry) {
+          const secs = elapsedSec.toFixed(1);
+          document.getElementById('timeInfo').textContent = `⏱ זמן: ${secs} שניות`;
+          document.getElementById('timeInfo').style.display = 'block';
+          document.getElementById('earnedPoints').textContent = `+${earned} נקודות`;
+          document.getElementById('earnedPoints').style.display = 'block';
+          document.getElementById('totalPts').textContent = `סה״כ: ${totalPoints} נקודות`;
+          document.getElementById('totalPts').style.display = 'block';
+        } else {
+          document.getElementById('timeInfo').style.display = 'none';
+          document.getElementById('earnedPoints').style.display = 'none';
+          document.getElementById('totalPts').style.display = 'none';
+        }
+
+        setTimeout(() => document.getElementById('successPopup').classList.add('show'), 300);
 
       } else {
-        // Wrong — shake, disable this button, allow retry
         btn.classList.add('wrong');
         btn.disabled = true;
         firstTry = false;
@@ -459,6 +643,11 @@
           document.getElementById('feedback').textContent = '';
         }, 800);
       }
+    }
+
+    function updateScore() {
+      const pts = timerMode ? ` | 🏅 ${totalPoints}` : '';
+      document.getElementById('score').textContent = `שאלה ${total} | ✅ ${score}${pts}`;
     }
 
     function randomReward() {
