@@ -80,8 +80,8 @@
     }
 
     .pokemon-img {
-      height: 90px;
-      width: 90px;
+      height: 105px;
+      width: 105px;
       object-fit: contain;
       image-rendering: pixelated;
       display: block;
@@ -124,8 +124,8 @@
     }
 
     .option-btn img {
-      width: 55px;
-      height: 55px;
+      width: 70px;
+      height: 70px;
       object-fit: contain;
       image-rendering: pixelated;
     }
@@ -301,6 +301,40 @@
     let correctPokemon = null;
     let firstTry = true;
 
+    const HE_NAMES = {
+      1:'בולבסאור',2:'איוויזאור',3:'ונוזאור',4:'שרמנדר',5:'שרמליאון',6:'שרמיזון',
+      7:'סקווירטל',8:'וורטורטל',9:'בלסטויז',10:'קטרפי',11:'מטאפוד',12:'באטרפרי',
+      13:'ווידל',14:'קוקון',15:'בידריל',16:'פידג׳י',17:'פידג׳ייאוטו',18:'פידג׳ייאוט',
+      19:'ראטאטה',20:'ראטיקייט',21:'ספירו',22:'פירות',23:'אקארס',24:'אריאוקס',
+      25:'פיקאצ׳ו',26:'ריצ׳ו',27:'סנדשרו',28:'סנדסלאש',29:'נידורן ♀',30:'נידורינה',
+      31:'נידוקווין',32:'נידורן ♂',33:'נידורינו',34:'נידוקינג',35:'קלפיירי',36:'קלפאבל',
+      37:'וולפיקס',38:'ניינטייל',39:'ג׳יגלי פאף',40:'ווויגלי טאף',41:'זובאט',42:'גולבאט',
+      43:'אוד',44:'גלום',45:'וילפלאום',46:'פאראס',47:'פאראסקט',48:'ווואדל',49:'ווואסקאוט',
+      50:'דיגלט',51:'דוגטריו',52:'מיאות׳',53:'פרסיאן',54:'סייידאק',55:'גולדאק',
+      56:'מנקי',57:'פריימייפ',58:'גרואוליית׳',59:'ארקנין',60:'פוליווג',61:'פוליוווירל',
+      62:'פוליווארת׳',63:'אברה',64:'קאדאברה',65:'אלאקאזאם',66:'מאצ׳אופ',67:'מאצ׳וק',
+      68:'מאצ׳אמפ',69:'בלבסאור',70:'ויקטריבל',71:'ויקטריבל',72:'טנטקול',73:'טנטקראל',
+      74:'ג׳ייאודוס',75:'גראווללר',76:'גולם',77:'פוניטה',78:'ראפידאש',79:'סלואופוק',
+      80:'סלואוברו',81:'מגנמייט',82:'מגנטון',83:'פארפץ׳ד',84:'דודו',85:'דודריו',
+      86:'סיל',87:'דיוגונג',88:'גריימר',89:'מאק',90:'שלדר',91:'קלוסטר',
+      92:'גאסטלי',93:'האונטר',94:'גנגאר',95:'אונייקס',96:'דראוזי',97:'היפנו',
+      98:'קראב',99:'קינגלר',100:'וולטורב',101:'אלקטרוד',102:'אגזקוט',103:'אגזגוטור',
+      104:'קיופוני',105:'מארואוק',106:'היטמונלי',107:'היטמונצ׳אן',108:'ליקיטונג',
+      109:'קופינג',110:'ווויזינג',111:'ריהורן',112:'ריידון',113:'צ׳אנסי',114:'טנגלה',
+      115:'קנגסקאן',116:'הורסיה',117:'סיידרה',118:'גולדין',119:'סיראקינג',
+      120:'סטארו',121:'סטאריו',122:'מר. מייים',123:'סקייתר',124:'ג׳ינקס',
+      125:'אלקטאבאז',126:'מאגמאר',127:'פינסיר',128:'טאורוס',129:'מאגיקרפ',
+      130:'גיאראדוס',131:'לפראס',132:'דיטו',133:'איווי',134:'ווייפורין',
+      135:'ג׳ולטיאון',136:'פלריאון',137:'פורטה',138:'אומאניט',139:'אומאסטאר',
+      140:'קאבוטו',141:'קאבוטופס',142:'אירודקטיל',143:'סנורלקס',144:'ארטיקונו',
+      145:'זאפדוס',146:'מולטרס',147:'דרטיני',148:'דרגונאיר',149:'דרגוניט',
+      150:'מיוטו',151:'מיו'
+    };
+
+    function heName(id, engName) {
+      return HE_NAMES[id] || engName;
+    }
+
     function randId() {
       return Math.floor(Math.random() * TOTAL) + 1;
     }
@@ -311,10 +345,6 @@
       return [...ids];
     }
 
-    function capitalize(str) {
-      return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
     function spriteUrl(id) {
       return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
     }
@@ -322,7 +352,7 @@
     async function fetchPokemon(id) {
       const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
       const data = await res.json();
-      return { id, name: data.name, sprite: spriteUrl(id) };
+      return { id, name: data.name, heName: heName(id, data.name), sprite: spriteUrl(id) };
     }
 
     async function nextRound() {
@@ -353,8 +383,8 @@
         btn.className = 'option-btn';
         btn.dataset.name = p.name;
         btn.innerHTML = `
-          <img src="${p.sprite}" alt="${p.name}" loading="lazy" />
-          <span class="poke-name">${capitalize(p.name)}</span>
+          <img src="${p.sprite}" alt="${p.heName}" loading="lazy" />
+          <span class="poke-name">${p.heName}</span>
         `;
         btn.onclick = () => pick(btn, p);
         container.appendChild(btn);
@@ -374,7 +404,7 @@
 
         // Show success popup
         document.getElementById('successImg').src = correctPokemon.sprite;
-        document.getElementById('successLabel').textContent = capitalize(correctPokemon.name);
+        document.getElementById('successLabel').textContent = correctPokemon.heName;
         document.getElementById('rewardEmoji').textContent = firstTry ? randomReward() : '👍';
         setTimeout(() => {
           document.getElementById('successPopup').classList.add('show');
