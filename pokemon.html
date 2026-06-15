@@ -462,6 +462,16 @@
       return audioCtx;
     }
 
+    function speakName(englishName) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(englishName);
+      utt.lang = 'en-US';
+      utt.rate = 0.85;
+      utt.pitch = 1.1;
+      window.speechSynthesis.speak(utt);
+    }
+
     function playSuccess() {
       const ctx = getCtx();
       [523, 659, 784, 1047].forEach((freq, i) => {
@@ -639,7 +649,10 @@
           document.getElementById('totalPts').style.display = 'none';
         }
 
-        setTimeout(() => document.getElementById('successPopup').classList.add('show'), 300);
+        setTimeout(() => {
+          document.getElementById('successPopup').classList.add('show');
+          speakName(correctPokemon.name);
+        }, 300);
 
       } else {
         btn.classList.add('wrong');
