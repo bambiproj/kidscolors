@@ -397,7 +397,8 @@
 
     <!-- Success popup -->
     <div class="success-popup" id="successPopup">
-      <img id="successImg" src="" alt="" />
+      <img id="successImg" src="" alt="" onclick="speakName(currentName)" style="cursor:pointer" title="לחץ לשמוע שוב" />
+      <div style="font-size:0.7rem;color:#bbb;margin-top:-4px">🔊 לחץ לשמוע</div>
       <div class="success-msg">!כל הכבוד 🎉</div>
       <div class="reward-emoji" id="rewardEmoji"></div>
       <div class="poke-sublabel">:זה היה</div>
@@ -415,6 +416,7 @@
     let total = 0;
     let totalPoints = 0;
     let correctPokemon = null;
+    let currentName = '';
     let firstTry = true;
 
     // Timer mode state
@@ -649,6 +651,7 @@
           document.getElementById('totalPts').style.display = 'none';
         }
 
+        currentName = correctPokemon.name;
         setTimeout(() => {
           document.getElementById('successPopup').classList.add('show');
           speakName(correctPokemon.name);
