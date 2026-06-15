@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Who's That Pokémon?</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #f5a623 0%, #e8372b 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.25);
+      display: flex;
+      gap: 12px;
+      padding: 10px 20px;
+      z-index: 10;
+    }
+
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.15);
+      transition: background 0.2s;
+    }
+
+    nav a:hover { background: rgba(255,255,255,0.3); }
+    nav a.active { background: rgba(255,255,255,0.4); }
+
+    h1 {
+      color: #fff;
+      font-size: clamp(1.5rem, 5vw, 2.2rem);
+      margin: 70px 0 24px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 28px 24px 24px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+
+    .score {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 16px;
+    }
+
+    .pokemon-stage {
+      position: relative;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .pokemon-img {
+      height: 160px;
+      width: 160px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      transition: filter 0.6s ease;
+    }
+
+    .pokemon-img.silhouette { filter: brightness(0); }
+    .pokemon-img.revealed   { filter: brightness(1); animation: popIn 0.5s ease; }
+
+    @keyframes popIn {
+      0%   { transform: scale(0.7); opacity: 0.3; }
+      60%  { transform: scale(1.15); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    .question {
+      font-size: clamp(1.2rem, 4vw, 1.6rem);
+      font-weight: 700;
+      color: #333;
+      margin: 12px 0 20px;
+      min-height: 2rem;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .option-btn {
+      padding: 14px 8px;
+      border: 3px solid #e0e0e0;
+      border-radius: 16px;
+      background: #fafafa;
+      font-size: clamp(0.9rem, 3.5vw, 1.05rem);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.2s, background 0.2s;
+      text-transform: capitalize;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      border-color: #aaa;
+    }
+
+    .option-btn:disabled { cursor: default; }
+
+    .option-btn.correct {
+      background: #d4f8d4;
+      border-color: #4caf50;
+      animation: bounce 0.4s ease;
+    }
+
+    .option-btn.wrong {
+      background: #fde8e8;
+      border-color: #f44336;
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes bounce {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.08); }
+      70%  { transform: scale(0.97); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%   { transform: translateX(0); }
+      25%  { transform: translateX(-6px); }
+      50%  { transform: translateX(6px); }
+      75%  { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+
+    .feedback {
+      margin-top: 18px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      min-height: 1.8rem;
+      transition: opacity 0.3s;
+      text-transform: capitalize;
+    }
+
+    .feedback.correct { color: #4caf50; }
+    .feedback.wrong   { color: #f44336; }
+    .feedback.hidden  { opacity: 0; }
+
+    .reward {
+      font-size: 2rem;
+      margin-top: 6px;
+      min-height: 2.4rem;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .next-btn {
+      margin-top: 18px;
+      padding: 13px 38px;
+      background: linear-gradient(135deg, #f5a623, #e8372b);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(232,55,43,0.4);
+    }
+
+    .next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232,55,43,0.5); }
+    .next-btn.visible { display: inline-block; }
+
+    .loading {
+      color: #aaa;
+      font-size: 1rem;
+      padding: 40px 0;
+    }
+
+    .pokeball-spin {
+      display: inline-block;
+      font-size: 2rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html">🎨 Colors</a>
+    <a href="pokemon.html" class="active">⚡ Pokémon</a>
+  </nav>
+
+  <h1>⚡ Who's That Pokémon?</h1>
+
+  <div class="card">
+    <div class="score" id="score">Question 1 | ✅ 0</div>
+
+    <div class="pokemon-stage">
+      <img class="pokemon-img silhouette" id="pokemonImg" src="" alt="Pokemon silhouette" />
+    </div>
+
+    <div class="reward" id="reward"></div>
+    <div class="question" id="question">Who's that Pokémon?</div>
+    <div class="options" id="options">
+      <div class="loading"><span class="pokeball-spin">⚪</span> Loading...</div>
+    </div>
+
+    <div class="feedback hidden" id="feedback"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextRound()">Next →</button>
+  </div>
+
+  <script>
+    // First 151 Pokémon
+    const TOTAL = 151;
+
+    let score = 0;
+    let total = 0;
+    let correctPokemon = null;
+    let answered = false;
+
+    function randId() {
+      return Math.floor(Math.random() * TOTAL) + 1;
+    }
+
+    function uniqueIds(count) {
+      const ids = new Set();
+      while (ids.size < count) ids.add(randId());
+      return [...ids];
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    async function fetchPokemon(id) {
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      const data = await res.json();
+      return {
+        id,
+        name: data.name,
+        sprite: data.sprites.other['official-artwork'].front_default
+                || data.sprites.front_default,
+      };
+    }
+
+    async function nextRound() {
+      answered = false;
+      document.getElementById('feedback').className = 'feedback hidden';
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('nextBtn').classList.remove('visible');
+      document.getElementById('reward').textContent = '';
+      document.getElementById('options').innerHTML = '<div class="loading"><span class="pokeball-spin">⚪</span> Loading...</div>';
+
+      const img = document.getElementById('pokemonImg');
+      img.src = '';
+      img.className = 'pokemon-img silhouette';
+
+      total++;
+      document.getElementById('score').textContent = `Question ${total} | ✅ ${score}`;
+      document.getElementById('question').textContent = "Who's that Pokémon?";
+
+      const ids = uniqueIds(4);
+      const pokemons = await Promise.all(ids.map(fetchPokemon));
+
+      correctPokemon = pokemons[Math.floor(Math.random() * pokemons.length)];
+
+      img.src = correctPokemon.sprite;
+      img.className = 'pokemon-img silhouette';
+
+      const container = document.getElementById('options');
+      container.innerHTML = '';
+
+      const shuffled = [...pokemons].sort(() => Math.random() - 0.5);
+      shuffled.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = capitalize(p.name);
+        btn.dataset.name = p.name;
+        btn.onclick = () => pick(btn, p);
+        container.appendChild(btn);
+      });
+    }
+
+    function pick(btn, pokemon) {
+      if (answered) return;
+      answered = true;
+
+      const allBtns = document.querySelectorAll('.option-btn');
+      allBtns.forEach(b => b.disabled = true);
+
+      const img = document.getElementById('pokemonImg');
+      const feedback = document.getElementById('feedback');
+      const reward = document.getElementById('reward');
+
+      // Reveal the Pokémon
+      img.className = 'pokemon-img revealed';
+
+      if (pokemon.name === correctPokemon.name) {
+        score++;
+        btn.classList.add('correct');
+        feedback.textContent = `Yes! It's ${capitalize(correctPokemon.name)}! 🎉`;
+        feedback.className = 'feedback correct';
+        reward.textContent = randomReward();
+        document.getElementById('score').textContent = `Question ${total} | ✅ ${score}`;
+      } else {
+        btn.classList.add('wrong');
+        allBtns.forEach(b => {
+          if (b.dataset.name === correctPokemon.name) b.classList.add('correct');
+        });
+        feedback.textContent = `It was ${capitalize(correctPokemon.name)}! 😢`;
+        feedback.className = 'feedback wrong';
+      }
+
+      document.getElementById('nextBtn').classList.add('visible');
+    }
+
+    function randomReward() {
+      const rewards = ['🏆', '⭐⭐⭐', '🎖️', '🌟🌟', '🏅', '👑', '💫💫💫'];
+      return rewards[Math.floor(Math.random() * rewards.length)];
+    }
+
+    nextRound();
+  </script>
+</body>
+</html>
