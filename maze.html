@@ -491,6 +491,14 @@
     function onDown(e) {
       if (won) return;
       const pos = getPos(e);
+      if (head) {
+        const resumeDist = Math.hypot(pos.x - head.x, pos.y - head.y);
+        if (resumeDist <= CELL * 0.9) {
+          dragging = true;
+          e.preventDefault();
+          return;
+        }
+      }
       const dist = Math.hypot(pos.x - startCenter.x, pos.y - startCenter.y);
       if (dist > CELL * 0.75) return;
       dragging = true;
@@ -523,7 +531,6 @@
 
     function onUp(e) {
       dragging = false;
-      head = null;
     }
 
     canvas.addEventListener('mousedown', onDown);
