@@ -27,8 +27,11 @@
       gap: 5px;
       padding: 6px 10px;
       z-index: 10;
-      justify-content: center;
+      justify-content: flex-start;
       flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100vw;
     }
 
     nav a {
@@ -241,6 +244,7 @@
     let goalCenter = { x: 0, y: 0 };
     let startCenter = { x: 0, y: 0 };
     let goalImg = null;
+    let maskData = null;
     let winEnglishName = '';
 
     const HE_NAMES = {
@@ -371,9 +375,17 @@
     }
 
     function isPath(x, y) {
-      if (x < 0 || y < 0 || x >= CANVAS_SIZE || y >= CANVAS_SIZE) return false;
-      const d = maskCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-      return d[0] > 128;
+      x = Math.floor(x); y = Math.floor(y);
+      if (x < 0 || y < 0 || x >= CANVAS_SIZE || y >= CANVAS_SIZE || !maskData) return false;
+      const idx = (y * CANVAS_SIZE + x) * 4;
+      return maskData[idx] > 128;
+    }
+
+    // Fuzzy check: forgiving for finger imprecision, checks a small cross of points
+    function isPathFuzzy(x, y) {
+      if (isPath(x, y)) return true;
+      const r = 5;
+      return isPath(x + r, y) || isPath(x - r, y) || isPath(x, y + r) || isPath(x, y - r);
     }
 
     function spriteUrl(id) {
@@ -404,6 +416,7 @@
 
       // Draw mask (black/white only) for collision detection
       drawMazeOn(maskCtx, '#ffffff', '#000000');
+      maskData = maskCtx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE).data;
 
       // Draw visible maze
       drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
@@ -496,7 +509,7 @@
         const t = i / steps;
         const sx = head.x + (pos.x - head.x) * t;
         const sy = head.y + (pos.y - head.y) * t;
-        if (!isPath(sx, sy)) { blocked = true; break; }
+        if (!isPathFuzzy(sx, sy)) { blocked = true; break; }
         lastValid = { x: sx, y: sy };
       }
       if (lastValid !== head) {
