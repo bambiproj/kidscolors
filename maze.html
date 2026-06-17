@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>מבוך הפוקימון</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      gap: 5px;
+      padding: 6px 10px;
+      z-index: 10;
+      justify-content: center;
+      flex-wrap: nowrap;
+    }
+
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.25);
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    nav a:hover { background: rgba(255,255,255,0.3); }
+    nav a.active { background: rgba(255,255,255,0.35); border-color: #fff; }
+
+    h1 {
+      color: #fff;
+      font-size: clamp(1rem, 3.5vw, 1.4rem);
+      margin: 50px 0 8px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 14px;
+      max-width: 380px;
+      width: 100%;
+      box-shadow: 0 16px 50px rgba(0,0,0,0.35);
+      text-align: center;
+      position: relative;
+    }
+
+    .hint {
+      font-size: 0.82rem;
+      color: #777;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .stats {
+      font-size: 0.8rem;
+      color: #999;
+      margin-bottom: 8px;
+    }
+
+    canvas {
+      touch-action: none;
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto;
+      background: #2d2d44;
+    }
+
+    .controls {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .ctrl-btn {
+      padding: 9px 20px;
+      border: none;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+      transition: transform 0.15s;
+    }
+
+    .ctrl-btn:hover { transform: translateY(-2px); }
+
+    /* Win popup */
+    .win-popup {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.97);
+      border-radius: 20px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      z-index: 5;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .win-popup.show { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .win-popup img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      cursor: pointer;
+      animation: popIn 0.5s ease;
+    }
+
+    @keyframes popIn {
+      0%   { transform: scale(0.6); opacity: 0.3; }
+      60%  { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .win-popup .win-msg {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #4caf50;
+    }
+
+    .win-popup .poke-name {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #764ba2;
+    }
+
+    .win-popup .tap-hint {
+      font-size: 0.72rem;
+      color: #bbb;
+      margin-top: -6px;
+    }
+
+    .next-btn {
+      margin-top: 4px;
+      padding: 11px 34px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(118,75,162,0.4);
+    }
+
+    .loading-msg {
+      color: #999;
+      padding: 40px 0;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html">🎨 צבעים</a>
+    <a href="math.html">➕ חשבון</a>
+    <a href="words.html">📖 מילים</a>
+    <a href="alef-bet.html">א-ב</a>
+    <a href="pokemon.html">⚡ פוקימון</a>
+    <a href="maze.html" class="active">🧩 מבוך</a>
+  </nav>
+
+  <h1>🧩 מבוך הפוקימון</h1>
+
+  <div class="card">
+    <div class="hint">!גע בדגל 🚩 וגרור את האצבע עד לפוקימון</div>
+    <div class="stats" id="stats">מבוכים שנפתרו: 0</div>
+
+    <div id="canvasWrap">
+      <div class="loading-msg" id="loadingMsg">🔄 טוען מבוך...</div>
+      <canvas id="mazeCanvas" width="322" height="322" style="display:none"></canvas>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn" onclick="resetTrail()">🔄 התחל מחדש</button>
+      <button class="ctrl-btn" onclick="newMaze()">🧩 מבוך חדש</button>
+    </div>
+
+    <div class="win-popup" id="winPopup">
+      <img id="winImg" src="" alt="" onclick="speakName(winEnglishName)" />
+      <div class="tap-hint">🔊 לחץ על התמונה לשמוע שוב</div>
+      <div class="win-msg">!מצאת אותו 🎉</div>
+      <div class="poke-name" id="winName"></div>
+      <button class="next-btn" onclick="newMaze()">מבוך חדש ←</button>
+    </div>
+  </div>
+
+  <script>
+    const SIZE = 7;
+    const CANVAS_SIZE = 322;
+    const CELL = CANVAS_SIZE / SIZE;
+    const PATH_W = CELL * 0.62;
+
+    const canvas = document.getElementById('mazeCanvas');
+    const ctx = canvas.getContext('2d');
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = CANVAS_SIZE;
+    maskCanvas.height = CANVAS_SIZE;
+    const maskCtx = maskCanvas.getContext('2d');
+
+    let cells = [];
+    let solvedCount = 0;
+    let dragging = false;
+    let head = null;
+    let won = false;
+    let goalCenter = { x: 0, y: 0 };
+    let startCenter = { x: 0, y: 0 };
+    let goalImg = null;
+    let winEnglishName = '';
+
+    const HE_NAMES = {
+      1:'בולבסאור',2:'איוויזאור',3:'ונוזאור',4:'שרמנדר',5:'שרמליאון',6:'שרמיזון',
+      7:'סקווירטל',8:'וורטורטל',9:'בלסטויז',10:'קטרפי',11:'מטאפוד',12:'באטרפרי',
+      13:'ווידל',14:'קוקון',15:'בידריל',16:'פידג׳י',17:'פידג׳ייאוטו',18:'פידג׳ייאוט',
+      19:'ראטאטה',20:'ראטיקייט',21:'ספירו',22:'פירות',23:'אקארס',24:'אריאוקס',
+      25:'פיקאצ׳ו',26:'ריצ׳ו',27:'סנדשרו',28:'סנדסלאש',29:'נידורן ♀',30:'נידורינה',
+      31:'נידוקווין',32:'נידורן ♂',33:'נידורינו',34:'נידוקינג',35:'קלפיירי',36:'קלפאבל',
+      37:'וולפיקס',38:'ניינטייל',39:'ג׳יגלי פאף',40:'ווויגלי טאף',41:'זובאט',42:'גולבאט',
+      43:'אוד',44:'גלום',45:'וילפלאום',46:'פאראס',47:'פאראסקט',48:'ווואדל',49:'ווואסקאוט',
+      50:'דיגלט',51:'דוגטריו',52:'מיאות׳',53:'פרסיאן',54:'סייידאק',55:'גולדאק',
+      56:'מנקי',57:'פריימייפ',58:'גרואוליית׳',59:'ארקנין',60:'פוליווג',61:'פוליוווירל',
+      62:'פוליווארת׳',63:'אברה',64:'קאדאברה',65:'אלאקאזאם',66:'מאצ׳אופ',67:'מאצ׳וק',
+      68:'מאצ׳אמפ',69:'בלבסאור',70:'ויקטריבל',71:'ויקטריבל',72:'טנטקול',73:'טנטקראל',
+      74:'ג׳ייאודוס',75:'גראווללר',76:'גולם',77:'פוניטה',78:'ראפידאש',79:'סלואופוק',
+      80:'סלואוברו',81:'מגנמייט',82:'מגנטון',83:'פארפץ׳ד',84:'דודו',85:'דודריו',
+      86:'סיל',87:'דיוגונג',88:'גריימר',89:'מאק',90:'שלדר',91:'קלוסטר',
+      92:'גאסטלי',93:'האונטר',94:'גנגאר',95:'אונייקס',96:'דראוזי',97:'היפנו',
+      98:'קראב',99:'קינגלר',100:'וולטורב',101:'אלקטרוד',102:'אגזקוט',103:'אגזגוטור',
+      104:'קיופוני',105:'מארואוק',106:'היטמונלי',107:'היטמונצ׳אן',108:'ליקיטונג',
+      109:'קופינג',110:'ווויזינג',111:'ריהורן',112:'ריידון',113:'צ׳אנסי',114:'טנגלה',
+      115:'קנגסקאן',116:'הורסיה',117:'סיידרה',118:'גולדין',119:'סיראקינג',
+      120:'סטארו',121:'סטאריו',122:'מר. מייים',123:'סקייתר',124:'ג׳ינקס',
+      125:'אלקטאבאז',126:'מאגמאר',127:'פינסיר',128:'טאורוס',129:'מאגיקרפ',
+      130:'גיאראדוס',131:'לפראס',132:'דיטו',133:'איווי',134:'ווייפורין',
+      135:'ג׳ולטיאון',136:'פלריאון',137:'פורטה',138:'אומאניט',139:'אומאסטאר',
+      140:'קאבוטו',141:'קאבוטופס',142:'אירודקטיל',143:'סנורלקס',144:'ארטיקונו',
+      145:'זאפדוס',146:'מולטרס',147:'דרטיני',148:'דרגונאיר',149:'דרגוניט',
+      150:'מיוטו',151:'מיו'
+    };
+    function heName(id, eng) { return HE_NAMES[id] || eng; }
+
+    // ── Audio ──────────────────────────────────────────────
+    let audioCtx = null;
+    function getCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+    function playSuccess() {
+      const ctx2 = getCtx();
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const osc = ctx2.createOscillator(), gain = ctx2.createGain();
+        osc.connect(gain); gain.connect(ctx2.destination);
+        osc.type = 'sine'; osc.frequency.value = freq;
+        const t = ctx2.currentTime + i * 0.12;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.2, t + 0.04);
+        gain.gain.linearRampToValueAtTime(0, t + 0.25);
+        osc.start(t); osc.stop(t + 0.28);
+      });
+    }
+    function playBlocked() {
+      const ctx2 = getCtx();
+      const osc = ctx2.createOscillator(), gain = ctx2.createGain();
+      osc.connect(gain); gain.connect(ctx2.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(140, ctx2.currentTime);
+      gain.gain.setValueAtTime(0.08, ctx2.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx2.currentTime + 0.08);
+      osc.start(ctx2.currentTime); osc.stop(ctx2.currentTime + 0.09);
+    }
+    function speakName(englishName) {
+      if (!window.speechSynthesis || !englishName) return;
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(englishName);
+      utt.lang = 'en-US';
+      utt.rate = 0.85;
+      utt.pitch = 1.1;
+      window.speechSynthesis.speak(utt);
+    }
+
+    // ── Maze generation (recursive backtracker) ─────────────
+    function generateMaze(size) {
+      const grid = [];
+      for (let y = 0; y < size; y++) {
+        const row = [];
+        for (let x = 0; x < size; x++) {
+          row.push({ top: true, right: true, bottom: true, left: true, visited: false });
+        }
+        grid.push(row);
+      }
+
+      function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+
+      function carve(x, y) {
+        grid[y][x].visited = true;
+        const dirs = shuffle([
+          { dx: 0, dy: -1, wall: 'top', opp: 'bottom' },
+          { dx: 1, dy: 0, wall: 'right', opp: 'left' },
+          { dx: 0, dy: 1, wall: 'bottom', opp: 'top' },
+          { dx: -1, dy: 0, wall: 'left', opp: 'right' },
+        ]);
+        for (const d of dirs) {
+          const nx = x + d.dx, ny = y + d.dy;
+          if (nx >= 0 && nx < size && ny >= 0 && ny < size && !grid[ny][nx].visited) {
+            grid[y][x][d.wall] = false;
+            grid[ny][nx][d.opp] = false;
+            carve(nx, ny);
+          }
+        }
+      }
+      carve(0, 0);
+      return grid;
+    }
+
+    function cellRect(x, y) {
+      const cx = x * CELL, cy = y * CELL;
+      const ccx = cx + CELL / 2, ccy = cy + CELL / 2;
+      return { x: ccx - PATH_W / 2, y: ccy - PATH_W / 2, w: PATH_W, h: PATH_W, cx: ccx, cy: ccy };
+    }
+
+    function drawMazeOn(targetCtx, pathColor, wallColor) {
+      targetCtx.fillStyle = wallColor;
+      targetCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      targetCtx.fillStyle = pathColor;
+      for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+          const cell = cells[y][x];
+          const r = cellRect(x, y);
+          targetCtx.fillRect(r.x, r.y, r.w, r.h);
+          if (!cell.right) targetCtx.fillRect(r.x + r.w, r.cy - PATH_W / 2, CELL - PATH_W, PATH_W);
+          if (!cell.bottom) targetCtx.fillRect(r.cx - PATH_W / 2, r.y + r.h, PATH_W, CELL - PATH_W);
+          if (!cell.left) targetCtx.fillRect(r.x - (CELL - PATH_W), r.cy - PATH_W / 2, CELL - PATH_W, PATH_W);
+          if (!cell.top) targetCtx.fillRect(r.cx - PATH_W / 2, r.y - (CELL - PATH_W), PATH_W, CELL - PATH_W);
+        }
+      }
+    }
+
+    function isPath(x, y) {
+      if (x < 0 || y < 0 || x >= CANVAS_SIZE || y >= CANVAS_SIZE) return false;
+      const d = maskCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+      return d[0] > 128;
+    }
+
+    function spriteUrl(id) {
+      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+    }
+
+    async function fetchRandomPokemon() {
+      const id = Math.floor(Math.random() * 151) + 1;
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      const data = await res.json();
+      return { id, name: data.name, heName: heName(id, data.name), sprite: spriteUrl(id) };
+    }
+
+    async function newMaze() {
+      won = false;
+      dragging = false;
+      head = null;
+      document.getElementById('winPopup').classList.remove('show');
+      document.getElementById('mazeCanvas').style.display = 'none';
+      document.getElementById('loadingMsg').style.display = 'block';
+
+      cells = generateMaze(SIZE);
+
+      const startR = cellRect(0, 0);
+      startCenter = { x: startR.cx, y: startR.cy };
+      const goalR = cellRect(Math.floor(SIZE / 2), Math.floor(SIZE / 2));
+      goalCenter = { x: goalR.cx, y: goalR.cy };
+
+      // Draw mask (black/white only) for collision detection
+      drawMazeOn(maskCtx, '#ffffff', '#000000');
+
+      // Draw visible maze
+      drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
+
+      // Load random Pokémon for the goal
+      const poke = await fetchRandomPokemon();
+      winEnglishName = poke.name;
+      goalImg = new Image();
+      goalImg.crossOrigin = 'anonymous';
+      goalImg.onload = () => {
+        ctx.drawImage(goalImg, goalCenter.x - 22, goalCenter.y - 22, 44, 44);
+        drawStartFlag();
+        document.getElementById('winName').textContent = poke.heName;
+        document.getElementById('winImg').src = poke.sprite;
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('mazeCanvas').style.display = 'block';
+      };
+      goalImg.src = poke.sprite;
+    }
+
+    function drawStartFlag() {
+      ctx.font = '22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🚩', startCenter.x, startCenter.y);
+    }
+
+    function resetTrail() {
+      if (won) return;
+      drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
+      if (goalImg && goalImg.complete) {
+        ctx.drawImage(goalImg, goalCenter.x - 22, goalCenter.y - 22, 44, 44);
+      }
+      drawStartFlag();
+      dragging = false;
+      head = null;
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function drawTrailSegment(a, b) {
+      ctx.strokeStyle = '#667eea';
+      ctx.lineWidth = PATH_W * 0.45;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+
+    function checkWin(pos) {
+      const dist = Math.hypot(pos.x - goalCenter.x, pos.y - goalCenter.y);
+      if (dist < PATH_W * 0.7) {
+        won = true;
+        dragging = false;
+        solvedCount++;
+        document.getElementById('stats').textContent = `מבוכים שנפתרו: ${solvedCount}`;
+        playSuccess();
+        setTimeout(() => {
+          document.getElementById('winPopup').classList.add('show');
+          speakName(winEnglishName);
+        }, 200);
+      }
+    }
+
+    function onDown(e) {
+      if (won) return;
+      const pos = getPos(e);
+      const dist = Math.hypot(pos.x - startCenter.x, pos.y - startCenter.y);
+      if (dist > CELL * 0.75) return;
+      dragging = true;
+      head = pos;
+      e.preventDefault();
+    }
+
+    function onMove(e) {
+      if (!dragging || won) return;
+      const pos = getPos(e);
+      const dist = Math.hypot(pos.x - head.x, pos.y - head.y);
+      const steps = Math.max(1, Math.ceil(dist / 2));
+      let lastValid = head;
+      let blocked = false;
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const sx = head.x + (pos.x - head.x) * t;
+        const sy = head.y + (pos.y - head.y) * t;
+        if (!isPath(sx, sy)) { blocked = true; break; }
+        lastValid = { x: sx, y: sy };
+      }
+      if (lastValid !== head) {
+        drawTrailSegment(head, lastValid);
+        head = lastValid;
+        checkWin(head);
+      }
+      if (blocked) playBlocked();
+      e.preventDefault();
+    }
+
+    function onUp(e) {
+      dragging = false;
+      head = null;
+    }
+
+    canvas.addEventListener('mousedown', onDown);
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseup', onUp);
+    canvas.addEventListener('mouseleave', onUp);
+    canvas.addEventListener('touchstart', onDown, { passive: false });
+    canvas.addEventListener('touchmove', onMove, { passive: false });
+    canvas.addEventListener('touchend', onUp);
+    canvas.addEventListener('touchcancel', onUp);
+
+    newMaze();
+  </script>
+</body>
+</html>
