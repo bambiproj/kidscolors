@@ -1,19 +1,31 @@
 # Doc Scanner (Android)
 
-A simple, CamScanner-style document scanner. Tap **Scan Document**, capture one
-or more pages (the camera automatically detects document edges, lets you crop
-and apply filters), and the app saves the result as a **PDF** in your
-**Downloads** folder. You can then open or share it.
+A simple, friendly document scanner that works **entirely on-device**. Open the
+app to a warm control panel — *"What are we scanning today, my love?"* — capture
+your pages with the camera, and save them as a single **PDF** in your
+**Downloads** folder.
 
-It is built on **Google's ML Kit Document Scanner**, which provides the full
-capture-crop-enhance flow and produces the PDF directly.
+## No network, ever
+
+The app does **not** request the `INTERNET` permission, so it physically cannot
+reach the network. Pages are captured with your device's camera app and the PDF
+is assembled locally with Android's built-in `PdfDocument`. Nothing leaves the
+phone.
+
+## How it works
+
+1. **Add a page** — opens your camera; snap a photo of the document.
+2. Repeat for as many pages as you like; thumbnails appear in the panel.
+3. **Enhance** (on by default) gives pages a crisp grayscale "scanned" look.
+   Turn it off to keep full colour.
+4. **Save as PDF** — writes one multi-page PDF to Downloads.
+5. **Open** or **Share** the result.
 
 ## Requirements
 
 - Android 10 (API 29) or newer.
-- **Google Play Services** must be present and up to date on the device (this is
-  the case for virtually all standard Android phones). The scanner UI is
-  downloaded on demand the first time you scan.
+- A camera app (essentially every phone has one). No special permissions are
+  requested — the system camera app handles the capture.
 
 ## Install the APK
 
@@ -24,15 +36,13 @@ capture-crop-enhance flow and produces the PDF directly.
    (**Settings → Apps → Special access → Install unknown apps**).
 3. Open the APK and tap **Install**.
 
-The APK is **debug-signed**, so it installs directly for personal use without
-Play Store distribution.
+The APK is **debug-signed**, so it installs directly for personal use.
 
 ## Build it yourself
 
-The APK is built automatically by GitHub Actions
-(`.github/workflows/android-build.yml`) on every push that touches `android/`.
-
-To build locally you need the Android SDK (platform 35, build-tools 35.0.0):
+Built automatically by GitHub Actions (`.github/workflows/android-build.yml`) on
+every push that touches `android/`. Locally (needs the Android SDK, platform 35,
+build-tools 35.0.0):
 
 ```bash
 cd android
@@ -42,7 +52,7 @@ cd android
 
 ## Project layout
 
-- `app/src/main/java/com/bambiproj/docscanner/MainActivity.kt` — the whole app:
-  launches the scanner and saves the resulting PDF to Downloads.
-- `app/src/main/res/` — layout, strings, theme, launcher icons.
-- `app/build.gradle.kts` — dependencies (ML Kit Document Scanner) and SDK config.
+- `app/src/main/java/com/bambiproj/docscanner/MainActivity.kt` — capture pages,
+  enhance, and assemble the PDF (all on-device).
+- `app/src/main/res/layout/activity_main.xml` — the control panel UI.
+- `app/src/main/res/values/` — strings, colours, theme, launcher icons.

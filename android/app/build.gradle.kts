@@ -44,7 +44,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.activity:activity-ktx:1.9.3")
 
-    // ML Kit Document Scanner (full CamScanner-style flow: camera, edge
-    // detection, crop, filters, multi-page) — returns JPEG pages and a PDF.
-    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
+    // Reads EXIF orientation so captured pages aren't rotated in the PDF.
+    // Everything runs on-device; the app needs no network access.
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 }

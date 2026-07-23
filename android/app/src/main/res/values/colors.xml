@@ -1,5 +1,10 @@
 <resources>
-    <color name="primary">#1565C0</color>
+    <color name="primary">#7A4FBF</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="ic_launcher_background">#1565C0</color>
+    <color name="background">#FBF7FF</color>
+    <color name="card">#FFFFFF</color>
+    <color name="stroke">#E7DEF5</color>
+    <color name="text">#241E2E</color>
+    <color name="muted">#8A7FA0</color>
+    <color name="ic_launcher_background">#7A4FBF</color>
 </resources>

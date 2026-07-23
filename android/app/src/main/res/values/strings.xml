@@ -1,19 +1,28 @@
 <resources>
     <string name="app_name">Doc Scanner</string>
-    <string name="subtitle">Scan documents and save them as PDF</string>
-    <string name="scan_document">Scan Document</string>
+    <string name="greeting">What are we scanning today, my love?</string>
+
+    <string name="empty_pages">No pages yet — tap “Add a page”.</string>
+    <string name="enhance_label">Enhance (scanned black &amp; white look)</string>
+    <string name="add_page">Add a page</string>
+    <string name="save_pdf">Save as PDF</string>
+    <string name="clear">Clear</string>
     <string name="open">Open PDF</string>
     <string name="share">Share PDF</string>
     <string name="share_pdf">Share PDF</string>
 
-    <string name="status_ready">Ready. Tap “Scan Document” to begin.</string>
-    <string name="status_starting">Opening scanner…</string>
-    <string name="status_cancelled">Scan cancelled.</string>
-    <string name="status_no_pdf">No PDF was produced.</string>
-    <string name="status_save_failed">Could not save the PDF.</string>
-    <string name="status_saved">Saved “%1$s” (%2$d page(s)) to Downloads.</string>
-    <string name="status_error">Error: %1$s</string>
+    <plurals name="page_count">
+        <item quantity="zero">No pages captured</item>
+        <item quantity="one">%d page ready</item>
+        <item quantity="other">%d pages ready</item>
+    </plurals>
 
-    <string name="scanner_unavailable">Scanner unavailable. Make sure Google Play Services is installed and up to date.</string>
+    <string name="status_saved">Saved “%1$s” (%2$d page(s)) to Downloads.</string>
+    <string name="status_save_failed">Could not save the PDF.</string>
+    <string name="status_cleared">Cleared. Ready for a fresh scan.</string>
+    <string name="status_capture_cancelled">Capture cancelled.</string>
+    <string name="status_capture_failed">Could not read that photo — try again.</string>
+
+    <string name="no_camera">No camera app found on this device.</string>
     <string name="no_pdf_viewer">No PDF viewer app found.</string>
 </resources>
