@@ -24,10 +24,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import com.bambiproj.docscanner.databinding.ActivityMainBinding
+import org.opencv.android.OpenCVLoader
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executors
 import kotlin.math.min
 
 class MainActivity : AppCompatActivity() {
@@ -42,6 +44,10 @@ class MainActivity : AppCompatActivity() {
 
     // The last PDF we wrote to Downloads, for the Open/Share buttons.
     private var lastSavedUri: Uri? = null
+
+    // Image processing (crop/enhance) runs off the UI thread.
+    private val ioExecutor = Executors.newSingleThreadExecutor()
+    private var openCvReady = false
 
     private val takePicture =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
@@ -59,7 +65,18 @@ class MainActivity : AppCompatActivity() {
         binding.openButton.setOnClickListener { openLastPdf() }
         binding.shareButton.setOnClickListener { shareLastPdf() }
 
+        openCvReady = try {
+            OpenCVLoader.initLocal()
+        } catch (e: Throwable) {
+            false
+        }
+
         refreshUi()
+    }
+
+    override fun onDestroy() {
+        ioExecutor.shutdown()
+        super.onDestroy()
     }
 
     // ---- Capture --------------------------------------------------------
@@ -83,19 +100,47 @@ class MainActivity : AppCompatActivity() {
             setStatus(getString(R.string.status_capture_cancelled))
             return
         }
-        try {
-            var bmp = decodeDownsampled(file, MAX_EDGE)
-            bmp = applyExifRotation(file, bmp)
-            if (binding.enhanceSwitch.isChecked) {
-                bmp = enhance(bmp)
+        val doEnhance = binding.enhanceSwitch.isChecked
+        binding.addPageButton.isEnabled = false
+        setStatus(getString(R.string.status_processing))
+
+        ioExecutor.execute {
+            var finalBmp: Bitmap? = null
+            var didCrop = false
+            try {
+                var bmp = decodeDownsampled(file, MAX_EDGE)
+                bmp = applyExifRotation(file, bmp)
+                if (openCvReady) {
+                    val cr = DocumentCropper.cropToDocument(bmp)
+                    if (cr.cropped && cr.bitmap !== bmp) bmp.recycle()
+                    bmp = cr.bitmap
+                    didCrop = cr.cropped
+                }
+                finalBmp = if (doEnhance) enhance(bmp) else bmp
+            } catch (e: Throwable) {
+                finalBmp = null
+            } finally {
+                file.delete()
             }
-            pages.add(bmp)
-        } catch (e: Exception) {
-            setStatus(getString(R.string.status_capture_failed))
-        } finally {
-            file.delete()
+
+            val produced = finalBmp
+            val cropped = didCrop
+            runOnUiThread {
+                binding.addPageButton.isEnabled = true
+                if (produced == null) {
+                    setStatus(getString(R.string.status_capture_failed))
+                } else {
+                    pages.add(produced)
+                    setStatus(
+                        getString(
+                            if (cropped) R.string.status_page_cropped
+                            else R.string.status_page_full
+                        )
+                    )
+                    refreshUi()
+                }
+            }
         }
-        refreshUi()
     }
 
     /** Decodes a JPEG capped to [maxEdge] px on its longest side to avoid OOM. */

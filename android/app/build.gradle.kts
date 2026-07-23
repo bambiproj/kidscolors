@@ -11,8 +11,14 @@ android {
         applicationId = "com.bambiproj.docscanner"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+
+        // Ship native OpenCV libs only for real-phone ABIs to keep the APK
+        // smaller (arm64 covers essentially every modern device).
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     buildTypes {
@@ -45,6 +51,10 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.9.3")
 
     // Reads EXIF orientation so captured pages aren't rotated in the PDF.
-    // Everything runs on-device; the app needs no network access.
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+
+    // On-device document edge detection + perspective crop. The native libs
+    // are bundled in the APK (loaded via OpenCVLoader.initLocal), so this
+    // adds no network access — everything runs locally on the phone.
+    implementation("org.opencv:opencv:4.11.0")
 }

@@ -1,10 +1,17 @@
 <resources>
-    <color name="primary">#7A4FBF</color>
+    <!-- Dark "scanner console" palette -->
+    <color name="bg">#0B0F14</color>
+    <color name="surface">#111823</color>
+    <color name="surface_alt">#0E141D</color>
+    <color name="stroke">#243244</color>
+    <color name="accent">#22D3EE</color>
+    <color name="accent_dim">#0E3A44</color>
+    <color name="on_accent">#04222A</color>
+    <color name="green">#34D399</color>
+    <color name="text">#E6EDF3</color>
+    <color name="muted">#7D8CA3</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="background">#FBF7FF</color>
-    <color name="card">#FFFFFF</color>
-    <color name="stroke">#E7DEF5</color>
-    <color name="text">#241E2E</color>
-    <color name="muted">#8A7FA0</color>
-    <color name="ic_launcher_background">#7A4FBF</color>
+
+    <color name="primary">#22D3EE</color>
+    <color name="ic_launcher_background">#111823</color>
 </resources>

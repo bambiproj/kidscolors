@@ -1,27 +1,35 @@
 <resources>
     <string name="app_name">Doc Scanner</string>
+    <string name="app_tag">DOCSCAN · v1.1</string>
+    <string name="prompt_line">scanner.ready()</string>
     <string name="greeting">What are we scanning today, my love?</string>
 
-    <string name="empty_pages">No pages yet — tap “Add a page”.</string>
-    <string name="enhance_label">Enhance (scanned black &amp; white look)</string>
-    <string name="add_page">Add a page</string>
-    <string name="save_pdf">Save as PDF</string>
-    <string name="clear">Clear</string>
-    <string name="open">Open PDF</string>
-    <string name="share">Share PDF</string>
+    <string name="badge_offline">◉ OFFLINE</string>
+    <string name="badge_autocrop">⌖ AUTO-CROP</string>
+    <string name="badge_ondevice">▤ ON-DEVICE PDF</string>
+
+    <string name="empty_pages">// no pages buffered — tap ADD PAGE</string>
+    <string name="enhance_label">Enhance — high-contrast B&amp;W scan</string>
+    <string name="add_page">▶  ADD PAGE</string>
+    <string name="save_pdf">SAVE PDF</string>
+    <string name="clear">CLEAR</string>
+    <string name="open">OPEN</string>
+    <string name="share">SHARE</string>
     <string name="share_pdf">Share PDF</string>
 
     <plurals name="page_count">
-        <item quantity="zero">No pages captured</item>
-        <item quantity="one">%d page ready</item>
-        <item quantity="other">%d pages ready</item>
+        <item quantity="one">[ %d page buffered ]</item>
+        <item quantity="other">[ %d pages buffered ]</item>
     </plurals>
 
-    <string name="status_saved">Saved “%1$s” (%2$d page(s)) to Downloads.</string>
-    <string name="status_save_failed">Could not save the PDF.</string>
-    <string name="status_cleared">Cleared. Ready for a fresh scan.</string>
-    <string name="status_capture_cancelled">Capture cancelled.</string>
-    <string name="status_capture_failed">Could not read that photo — try again.</string>
+    <string name="status_processing">› detecting page edges…</string>
+    <string name="status_page_cropped">✓ page detected &amp; cropped</string>
+    <string name="status_page_full">• no edges found — kept full frame</string>
+    <string name="status_saved">✓ wrote “%1$s” (%2$d page(s)) → Downloads</string>
+    <string name="status_save_failed">✗ could not save the PDF</string>
+    <string name="status_cleared">buffer cleared — ready</string>
+    <string name="status_capture_cancelled">capture cancelled</string>
+    <string name="status_capture_failed">✗ could not read that photo</string>
 
     <string name="no_camera">No camera app found on this device.</string>
     <string name="no_pdf_viewer">No PDF viewer app found.</string>
