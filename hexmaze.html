@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>מבוך משושים</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      gap: 5px;
+      padding: 6px 10px;
+      z-index: 10;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100vw;
+    }
+    nav a {
+      color: #fff; text-decoration: none; font-weight: 700; font-size: 0.78rem;
+      padding: 4px 9px; border-radius: 20px; background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.25); transition: background 0.2s; white-space: nowrap;
+    }
+    nav a:hover { background: rgba(255,255,255,0.3); }
+    nav a.active { background: rgba(255,255,255,0.35); border-color: #fff; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 40%, #4facfe 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 48px;
+      padding-bottom: 20px;
+    }
+
+    h1 {
+      color: #fff;
+      font-size: clamp(1.2rem, 4vw, 1.7rem);
+      margin: 10px 0 6px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      letter-spacing: 1px;
+    }
+
+    .level-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 4px 10px 6px;
+      max-width: 420px;
+    }
+
+    .lvl-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .lvl-btn:hover { background: rgba(255,255,255,0.38); transform: scale(1.12); }
+    .lvl-btn.active { background: #fff; color: #c0392b; transform: scale(1.12); }
+
+    .hint {
+      color: rgba(255,255,255,0.92);
+      font-size: 0.85rem;
+      margin-bottom: 7px;
+      text-align: center;
+    }
+
+    #hexCanvas {
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      touch-action: none;
+      display: block;
+      background: #2d2d44;
+    }
+
+    #stats {
+      color: rgba(255,255,255,0.8);
+      font-size: 0.8rem;
+      margin-top: 7px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .action-btn {
+      padding: 7px 18px;
+      border-radius: 50px;
+      border: 2px solid rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .action-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* Win popup */
+    #winPopup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #winPopup.show { display: flex; }
+    .win-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 24px 28px 20px;
+      text-align: center;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+      animation: popIn 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+      max-width: 300px;
+      width: 90%;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.5); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .win-card .reward-emoji { font-size: 2.2rem; margin-bottom: 4px; }
+    .win-card img {
+      width: 100px; height: 100px; object-fit: contain; cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .win-card img:hover { transform: scale(1.08); }
+    .win-card .poke-name {
+      font-size: 1.4rem; font-weight: 800; color: #e74c3c; margin: 6px 0 2px;
+    }
+    .win-card .sub-label { font-size: 0.78rem; color: #999; margin-bottom: 14px; }
+    .win-card .next-btn {
+      background: linear-gradient(135deg, #f5576c, #4facfe);
+      color: #fff; border: none; padding: 11px 32px;
+      border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    }
+    .win-card .next-btn:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html">🎨 צבעים</a>
+    <a href="math.html">➕ חשבון</a>
+    <a href="words.html">📖 מילים</a>
+    <a href="alef-bet.html">א-ב</a>
+    <a href="pokemon.html">⚡ פוקימון</a>
+    <a href="maze.html">🧩 מבוך</a>
+    <a href="hexmaze.html" class="active">⬡ משושים</a>
+  </nav>
+
+  <h1>⬡ מבוך משושים</h1>
+
+  <div class="level-row" id="levelBtns"></div>
+  <div class="hint">גרור אצבע מ 🚩 עד לפוקימון!</div>
+  <canvas id="hexCanvas"></canvas>
+  <div id="stats">מבוכים שנפתרו: 0</div>
+  <div class="btn-row">
+    <button class="action-btn" onclick="newMaze(currentLevel)">מבוך חדש 🔄</button>
+    <button class="action-btn" onclick="resetTrail()">נסה שוב ↩</button>
+  </div>
+
+  <div id="winPopup">
+    <div class="win-card">
+      <div class="reward-emoji" id="winReward">🎉</div>
+      <img id="winImg" src="" alt="" onclick="speakName(winEnglishName)"/>
+      <div class="poke-name" id="winName"></div>
+      <div class="sub-label">🔊 לחץ על הפוקימון לשמוע שוב</div>
+      <button class="next-btn" onclick="nextMaze()">הבא ←</button>
+    </div>
+  </div>
+
+  <script>
+    const SQRT3 = Math.sqrt(3);
+
+    // Flat-top hex axial directions: (dq,dr), opposite index
+    const DIRS = [
+      { dq:  1, dr:  0, idx: 0, opp: 3 }, // E
+      { dq:  0, dr:  1, idx: 1, opp: 4 }, // SE
+      { dq: -1, dr:  1, idx: 2, opp: 5 }, // SW
+      { dq: -1, dr:  0, idx: 3, opp: 0 }, // W
+      { dq:  0, dr: -1, idx: 4, opp: 1 }, // NW
+      { dq:  1, dr: -1, idx: 5, opp: 2 }, // NE
+    ];
+
+    const LEVELS = [
+      { cols: 3, rows: 2 }, { cols: 3, rows: 3 }, { cols: 4, rows: 3 },
+      { cols: 4, rows: 4 }, { cols: 5, rows: 4 }, { cols: 5, rows: 5 },
+      { cols: 6, rows: 5 }, { cols: 6, rows: 6 }, { cols: 7, rows: 6 },
+      { cols: 7, rows: 7 },
+    ];
+    const LEVEL_NAMES = [
+      '⭐ קל מאוד','⭐ קל','⭐⭐ פשוט','⭐⭐ בינוני','⭐⭐⭐ אתגר',
+      '⭐⭐⭐ קשה','⭐⭐⭐⭐ מאתגר','⭐⭐⭐⭐ קשה','🔥 מומחה','🔥🔥 אגדי',
+    ];
+
+    const canvas = document.getElementById('hexCanvas');
+    const ctx = canvas.getContext('2d');
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d');
+
+    let currentLevel = 0;
+    let cols = 3, rows = 2;
+    let hexSize = 40, offX = 0, offY = 0;
+    let grid = [];
+    let maskData = null;
+    let dragging = false, head = null, won = false;
+    let startCenter = { x: 0, y: 0 }, goalCenter = { x: 0, y: 0 };
+    let goalImg = null, winEnglishName = '', solvedCount = 0;
+
+    // ── Hebrew Pokémon names ────────────────────────────────────
+    const HE_NAMES = {
+      1:'בולבסאור',2:'איוויזאור',3:'ונוזאור',4:'שרמנדר',5:'שרמליאון',6:'שרמיזון',
+      7:'סקווירטל',8:'וורטורטל',9:'בלסטויז',10:'קטרפי',11:'מטאפוד',12:'באטרפרי',
+      13:'ווידל',14:'קוקון',15:'בידריל',16:'פידג׳י',17:'פידג׳ייאוטו',18:'פידג׳ייאוט',
+      19:'ראטאטה',20:'ראטיקייט',21:'ספירו',22:'פירות',23:'אקארס',24:'אריאוקס',
+      25:'פיקאצ׳ו',26:'ריצ׳ו',27:'סנדשרו',28:'סנדסלאש',29:'נידורן ♀',30:'נידורינה',
+      31:'נידוקווין',32:'נידורן ♂',33:'נידורינו',34:'נידוקינג',35:'קלפיירי',36:'קלפאבל',
+      37:'וולפיקס',38:'ניינטייל',39:'ג׳יגלי פאף',40:'ווויגלי טאף',41:'זובאט',42:'גולבאט',
+      43:'אוד',44:'גלום',45:'וילפלאום',46:'פאראס',47:'פאראסקט',48:'ווואדל',49:'ווואסקאוט',
+      50:'דיגלט',51:'דוגטריו',52:'מיאות׳',53:'פרסיאן',54:'סייידאק',55:'גולדאק',
+      56:'מנקי',57:'פריימייפ',58:'גרואוליית׳',59:'ארקנין',60:'פוליווג',61:'פוליוווירל',
+      62:'פוליווארת׳',63:'אברה',64:'קאדאברה',65:'אלאקאזאם',66:'מאצ׳אופ',67:'מאצ׳וק',
+      68:'מאצ׳אמפ',69:'בלבסאור',70:'ויקטריבל',71:'ויקטריבל',72:'טנטקול',73:'טנטקראל',
+      74:'ג׳ייאודוס',75:'גראווללר',76:'גולם',77:'פוניטה',78:'ראפידאש',79:'סלואופוק',
+      80:'סלואוברו',81:'מגנמייט',82:'מגנטון',83:'פארפץ׳ד',84:'דודו',85:'דודריו',
+      86:'סיל',87:'דיוגונג',88:'גריימר',89:'מאק',90:'שלדר',91:'קלוסטר',
+      92:'גאסטלי',93:'האונטר',94:'גנגאר',95:'אונייקס',96:'דראוזי',97:'היפנו',
+      98:'קראב',99:'קינגלר',100:'וולטורב',101:'אלקטרוד',102:'אגזקוט',103:'אגזגוטור',
+      104:'קיופוני',105:'מארואוק',106:'היטמונלי',107:'היטמונצ׳אן',108:'ליקיטונג',
+      109:'קופינג',110:'ווויזינג',111:'ריהורן',112:'ריידון',113:'צ׳אנסי',114:'טנגלה',
+      115:'קנגסקאן',116:'הורסיה',117:'סיידרה',118:'גולדין',119:'סיראקינג',
+      120:'סטארו',121:'סטאריו',122:'מר. מייים',123:'סקייתר',124:'ג׳ינקס',
+      125:'אלקטאבאז',126:'מאגמאר',127:'פינסיר',128:'טאורוס',129:'מאגיקרפ',
+      130:'גיאראדוס',131:'לפראס',132:'דיטו',133:'איווי',134:'ווייפורין',
+      135:'ג׳ולטיאון',136:'פלריאון',137:'פורטה',138:'אומאניט',139:'אומאסטאר',
+      140:'קאבוטו',141:'קאבוטופס',142:'אירודקטיל',143:'סנורלקס',144:'ארטיקונו',
+      145:'זאפדוס',146:'מולטרס',147:'דרטיני',148:'דרגונאיר',149:'דרגוניט',
+      150:'מיוטו',151:'מיו'
+    };
+    function heName(id, eng) { return HE_NAMES[id] || eng; }
+
+    // ── Audio ───────────────────────────────────────────────────
+    let audioCtx = null;
+    function getACtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+    function playSuccess() {
+      const ac = getACtx();
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const osc = ac.createOscillator(), g = ac.createGain();
+        osc.connect(g); g.connect(ac.destination);
+        osc.type = 'sine'; osc.frequency.value = freq;
+        const t = ac.currentTime + i * 0.12;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.2, t + 0.04);
+        g.gain.linearRampToValueAtTime(0, t + 0.25);
+        osc.start(t); osc.stop(t + 0.28);
+      });
+    }
+    function playBlocked() {
+      const ac = getACtx();
+      const osc = ac.createOscillator(), g = ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
+      osc.type = 'square'; osc.frequency.value = 140;
+      g.gain.setValueAtTime(0.07, ac.currentTime);
+      g.gain.linearRampToValueAtTime(0, ac.currentTime + 0.08);
+      osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.09);
+    }
+    function speakName(name) {
+      if (!window.speechSynthesis || !name) return;
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(name);
+      u.lang = 'en-US'; u.rate = 0.85; u.pitch = 1.1;
+      speechSynthesis.speak(u);
+    }
+
+    // ── Canvas sizing ───────────────────────────────────────────
+    function resizeCanvas() {
+      const sz = Math.min(window.innerWidth - 20, window.innerHeight - 200, 400);
+      canvas.width = canvas.height = sz;
+      maskCanvas.width = maskCanvas.height = sz;
+    }
+
+    // ── Layout calculation ──────────────────────────────────────
+    function computeLayout(c, r) {
+      cols = c; rows = r;
+      const CS = canvas.width;
+      const margin = 14;
+      const avail = CS - 2 * margin;
+      const szW = avail / (1.5 * (cols - 1) + 2);
+      const szH = avail / (SQRT3 * ((cols - 1) / 2 + rows));
+      hexSize = Math.min(szW, szH);
+      const gridW = hexSize * (1.5 * (cols - 1) + 2);
+      const gridH = hexSize * SQRT3 * ((cols - 1) / 2 + rows);
+      offX = margin + hexSize + (avail - gridW) / 2;
+      offY = margin + hexSize * SQRT3 / 2 + (avail - gridH) / 2;
+    }
+
+    // Pixel center of cell (q,r)
+    function cellCenter(q, r) {
+      return {
+        x: offX + hexSize * 1.5 * q,
+        y: offY + hexSize * (SQRT3 / 2 * q + SQRT3 * r)
+      };
+    }
+
+    // ── Hex drawing helpers ─────────────────────────────────────
+    function hexPath(tCtx, cx, cy, r) {
+      tCtx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI / 3 * i;
+        const px = cx + r * Math.cos(a);
+        const py = cy + r * Math.sin(a);
+        i === 0 ? tCtx.moveTo(px, py) : tCtx.lineTo(px, py);
+      }
+      tCtx.closePath();
+    }
+
+    function fillHex(tCtx, cx, cy, r, color) {
+      hexPath(tCtx, cx, cy, r);
+      tCtx.fillStyle = color;
+      tCtx.fill();
+    }
+
+    function fillConnector(tCtx, ax, ay, bx, by, halfW, color) {
+      const dx = bx - ax, dy = by - ay;
+      const len = Math.hypot(dx, dy);
+      const px = -dy / len * halfW, py = dx / len * halfW;
+      tCtx.fillStyle = color;
+      tCtx.beginPath();
+      tCtx.moveTo(ax + px, ay + py);
+      tCtx.lineTo(bx + px, by + py);
+      tCtx.lineTo(bx - px, by - py);
+      tCtx.lineTo(ax - px, ay - py);
+      tCtx.closePath();
+      tCtx.fill();
+    }
+
+    // ── Draw maze on a target canvas ────────────────────────────
+    function drawMazeOn(tCtx, pathColor, wallColor) {
+      const W = tCtx.canvas.width;
+      const pathR = hexSize * 0.80;
+      const connH = hexSize * 0.48; // connector half-width
+
+      tCtx.fillStyle = wallColor;
+      tCtx.fillRect(0, 0, W, W);
+
+      for (let r = 0; r < rows; r++) {
+        for (let q = 0; q < cols; q++) {
+          const { x: cx, y: cy } = cellCenter(q, r);
+          // Draw smooth circle at center for rounded corridor junctions
+          tCtx.fillStyle = pathColor;
+          tCtx.beginPath();
+          tCtx.arc(cx, cy, pathR * 0.72, 0, Math.PI * 2);
+          tCtx.fill();
+          // Fill hex interior
+          fillHex(tCtx, cx, cy, pathR, pathColor);
+
+          const cell = grid[r][q];
+          for (let di = 0; di < 6; di++) {
+            if (!cell.walls[di]) {
+              const d = DIRS[di];
+              const nq = q + d.dq, nr = r + d.dr;
+              if (nq >= 0 && nq < cols && nr >= 0 && nr < rows) {
+                const { x: nx, y: ny } = cellCenter(nq, nr);
+                fillConnector(tCtx, cx, cy, nx, ny, connH, pathColor);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // ── Maze generation ─────────────────────────────────────────
+    function shuffled(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function generateHexMaze() {
+      grid = [];
+      for (let r = 0; r < rows; r++) {
+        grid[r] = [];
+        for (let q = 0; q < cols; q++) {
+          grid[r][q] = { walls: Array(6).fill(true), visited: false };
+        }
+      }
+      function carve(q, r) {
+        grid[r][q].visited = true;
+        for (const d of shuffled(DIRS)) {
+          const nq = q + d.dq, nr = r + d.dr;
+          if (nq >= 0 && nq < cols && nr >= 0 && nr < rows && !grid[nr][nq].visited) {
+            grid[r][q].walls[d.idx] = false;
+            grid[nr][nq].walls[d.opp] = false;
+            carve(nq, nr);
+          }
+        }
+      }
+      carve(0, 0);
+    }
+
+    // ── Collision detection ─────────────────────────────────────
+    function isPath(x, y) {
+      x = Math.floor(x); y = Math.floor(y);
+      const W = canvas.width;
+      if (x < 0 || y < 0 || x >= W || y >= W || !maskData) return false;
+      return maskData[(y * W + x) * 4] > 128;
+    }
+
+    function isPathFuzzy(x, y) {
+      if (isPath(x, y)) return true;
+      const r = 5;
+      return isPath(x+r,y) || isPath(x-r,y) || isPath(x,y+r) || isPath(x,y-r);
+    }
+
+    // ── Pokémon helpers ─────────────────────────────────────────
+    function spriteUrl(id) {
+      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+    }
+
+    async function fetchRandomPokemon() {
+      const id = Math.floor(Math.random() * 151) + 1;
+      try {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const data = await res.json();
+        return { id, name: data.name };
+      } catch {
+        return { id, name: 'pikachu' };
+      }
+    }
+
+    const REWARDS = ['🌟','🏆','🎊','🎈','✨','🦋','🌈','🎯','💎','🥇'];
+    function randReward() { return REWARDS[Math.floor(Math.random() * REWARDS.length)]; }
+
+    // ── Event position ──────────────────────────────────────────
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const sx = canvas.width / rect.width;
+      const sy = canvas.height / rect.height;
+      const src = e.touches ? e.touches[0] : e;
+      return { x: (src.clientX - rect.left) * sx, y: (src.clientY - rect.top) * sy };
+    }
+
+    // ── Drawing helpers ─────────────────────────────────────────
+    function drawTrail(a, b) {
+      ctx.strokeStyle = '#4fc3f7';
+      ctx.lineWidth = hexSize * 0.42;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+
+    function drawGoalImage() {
+      if (!goalImg) return;
+      const { x, y } = goalCenter;
+      const sz = hexSize * 1.4;
+      ctx.drawImage(goalImg, x - sz/2, y - sz/2, sz, sz);
+    }
+
+    function drawStart() {
+      const { x, y } = startCenter;
+      ctx.font = `${Math.round(hexSize * 0.9)}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🚩', x, y);
+    }
+
+    // ── Win check ───────────────────────────────────────────────
+    function checkWin(pos) {
+      if (Math.hypot(pos.x - goalCenter.x, pos.y - goalCenter.y) < hexSize * 0.7) {
+        won = true; dragging = false;
+        solvedCount++;
+        document.getElementById('stats').textContent = `מבוכים שנפתרו: ${solvedCount}`;
+        playSuccess();
+        setTimeout(() => {
+          document.getElementById('winPopup').classList.add('show');
+          speakName(winEnglishName);
+        }, 300);
+      }
+    }
+
+    // ── Touch / mouse handlers ──────────────────────────────────
+    function onDown(e) {
+      if (won) return;
+      const pos = getPos(e);
+      if (head) {
+        if (Math.hypot(pos.x - head.x, pos.y - head.y) <= hexSize * 0.95) {
+          dragging = true;
+          e.preventDefault();
+          return;
+        }
+      }
+      if (Math.hypot(pos.x - startCenter.x, pos.y - startCenter.y) <= hexSize * 0.85) {
+        dragging = true;
+        head = { ...startCenter };
+        e.preventDefault();
+      }
+    }
+
+    function onMove(e) {
+      if (!dragging || won) return;
+      const pos = getPos(e);
+      const dist = Math.hypot(pos.x - head.x, pos.y - head.y);
+      const steps = Math.max(1, Math.ceil(dist / 2));
+      let lastValid = head;
+      let blocked = false;
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const sx = head.x + (pos.x - head.x) * t;
+        const sy = head.y + (pos.y - head.y) * t;
+        if (!isPathFuzzy(sx, sy)) { blocked = true; break; }
+        lastValid = { x: sx, y: sy };
+      }
+      if (lastValid !== head) {
+        drawTrail(head, lastValid);
+        head = lastValid;
+        checkWin(head);
+      }
+      if (blocked) playBlocked();
+      e.preventDefault();
+    }
+
+    function onUp() { dragging = false; }
+
+    canvas.addEventListener('mousedown', onDown);
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseup', onUp);
+    canvas.addEventListener('mouseleave', onUp);
+    canvas.addEventListener('touchstart', onDown, { passive: false });
+    canvas.addEventListener('touchmove', onMove, { passive: false });
+    canvas.addEventListener('touchend', onUp);
+    canvas.addEventListener('touchcancel', onUp);
+
+    // ── Reset trail ─────────────────────────────────────────────
+    function resetTrail() {
+      won = false; dragging = false; head = null;
+      document.getElementById('winPopup').classList.remove('show');
+      drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
+      drawGoalImage();
+      drawStart();
+    }
+
+    // ── New maze ────────────────────────────────────────────────
+    async function newMaze(levelIdx) {
+      currentLevel = levelIdx;
+      won = false; dragging = false; head = null;
+      document.getElementById('winPopup').classList.remove('show');
+
+      const lv = LEVELS[levelIdx];
+      computeLayout(lv.cols, lv.rows);
+      generateHexMaze();
+
+      startCenter = cellCenter(0, 0);
+      goalCenter = cellCenter(cols - 1, rows - 1);
+
+      // Build mask
+      drawMazeOn(maskCtx, '#ffffff', '#000000');
+      maskData = maskCtx.getImageData(0, 0, canvas.width, canvas.width).data;
+
+      // Draw visible maze with placeholder at goal
+      drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
+      ctx.font = `${Math.round(hexSize * 1.1)}px serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('❓', goalCenter.x, goalCenter.y);
+      drawStart();
+
+      // Fetch Pokémon
+      const poke = await fetchRandomPokemon();
+      winEnglishName = poke.name;
+      const hebName = heName(poke.id, poke.name);
+      const url = spriteUrl(poke.id);
+
+      document.getElementById('winImg').src = url;
+      document.getElementById('winName').textContent = hebName;
+      document.getElementById('winReward').textContent = randReward();
+
+      goalImg = new Image();
+      goalImg.crossOrigin = 'anonymous';
+      goalImg.onload = () => {
+        drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
+        drawGoalImage();
+        drawStart();
+      };
+      goalImg.src = url;
+    }
+
+    function nextMaze() {
+      document.getElementById('winPopup').classList.remove('show');
+      const next = Math.min(currentLevel + 1, LEVELS.length - 1);
+      document.querySelectorAll('.lvl-btn').forEach((b, i) => b.classList.toggle('active', i === next));
+      newMaze(next);
+    }
+
+    // ── Level buttons ───────────────────────────────────────────
+    function buildLevelButtons() {
+      const container = document.getElementById('levelBtns');
+      LEVELS.forEach((_, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'lvl-btn' + (i === 0 ? ' active' : '');
+        btn.textContent = i + 1;
+        btn.title = LEVEL_NAMES[i];
+        btn.onclick = () => {
+          document.querySelectorAll('.lvl-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          newMaze(i);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    // ── Init ────────────────────────────────────────────────────
+    resizeCanvas();
+    buildLevelButtons();
+    newMaze(0);
+  </script>
+</body>
+</html>
