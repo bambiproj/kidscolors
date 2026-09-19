@@ -397,24 +397,32 @@ class Engine(val level: Level) {
         }
     }
 
+    /**
+     * Roaming monsters patrol back and forth. They never walk into the snake -
+     * they turn around instead - so the only way to lose one is to drive into
+     * it yourself. Being hit from behind by something you cannot see coming is
+     * not a fair way for a small player to lose.
+     */
     private fun stepMovers() {
         for (m in movers) {
             m.px = m.x
             m.py = m.y
             var nx = m.x + m.dx
             var ny = m.y + m.dy
-            if (blockedStatic(nx, ny) || onPortal(nx, ny)) {
+            if (moverBlocked(nx, ny)) {
                 m.dx = -m.dx
                 m.dy = -m.dy
                 nx = m.x + m.dx
                 ny = m.y + m.dy
-                if (blockedStatic(nx, ny)) { nx = m.x; ny = m.y }
+                if (moverBlocked(nx, ny)) { nx = m.x; ny = m.y }
             }
             m.x = nx
             m.y = ny
-            if (m.x == body[0].x && m.y == body[0].y) crash(m.x, m.y)
         }
     }
+
+    private fun moverBlocked(x: Int, y: Int): Boolean =
+        blockedStatic(x, y) || onPortal(x, y) || onSnake(x, y)
 
     private fun crash(x: Int, y: Int) {
         if (shield) {

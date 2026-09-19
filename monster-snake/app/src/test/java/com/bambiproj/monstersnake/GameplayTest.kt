@@ -252,6 +252,25 @@ class GameplayTest {
     }
 
     @Test
+    fun roamingMonstersNeverHitYouFromBehind() {
+        // A mover walking into a stationary snake must turn around, not kill.
+        val level = Levels.get(11)
+        val e = Engine(level)
+        val m = e.movers[0]
+        val head = e.body[0]
+        // park a mover right next to the head, aimed at it
+        m.x = head.x + 1
+        m.y = head.y
+        m.dx = -1
+        m.dy = 0
+        e.turn(1, 0)                    // snake is alive and running
+        val step = level.stepMs / 1000f
+        e.update(step)
+        e.update(step)
+        assertTrue("a mover must not kill the snake by walking into it", e.alive || e.won)
+    }
+
+    @Test
     fun progressUnlocksAndSavesLocally() {
         Prefs.unlocked = 1
         Prefs.unlockLevel(2)
