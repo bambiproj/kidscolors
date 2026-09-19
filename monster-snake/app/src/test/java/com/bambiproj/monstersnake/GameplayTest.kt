@@ -66,6 +66,36 @@ class GameplayTest {
         return n
     }
 
+    /**
+     * Can the snake still reach its own tail after this move? Keeping that
+     * path open is the standard way to avoid sealing yourself in.
+     */
+    private fun tailReachable(e: Engine, d: IntArray): Boolean {
+        val tail = e.body[e.body.size - 1]
+        val blocked = blockedGrid(e)
+        blocked[tail.y][tail.x] = false
+        val start = stepTo(e, e.body[0].x, e.body[0].y, d) ?: return false
+        if (blocked[start[1]][start[0]]) return false
+        if (start[0] == tail.x && start[1] == tail.y) return true
+        val seen = Array(e.rows) { BooleanArray(e.cols) }
+        val q = ArrayDeque<Int>()
+        seen[start[1]][start[0]] = true
+        q.add(start[1] * e.cols + start[0])
+        while (q.isNotEmpty()) {
+            val cur = q.removeFirst()
+            val cx = cur % e.cols
+            val cy = cur / e.cols
+            for (dd in dirs) {
+                val p = stepTo(e, cx, cy, dd) ?: continue
+                if (p[0] == tail.x && p[1] == tail.y) return true
+                if (blocked[p[1]][p[0]] || seen[p[1]][p[0]]) continue
+                seen[p[1]][p[0]] = true
+                q.add(p[1] * e.cols + p[0])
+            }
+        }
+        return false
+    }
+
     /** Breadth-first step towards the nearest collectible worth having. */
     private fun chooseMove(e: Engine): IntArray? {
         val cols = e.cols
@@ -122,6 +152,7 @@ class GameplayTest {
             val room = roomAfter(e, d)
             if (room <= 0) continue
             var score = room
+            if (tailReachable(e, d)) score += 5000
             if (bestDir != null && d[0] == bestDir[0] && d[1] == bestDir[1]) score += 1000
             if (room < need) score -= 3000
             val p = stepTo(e, e.body[0].x, e.body[0].y, d)
