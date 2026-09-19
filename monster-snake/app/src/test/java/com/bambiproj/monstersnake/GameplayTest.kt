@@ -19,7 +19,8 @@ class GameplayTest {
         val rows = e.rows
         val g = Array(rows) { BooleanArray(cols) }
         for (cell in e.walls) g[cell / cols][cell % cols] = true
-        for (i in 0 until e.body.size - 1) g[e.body[i].y][e.body[i].x] = true
+        // Block the tail too: it stays put on the step after eating.
+        for (seg in e.body) g[seg.y][seg.x] = true
         for (m in e.movers) {
             g[m.y][m.x] = true
             val nx = m.x + m.dx
