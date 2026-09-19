@@ -258,16 +258,43 @@ class GameplayTest {
         val e = Engine(level)
         val m = e.movers[0]
         val head = e.body[0]
-        // park a mover right next to the head, aimed at it
-        m.x = head.x + 1
-        m.y = head.y
-        m.dx = -1
-        m.dy = 0
-        e.turn(1, 0)                    // snake is alive and running
+        // park a mover just above the snake, walking down into it
+        m.x = head.x
+        m.y = head.y - 1
+        m.dx = 0
+        m.dy = 1
+        e.turn(1, 0)                    // the snake runs away to the right
         val step = level.stepMs / 1000f
-        e.update(step)
-        e.update(step)
-        assertTrue("a mover must not kill the snake by walking into it", e.alive || e.won)
+        for (i in 0 until 4) e.update(step)
+        assertTrue("a mover must not kill the snake by walking into it", e.alive)
+        assertTrue("the mover should have turned around", m.dy == -1)
+    }
+
+    @Test
+    fun portalsNeverDropYouIntoAWall() {
+        // Walk into every portal from every direction and make sure the jump
+        // either lands somewhere safe or simply does not happen.
+        for (num in 1..Levels.COUNT) {
+            val level = Levels.get(num)
+            if (!level.portals) continue
+            for (pi in Levels.get(num).let { 0 until Engine(it).portals.size }) {
+                for (d in dirs) {
+                    val e = Engine(level)
+                    val p = e.portals[pi]
+                    // stand the snake next to the portal, facing it
+                    e.body.clear()
+                    e.body.add(Seg(p.x - d[0], p.y - d[1]))
+                    e.body.add(Seg(p.x - d[0] * 2, p.y - d[1] * 2))
+                    if (e.body.any { it.x < 0 || it.y < 0 || it.x >= e.cols || it.y >= e.rows }) continue
+                    e.turn(d[0], d[1])
+                    e.update(level.stepMs / 1000f)
+                    assertTrue(
+                        "level $num portal $pi from (${d[0]},${d[1]}) killed the player",
+                        e.alive
+                    )
+                }
+            }
+        }
     }
 
     @Test

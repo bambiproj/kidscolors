@@ -259,17 +259,18 @@ class Engine(val level: Level) {
             return
         }
 
-        // portals
+        // portals - always spit the snake out somewhere it can survive
         for (k in portals.indices) {
             val pp = portals[k]
             if (pp.x == nx && pp.y == ny) {
                 val other = portals[if (k % 2 == 0) k + 1 else k - 1]
-                nx = other.x + dirX
-                ny = other.y + dirY
-                if (level.wrap) {
-                    nx = (nx + cols) % cols
-                    ny = (ny + rows) % rows
-                }
+                val exit = portalExit(other) ?: break
+                nx = exit[0]
+                ny = exit[1]
+                dirX = exit[2]
+                dirY = exit[3]
+                wantX = dirX
+                wantY = dirY
                 headJumped = true
                 events.add(Event(Evt.PORTAL, other.x, other.y, 0))
                 break
@@ -310,6 +311,36 @@ class Engine(val level: Level) {
         if (powerActive(Power.MAGNET)) pullItems(nx, ny)
 
         checkGoal()
+    }
+
+    /**
+     * Where a portal drops you: straight on if it is clear, otherwise sideways
+     * or back the way you came. Returns x, y and the new heading, or null when
+     * the far side is completely boxed in (then the jump simply does not
+     * happen, instead of killing the player).
+     */
+    private fun portalExit(other: Seg): IntArray? {
+        val opts = arrayOf(
+            intArrayOf(dirX, dirY),
+            intArrayOf(dirY, dirX),
+            intArrayOf(-dirY, -dirX),
+            intArrayOf(-dirX, -dirY)
+        )
+        for (o in opts) {
+            var ex = other.x + o[0]
+            var ey = other.y + o[1]
+            if (level.wrap) {
+                ex = (ex + cols) % cols
+                ey = (ey + rows) % rows
+            }
+            if (ex < 0 || ey < 0 || ex >= cols || ey >= rows) continue
+            if (walls.contains(cell(ex, ey))) continue
+            if (onSnake(ex, ey)) continue
+            if (onMover(ex, ey)) continue
+            if (onPortal(ex, ey)) continue
+            return intArrayOf(ex, ey, o[0], o[1])
+        }
+        return null
     }
 
     private fun pickUp(x: Int, y: Int) {
