@@ -140,19 +140,37 @@ class GameplayTest {
         return best
     }
 
+    /**
+     * Runs the level in small time slices, re-steering whenever the snake has
+     * actually moved on - the same freedom a player watching the screen has.
+     */
     private fun playLevel(num: Int, maxSteps: Int): Engine {
         val level = Levels.get(num)
         val e = Engine(level)
-        val step = level.stepMs / 1000f
+        val slice = level.stepMs / 4000f
+        var lastX = -1
+        var lastY = -1
         var steps = 0
-        while (steps < maxSteps && e.alive && !e.won) {
-            val d = chooseMove(e)
-            if (d != null) e.turn(d[0], d[1])
-            else e.turn(e.dirX, e.dirY)
-            e.update(step)
+        e.turn(1, 0)
+        while (steps < maxSteps * 4 && e.alive && !e.won) {
+            val h = e.body[0]
+            if (h.x != lastX || h.y != lastY) {
+                lastX = h.x
+                lastY = h.y
+                val d = chooseMove(e)
+                if (d != null) e.turn(d[0], d[1])
+            }
+            e.update(slice)
             steps++
         }
         return e
+    }
+
+    private fun why(e: Engine): String {
+        val crash = e.events.lastOrNull { it.type == Evt.CRASH }
+        val h = e.body[0]
+        return "head=(${h.x},${h.y}) dir=(${e.dirX},${e.dirY})" +
+            if (crash != null) " crashAt=(${crash.x},${crash.y})" else " noCrashEvent"
     }
 
     @Test
@@ -161,7 +179,7 @@ class GameplayTest {
             val e = playLevel(num, 6000)
             assertTrue(
                 "level $num unfinished alive=${e.alive} progress=${e.progress()}" +
-                    "/${e.level.target} score=${e.score} len=${e.body.size} items=${e.items.size}",
+                    "/${e.level.target} score=${e.score} len=${e.body.size} " + why(e),
                 e.won
             )
         }
