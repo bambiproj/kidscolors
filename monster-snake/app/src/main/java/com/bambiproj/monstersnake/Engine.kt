@@ -94,16 +94,9 @@ class Engine(val level: Level) {
         tailPrevY = sy
 
         if (level.portals) {
-            val a = Seg(2, 2)
-            val b = Seg(cols - 3, rows - 3)
-            if (!blockedStatic(a.x, a.y) && !blockedStatic(b.x, b.y)) {
-                portals.add(a); portals.add(b)
-            }
-            val cc = Seg(cols - 3, 2)
-            val dd = Seg(2, rows - 3)
-            if (!blockedStatic(cc.x, cc.y) && !blockedStatic(dd.x, dd.y)) {
-                portals.add(cc); portals.add(dd)
-            }
+            // Portals win over blocks: carve the square out so a pair always exists.
+            addPortalPair(Seg(2, 2), Seg(cols - 3, rows - 3))
+            addPortalPair(Seg(cols - 3, 2), Seg(2, rows - 3))
         }
 
         for (i in 0 until level.movers) {
@@ -115,6 +108,15 @@ class Engine(val level: Level) {
         spawnFood()
         if (level.goal == Goal.STARS) spawnStar()
         if (level.goal == Goal.COINS) { spawnCoin(); spawnCoin() }
+    }
+
+    private fun addPortalPair(a: Seg, b: Seg) {
+        val startRow = rows / 2
+        if (a.y == startRow || b.y == startRow) return
+        walls.remove(a.y * cols + a.x)
+        walls.remove(b.y * cols + b.x)
+        portals.add(a)
+        portals.add(b)
     }
 
     // ------------------------------------------------------------- helpers

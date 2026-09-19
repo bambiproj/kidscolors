@@ -111,19 +111,33 @@ class GameplayTest {
             }
         }
 
+        // Weigh "go get it" against "don't wall yourself in", the way a
+        // careful player does.
         val need = e.body.size + 2
-        if (bestDir != null && roomAfter(e, bestDir) >= need) return bestDir
-
-        // otherwise head for the roomiest square
-        var room = -1
-        var safest: IntArray? = null
+        var best: IntArray? = null
+        var bestScore = Int.MIN_VALUE
         for (d in dirs) {
             if (d[0] == -e.dirX && d[1] == -e.dirY) continue
-            val r = roomAfter(e, d)
-            if (r > room) { room = r; safest = d }
+            val room = roomAfter(e, d)
+            if (room <= 0) continue
+            var score = room
+            if (bestDir != null && d[0] == bestDir[0] && d[1] == bestDir[1]) score += 1000
+            if (room < need) score -= 3000
+            val p = stepTo(e, e.body[0].x, e.body[0].y, d)
+            if (p != null) score -= nearestTarget(e, p[0], p[1])
+            if (score > bestScore) { bestScore = score; best = d }
         }
-        if (safest != null && room > 0) return safest
-        return bestDir
+        return best ?: bestDir
+    }
+
+    private fun nearestTarget(e: Engine, x: Int, y: Int): Int {
+        var best = e.cols + e.rows
+        for (it in e.items) {
+            if (it.kind == Kind.POWER) continue
+            val d = Math.abs(it.x - x) + Math.abs(it.y - y)
+            if (d < best) best = d
+        }
+        return best
     }
 
     private fun playLevel(num: Int, maxSteps: Int): Engine {

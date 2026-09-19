@@ -132,9 +132,11 @@ object Levels {
                 for (d in -2..2) { add(cx + d, cy - 3); add(cx, cy - 3 + d) }
                 for (d in -2..2) { add(cx + d, cy + 3); add(cx, cy + 3 + d) }
             }
-            3 -> { // two vertical gates with a gap
+            3 -> { // two vertical gates, open in the middle and at both ends
                 for (r in 0 until rows) {
-                    if (r < rows / 2 - 2 || r > rows / 2 + 2) { add(3, r); add(cols - 4, r) }
+                    val middleGap = r >= rows / 2 - 2 && r <= rows / 2 + 2
+                    val endGap = r <= 2 || r >= rows - 3
+                    if (!middleGap && !endGap) { add(3, r); add(cols - 4, r) }
                 }
             }
             4 -> { // pillar grid near the edges
@@ -171,7 +173,7 @@ object Levels {
                     r += 3
                 }
             }
-            7 -> { // diamond
+            7 -> { // diamond with a doorway on each side
                 val rad = 4
                 for (d in 0..rad) {
                     add(cx - rad + d, cy - d); add(cx + rad - d, cy - d)
@@ -179,6 +181,8 @@ object Levels {
                 }
                 s.remove(cy * cols + (cx - rad))
                 s.remove(cy * cols + (cx + rad))
+                s.remove((cy - rad) * cols + cx)
+                s.remove((cy + rad) * cols + cx)
             }
             8 -> { // dotted grid
                 var r = 2
