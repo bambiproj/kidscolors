@@ -146,8 +146,8 @@ class GameplayTest {
         for (num in 1..Levels.COUNT) {
             val e = playLevel(num, 6000)
             assertTrue(
-                "level $num did not finish (alive=${e.alive} won=${e.won} " +
-                    "progress=${e.progress()}/${e.level.target} score=${e.score})",
+                "level $num unfinished alive=${e.alive} progress=${e.progress()}" +
+                    "/${e.level.target} score=${e.score} len=${e.body.size} items=${e.items.size}",
                 e.won
             )
         }
@@ -213,11 +213,28 @@ class GameplayTest {
         // grant a shield the same way a power-up would
         e.items.add(Item(e.body[0].x, e.body[0].y - 1, Kind.POWER, Power.SHIELD))
         e.turn(0, -1)                   // then head straight for the top wall
+        var rescued = false
+        for (i in 0 until 40) {
+            e.update(step)
+            if (e.events.any { it.type == Evt.SAVED }) { rescued = true; break }
+            if (!e.alive) break
+        }
+        assertTrue("the shield should have caught the wall", rescued)
+        assertTrue("a shielded snake should survive its first crash", e.alive)
+        assertTrue("the shield should be used up", !e.shield)
+    }
+
+    @Test
+    fun withoutAShieldAWallEndsTheRun() {
+        val level = Levels.get(4)
+        val e = Engine(level)
+        val step = level.stepMs / 1000f
+        e.turn(0, -1)
         for (i in 0 until 40) {
             e.update(step)
             if (!e.alive) break
         }
-        assertTrue("a shielded snake should survive a wall", e.alive)
+        assertTrue("hitting a wall unprotected should end the run", !e.alive)
     }
 
     @Test

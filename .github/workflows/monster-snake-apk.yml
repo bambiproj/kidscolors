@@ -44,8 +44,7 @@ jobs:
         run: |
           for f in app/build/test-results/testReleaseUnitTest/*.xml; do
             echo "===== $f"
-            head -c 20000 "$f"
-            echo
+            grep -o 'message="[^"]*"' "$f" || true
           done
 
       - name: Build release APK
