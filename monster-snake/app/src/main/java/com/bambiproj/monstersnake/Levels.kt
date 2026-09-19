@@ -71,25 +71,25 @@ object Levels {
         Level(2, "Star Picnic",     10, 13, 285, true, 0, 0, false, Goal.STARS, 3, NONE, Theme.MEADOW, 110, 150),
         Level(3, "Rocky Corners",   11, 14, 270, true, 1, 0, false, Goal.EAT, 8, NONE, Theme.MEADOW, 120, 170),
         Level(4, "Coin Meadow",     11, 14, 255, false, 0, 0, false, Goal.COINS, 8, P_SH, Theme.MEADOW, 130, 180),
-        Level(5, "The Big Cross",   11, 14, 245, false, 2, 0, false, Goal.SCORE, 150, P_SH_BO, Theme.MEADOW, 220, 300),
+        Level(5, "The Big Cross",   11, 14, 245, false, 2, 0, false, Goal.SCORE, 120, P_SH_BO, Theme.MEADOW, 180, 240),
 
         Level(6, "Candy Gates",     11, 15, 240, false, 3, 0, false, Goal.EAT, 10, P_SH_BO, Theme.CANDY, 180, 240),
-        Level(7, "Lollipop Pillars", 11, 15, 232, false, 4, 0, false, Goal.SCORE, 200, P_SH_SP, Theme.CANDY, 280, 360),
+        Level(7, "Lollipop Pillars", 11, 15, 232, false, 4, 0, false, Goal.SCORE, 170, P_SH_SP, Theme.CANDY, 240, 310),
         Level(8, "Zigzag Sweets",   12, 16, 226, false, 6, 0, false, Goal.STARS, 4, P_SH_MA, Theme.CANDY, 220, 300),
         Level(9, "Sugar Rings",     12, 16, 220, false, 5, 0, false, Goal.EAT, 12, P_SH_BO_MA, Theme.CANDY, 240, 320),
-        Level(10, "Candy Diamond",  12, 16, 214, false, 7, 0, false, Goal.SCORE, 260, P_MOST, Theme.CANDY, 340, 440),
+        Level(10, "Candy Diamond",  12, 16, 214, false, 7, 0, false, Goal.SCORE, 220, P_MOST, Theme.CANDY, 300, 390),
 
         Level(11, "Coral Cross",    12, 16, 212, false, 2, 1, false, Goal.EAT, 12, P_SH_BO, Theme.OCEAN, 250, 330),
         Level(12, "Kelp Gates",     12, 16, 208, false, 3, 1, false, Goal.STARS, 5, P_SH_MA, Theme.OCEAN, 270, 360),
         Level(13, "Bubble Field",   12, 16, 204, false, 8, 2, false, Goal.COINS, 14, P_MOST, Theme.OCEAN, 290, 380),
-        Level(14, "Deep Zigzag",    12, 16, 200, false, 6, 2, false, Goal.SCORE, 330, P_MOST, Theme.OCEAN, 420, 540),
+        Level(14, "Deep Zigzag",    12, 16, 200, false, 6, 2, false, Goal.SCORE, 250, P_MOST, Theme.OCEAN, 330, 420),
         Level(15, "Tunnel Reef",    12, 16, 196, false, 9, 2, false, Goal.EAT, 15, P_ALL, Theme.OCEAN, 320, 420),
 
         Level(16, "Portal Park",    12, 17, 194, false, 1, 0, true, Goal.STARS, 5, P_SH_BO, Theme.SPACE, 300, 400),
-        Level(17, "Ring Station",   12, 17, 190, false, 5, 1, true, Goal.SCORE, 380, P_MOST, Theme.SPACE, 470, 600),
-        Level(18, "Comet Diamond",  12, 17, 186, false, 7, 2, true, Goal.EAT, 18, P_MOST, Theme.SPACE, 380, 480),
+        Level(17, "Ring Station",   12, 17, 190, false, 5, 1, true, Goal.SCORE, 290, P_MOST, Theme.SPACE, 380, 480),
+        Level(18, "Comet Diamond",  12, 17, 186, false, 7, 2, true, Goal.EAT, 16, P_MOST, Theme.SPACE, 340, 440),
         Level(19, "Meteor Grid",    12, 17, 182, false, 8, 2, true, Goal.STARS, 6, P_ALL, Theme.SPACE, 400, 520),
-        Level(20, "Galaxy Finale",  12, 17, 178, false, 9, 3, true, Goal.SCORE, 450, P_ALL, Theme.SPACE, 560, 720)
+        Level(20, "Galaxy Finale",  12, 17, 178, false, 9, 3, true, Goal.SCORE, 340, P_ALL, Theme.SPACE, 440, 560)
     )
 
     fun get(num: Int): Level {

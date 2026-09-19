@@ -322,7 +322,7 @@ class Engine(val level: Level) {
             when (it.kind) {
                 Kind.FOOD -> {
                     eaten++
-                    grow += 2
+                    grow += 1
                     score += 10 * mult
                     coinsEarned += 1
                     foodSinceChest++
