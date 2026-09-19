@@ -4,37 +4,60 @@ on:
   push:
     branches:
       - claude/monster-snake-android-83pj0i
+    paths:
+      - "monster-snake/**"
+      - ".github/workflows/monster-snake-apk.yml"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: |
+          set -e
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKMANAGER="$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | tail -1)"
+          echo "sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build release APK
         working-directory: monster-snake
         run: ./gradlew --no-daemon --stacktrace assembleRelease
 
-      - name: Rename APK
-        working-directory: monster-snake
+      - name: Stage APK
         run: |
-          mkdir -p out
-          cp app/build/outputs/apk/release/app-release.apk out/MonsterSnake.apk
-          ls -la out
+          mkdir -p dist
+          cp monster-snake/app/build/outputs/apk/release/app-release.apk dist/MonsterSnake.apk
+          ls -la dist
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: MonsterSnake-APK
-          path: monster-snake/out/MonsterSnake.apk
+          path: dist/MonsterSnake.apk
           if-no-files-found: error
+
+      - name: Publish APK to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: monster-snake-latest
+          name: Monster Snake (latest build)
+          body: |
+            Monster Snake - a friendly Snake game for kids 6+.
+            Download `MonsterSnake.apk` below and install it on your Android phone.
+            Works fully offline. No ads, no tracking, no accounts.
+          files: dist/MonsterSnake.apk
