@@ -43,16 +43,9 @@ jobs:
         working-directory: monster-snake
         run: |
           for f in app/build/test-results/testReleaseUnitTest/*.xml; do
-            echo "=== $f"
-            python3 - "$f" <<'PY'
-          import sys, xml.etree.ElementTree as ET
-          root = ET.parse(sys.argv[1]).getroot()
-          for tc in root.iter('testcase'):
-              for bad in list(tc.iter('failure')) + list(tc.iter('error')):
-                  print('FAILED:', tc.get('name'))
-                  print((bad.get('message') or '')[:600])
-                  print('-' * 60)
-          PY
+            echo "===== $f"
+            head -c 20000 "$f"
+            echo
           done
 
       - name: Build release APK
