@@ -24,7 +24,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 52px 16px 24px;
+      padding: 48px 8px 16px;
       overflow-x: hidden;
       touch-action: manipulation;
       user-select: none;
@@ -61,7 +61,7 @@
 
     header {
       width: 100%;
-      max-width: 520px;
+      max-width: var(--board-w, 520px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -85,7 +85,7 @@
 
     .stats {
       width: 100%;
-      max-width: 520px;
+      max-width: var(--board-w, 520px);
       display: flex;
       gap: 8px;
       margin-bottom: 8px;
@@ -106,7 +106,7 @@
 
     .hud2 {
       width: 100%;
-      max-width: 520px;
+      max-width: var(--board-w, 520px);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -134,11 +134,11 @@
 
     .board-wrap {
       position: relative;
-      width: 100%;
-      max-width: 520px;
-      aspect-ratio: 1 / 1;
-      border-radius: 24px;
-      padding: 8px;
+      width: var(--board-w, 100%);
+      height: var(--board-h, auto);
+      aspect-ratio: var(--board-ratio, 1 / 1);
+      border-radius: 22px;
+      padding: 6px;
       background: var(--card);
       box-shadow: 0 10px 0 rgba(0,0,0,0.12), 0 20px 50px rgba(0,0,0,0.2);
     }
@@ -152,7 +152,7 @@
 
     .overlay {
       position: absolute;
-      inset: 8px;
+      inset: 6px;
       border-radius: 18px;
       background: rgba(255,255,255,0.9);
       display: flex;
@@ -238,11 +238,16 @@
     .toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
 
     .controls {
-      margin-top: 14px;
+      margin-top: 12px;
       display: grid;
-      grid-template-columns: repeat(3, 66px);
-      grid-template-rows: repeat(2, 66px);
-      gap: 8px;
+      grid-template-columns: repeat(3, 62px);
+      grid-template-rows: repeat(2, 58px);
+      gap: 7px;
+    }
+    @media (max-width: 560px) {
+      .hint { display: none; }
+      h1 { font-size: 1.3rem; }
+      header, .stats, .hud2 { margin-bottom: 6px; }
     }
     .controls button {
       border: none;
@@ -342,15 +347,15 @@
     <button class="down" data-dir="down" aria-label="Down">⬇️</button>
     <button class="right" data-dir="right" aria-label="Right">➡️</button>
   </div>
-  <p class="hint">Swipe, tap next to Ziggy, or use the arrow keys!</p>
+  <p class="hint" id="hintText">Swipe, tap next to Ziggy, or use the arrow keys!</p>
 
   <canvas id="confetti"></canvas>
 
   <script>
     // ---------- Settings ----------
-    const GRID = 20;
-    const VIEW = 600;                 // logical board size in px
-    const CELL = VIEW / GRID;
+    const CELL = 30;                  // logical px per cell
+    let COLS = 20, ROWS = 20;         // board size in cells, chosen to fill the screen
+    let VIEW_W = COLS * CELL, VIEW_H = ROWS * CELL;
     const TAU = Math.PI * 2;
     const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
 
@@ -396,8 +401,6 @@
     const $ = id => document.getElementById(id);
     const canvas = $('board');
     const ctx = canvas.getContext('2d');
-    canvas.width = VIEW * DPR;
-    canvas.height = VIEW * DPR;
     const startScreen = $('startScreen'), pauseScreen = $('pauseScreen'), overScreen = $('overScreen');
 
     // ---------- Storage (safe) ----------
@@ -453,12 +456,12 @@
     const rand = (a, b) => a + Math.random() * (b - a);
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
     const same = (a, b) => a.x === b.x && a.y === b.y;
-    const outside = c => c.x < 0 || c.y < 0 || c.x >= GRID || c.y >= GRID;
-    const wrap = c => ({ x: (c.x + GRID) % GRID, y: (c.y + GRID) % GRID });
+    const outside = c => c.x < 0 || c.y < 0 || c.x >= COLS || c.y >= ROWS;
+    const wrap = c => ({ x: (c.x + COLS) % COLS, y: (c.y + ROWS) % ROWS });
     const mode = () => MODES[modeKey];
     function dist(a, b) {
       let dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
-      if (!mode().walls) { dx = Math.min(dx, GRID - dx); dy = Math.min(dy, GRID - dy); }
+      if (!mode().walls) { dx = Math.min(dx, COLS - dx); dy = Math.min(dy, ROWS - dy); }
       return dx + dy;
     }
     function easeOutBack(t) { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
@@ -479,7 +482,7 @@
     function reset() {
       gameTime = 0;
       score = 0; level = 1; lives = mode().lives;
-      player = makeSnake(5, 10, DIRS.right, 4, true);
+      player = makeSnake(5, Math.floor(ROWS / 2), DIRS.right, 4, true);
       enemies = []; items = []; particles = []; floaters = [];
       power = { shield: 0, magnet: 0, turbo: 0, freeze: 0 };
       hurtUntil = 0; combo = 0; lastEatAt = -1e9; mood = 'happy';
@@ -491,8 +494,9 @@
       fillFruits();
     }
 
-    const desiredEnemies = () => Math.min(4, mode().enemies + Math.floor((level - 1) / 3));
-    const desiredFruits = () => Math.min(6, 3 + Math.floor(level / 2));
+    const extraRoom = () => Math.max(0, Math.floor((COLS * ROWS - 400) / 100)); // bigger boards get more
+    const desiredEnemies = () => Math.min(5, mode().enemies + Math.floor((level - 1) / 3) + (COLS * ROWS >= 600 ? 1 : 0));
+    const desiredFruits = () => Math.min(10, 3 + Math.floor(level / 2) + extraRoom());
     const allSnakes = () => [player, ...enemies];
 
     function snakeAt(c, mover) {
@@ -510,7 +514,7 @@
 
     function freeCell(minFromHead = 3) {
       for (let tries = 0; tries < 200; tries++) {
-        const c = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+        const c = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
         if (snakeAt(c) || itemAt(c)) continue;
         if (player && dist(c, player.body[0]) < minFromHead) continue;
         return c;
@@ -547,7 +551,7 @@
       const skin = ENEMY_SKINS.find(s => !used.includes(s)) || pick(ENEMY_SKINS);
       for (let tries = 0; tries < 80; tries++) {
         const dir = pick(DIR_LIST);
-        const x = Math.floor(rand(3, GRID - 3)), y = Math.floor(rand(3, GRID - 3));
+        const x = Math.floor(rand(3, COLS - 3)), y = Math.floor(rand(3, ROWS - 3));
         const cells = [0, 1, 2].map(i => ({ x: x - dir.x * i, y: y - dir.y * i }));
         if (cells.some(c => snakeAt(c) || itemAt(c))) continue;
         if (dist(cells[0], player.body[0]) < 7) continue;
@@ -917,21 +921,21 @@
     // the grass is drawn once and reused every frame
     const bg = document.createElement('canvas');
     function buildBackground() {
-      bg.width = bg.height = VIEW * DPR;
+      bg.width = VIEW_W * DPR; bg.height = VIEW_H * DPR;
       const g = bg.getContext('2d');
       g.scale(DPR, DPR);
-      const grad = g.createLinearGradient(0, 0, VIEW, VIEW);
+      const grad = g.createLinearGradient(0, 0, VIEW_W, VIEW_H);
       grad.addColorStop(0, '#b6f0ae'); grad.addColorStop(1, '#9fe6a8');
-      g.fillStyle = grad; g.fillRect(0, 0, VIEW, VIEW);
+      g.fillStyle = grad; g.fillRect(0, 0, VIEW_W, VIEW_H);
       g.fillStyle = 'rgba(255,255,255,0.22)';
-      for (let x = 0; x < GRID; x++)
-        for (let y = 0; y < GRID; y++) {
+      for (let x = 0; x < COLS; x++)
+        for (let y = 0; y < ROWS; y++) {
           if ((x + y) % 2) continue;
           roundRect(g, x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2, 7); g.fill();
         }
       const flowers = ['#ffffff', '#fff27a', '#ffb3d9', '#c9b6ff'];
-      for (let i = 0; i < 26; i++) {
-        const fx = rand(8, VIEW - 8), fy = rand(8, VIEW - 8);
+      for (let i = 0; i < COLS * ROWS / 15; i++) {
+        const fx = rand(8, VIEW_W - 8), fy = rand(8, VIEW_H - 8);
         g.globalAlpha = 0.55;
         g.fillStyle = pick(flowers);
         for (let p = 0; p < 5; p++) {
@@ -943,15 +947,16 @@
       }
       g.globalAlpha = 0.35;
       g.strokeStyle = '#5cb85c'; g.lineWidth = 1.6; g.lineCap = 'round';
-      for (let i = 0; i < 40; i++) {
-        const gx = rand(0, VIEW), gy = rand(0, VIEW);
+      for (let i = 0; i < COLS * ROWS / 10; i++) {
+        const gx = rand(0, VIEW_W), gy = rand(0, VIEW_H);
         g.beginPath(); g.moveTo(gx, gy); g.quadraticCurveTo(gx - 2, gy - 5, gx - 3, gy - 8);
         g.moveTo(gx + 3, gy); g.quadraticCurveTo(gx + 4, gy - 5, gx + 6, gy - 7); g.stroke();
       }
       g.globalAlpha = 1;
-      const vig = g.createRadialGradient(VIEW / 2, VIEW / 2, VIEW * 0.35, VIEW / 2, VIEW / 2, VIEW * 0.75);
+      const big = Math.max(VIEW_W, VIEW_H);
+      const vig = g.createRadialGradient(VIEW_W / 2, VIEW_H / 2, big * 0.35, VIEW_W / 2, VIEW_H / 2, big * 0.75);
       vig.addColorStop(0, 'rgba(0,60,0,0)'); vig.addColorStop(1, 'rgba(0,60,0,0.18)');
-      g.fillStyle = vig; g.fillRect(0, 0, VIEW, VIEW);
+      g.fillStyle = vig; g.fillRect(0, 0, VIEW_W, VIEW_H);
     }
 
     function drawStar(x, y, r) {
@@ -1004,8 +1009,8 @@
       for (let i = 0; i < s.body.length; i++) {
         const c = s.body[i], p = s.prev[i] || c;
         let px = p.x, py = p.y;
-        if (c.x - px > 1) px += GRID; else if (c.x - px < -1) px -= GRID;
-        if (c.y - py > 1) py += GRID; else if (c.y - py < -1) py -= GRID;
+        if (c.x - px > 1) px += COLS; else if (c.x - px < -1) px -= COLS;
+        if (c.y - py > 1) py += ROWS; else if (c.y - py < -1) py -= ROWS;
         pts[i] = { x: (px + (c.x - px) * t + .5) * CELL, y: (py + (c.y - py) * t + .5) * CELL };
       }
       return pts;
@@ -1143,10 +1148,10 @@
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ctx.save();
       if (shake > 0.5) { ctx.translate(rand(-shake, shake), rand(-shake, shake)); shake *= 0.85; } else shake = 0;
-      ctx.drawImage(bg, 0, 0, VIEW, VIEW);
+      ctx.drawImage(bg, 0, 0, VIEW_W, VIEW_H);
       if (mode().walls) {
         ctx.strokeStyle = '#ff9a3c'; ctx.lineWidth = 8;
-        roundRect(ctx, 4, 4, VIEW - 8, VIEW - 8, 14); ctx.stroke();
+        roundRect(ctx, 4, 4, VIEW_W - 8, VIEW_H - 8, 14); ctx.stroke();
       }
       drawItems(now);
       const active = running && !paused;
@@ -1234,7 +1239,7 @@
     canvas.addEventListener('pointerup', e => {
       if (pStart && !swiped && running) {
         const rect = canvas.getBoundingClientRect();
-        const bx = (e.clientX - rect.left) / rect.width * VIEW, by = (e.clientY - rect.top) / rect.height * VIEW;
+        const bx = (e.clientX - rect.left) / rect.width * VIEW_W, by = (e.clientY - rect.top) / rect.height * VIEW_H;
         const h = player.body[0], hx = (h.x + .5) * CELL, hy = (h.y + .5) * CELL;
         if (player.dir.x !== 0) setDir(by < hy ? 'up' : 'down');
         else setDir(bx < hx ? 'left' : 'right');
@@ -1273,7 +1278,41 @@
       requestAnimationFrame(frame);
     }
 
-    buildBackground();
+    // ---------- Fit the board to the screen ----------
+    const boardWrap = document.querySelector('.board-wrap');
+    const root = document.documentElement.style;
+    function layout() {
+      const pad = 12; // board-wrap padding on both sides
+      root.setProperty('--board-w', '100%'); root.setProperty('--board-h', 'auto');
+      const top = boardWrap.getBoundingClientRect().top + scrollY;
+      const below = document.querySelector('.controls').offsetHeight + 12 +
+                    (getComputedStyle($('hintText')).display === 'none' ? 0 : $('hintText').offsetHeight + 10) + 18;
+      const availW = Math.min(innerWidth - 16, 1100);
+      const availH = Math.max(280, innerHeight - top - below);
+
+      if (!running) {
+        // the short side gets 20 cells, the long side as many as fit (up to 32)
+        const ratio = Math.max(0.62, Math.min(1.6, availW / availH));
+        if (ratio >= 1) { ROWS = 20; COLS = Math.min(32, Math.round(20 * ratio)); }
+        else { COLS = 20; ROWS = Math.min(32, Math.round(20 / ratio)); }
+        VIEW_W = COLS * CELL; VIEW_H = ROWS * CELL;
+        canvas.width = VIEW_W * DPR; canvas.height = VIEW_H * DPR;
+        buildBackground();
+      }
+      // largest size with the board's shape that fits the space
+      const scale = Math.min((availW - pad) / VIEW_W, (availH - pad) / VIEW_H);
+      const bw = Math.floor(VIEW_W * scale + pad), bh = Math.floor(VIEW_H * scale + pad);
+      root.setProperty('--board-w', bw + 'px');
+      root.setProperty('--board-h', bh + 'px');
+      root.setProperty('--board-ratio', `${bw} / ${bh}`);
+    }
+    let resizeTimer;
+    addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { const wasIdle = !running; layout(); if (wasIdle) reset(); }, 150);
+    });
+
+    layout();
     reset();
     requestAnimationFrame(frame);
   </script>
