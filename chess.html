@@ -14,28 +14,43 @@
       --btn: #7c5cff;
       --light: #f4fbe9;
       --dark: #86c98a;
-      --board: clamp(280px, min(calc(100vw - 12px), calc(100vh - 230px)), 760px);
+      --vh: 100vh;
+      --board: clamp(260px, min(calc(100vw - 8px), calc(var(--vh) - 262px)), 900px);
     }
-    @supports (height: 100svh) {
-      :root { --board: clamp(280px, min(calc(100vw - 12px), calc(100svh - 230px)), 760px); }
+    @supports (height: 100dvh) { :root { --vh: 100dvh; } }
+    /* wide screens: board on the left, panel on the right */
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
+      :root { --board: clamp(260px, min(calc(var(--vh) - 80px), calc(100vw - 370px)), 1000px); }
     }
     body.theme-candy { --light: #fff0f6; --dark: #f2a0c4; }
     body.theme-ocean { --light: #eef7ff; --dark: #7fb6e8; }
 
-    html, body { height: 100%; }
+    /* the page never scrolls or bounces, so the board stays put while playing */
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
     body {
+      position: fixed;
+      inset: 0;
       font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', Tahoma, Arial, sans-serif;
       background: linear-gradient(135deg, #8fd3f4 0%, #b19cff 100%);
       color: var(--ink);
-      min-height: 100vh;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+    }
+    .app {
+      position: absolute;
+      top: 44px; left: 0; right: 0; bottom: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 46px 6px 10px;
-      overflow-x: hidden;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
+      gap: 10px;
+      padding: 4px 4px 8px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
+      .app { flex-direction: row; justify-content: center; align-items: flex-start; gap: 18px; padding-top: 10px; }
     }
 
     nav {
@@ -66,10 +81,14 @@
     nav a:hover { background: rgba(255,255,255,0.3); }
     nav a.active { background: rgba(255,255,255,0.4); }
 
-    .column { width: var(--board); display: flex; flex-direction: column; gap: 6px; }
+    .panel { width: var(--board); display: flex; flex-direction: column; gap: 8px; }
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; } }
 
-    /* coach speech bubble */
-    .coach { display: flex; align-items: center; gap: 8px; min-height: 50px; }
+    /* the two players */
+    .players { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* coach speech bubble: fixed height so nothing jumps when the text changes */
+    .coach { display: flex; align-items: center; gap: 8px; height: 76px; }
     .coach .face { font-size: 2.1rem; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.15)); }
     .coach .face.talk { animation: hop .4s ease; }
     @keyframes hop { 50% { transform: translateY(-6px) rotate(-6deg); } }
@@ -78,11 +97,16 @@
       position: relative;
       background: #fff;
       border-radius: 16px;
-      padding: 7px 12px;
-      font-size: clamp(0.85rem, 3.6vw, 1.05rem);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      font-size: clamp(0.82rem, 3.5vw, 1rem);
       line-height: 1.25;
+      overflow: hidden;
       box-shadow: 0 4px 0 rgba(0,0,0,0.1);
     }
+    .bubble span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .bubble::before {
       content: '';
       position: absolute;
@@ -99,19 +123,24 @@
 
     .tray {
       display: flex;
-      align-items: center;
-      gap: 6px;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
       background: rgba(255,255,255,0.55);
       border-radius: 14px;
-      padding: 3px 10px;
-      min-height: 32px;
+      padding: 5px 10px;
+      height: 54px;
       font-weight: bold;
       font-size: 0.95rem;
+      overflow: hidden;
+      transition: box-shadow .2s, background .2s;
     }
-    .tray .who { white-space: nowrap; }
-    .tray .caps { display: flex; flex-wrap: wrap; flex: 1; align-items: center; }
-    .tray .caps .pc { width: 22px; height: 22px; margin-right: -6px; background-size: contain; }
-    .tray .lead { color: #2e9d4f; white-space: nowrap; }
+    .tray .top { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+    .tray .who { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tray .caps { display: flex; flex-wrap: nowrap; align-items: center; height: 20px; overflow: hidden; }
+    .tray .caps .pc { width: 20px; height: 20px; margin-right: -9px; background-size: contain; flex: none; }
+    .tray .caps:empty::before { content: 'No captures yet'; font-size: 0.7rem; font-weight: normal; color: var(--soft); }
+    .tray .lead { color: #2e9d4f; white-space: nowrap; font-size: 0.85rem; }
     .tray.turn { background: #fff; box-shadow: 0 0 0 3px #ffd23f; }
     .thinking::after { content: ''; animation: dots 1s steps(4) infinite; }
     @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
@@ -217,6 +246,7 @@
       color: var(--ink);
       font: inherit;
       font-size: 0.78rem;
+      height: 54px;
       padding: 4px 2px;
       box-shadow: 0 4px 0 rgba(0,0,0,0.13);
       cursor: pointer;
@@ -289,7 +319,7 @@
     }
     .promo button .pc { position: static; display: block; width: 100%; height: 100%; transition: none; }
 
-    .credit { margin-top: 8px; font-size: 0.65rem; color: rgba(255,255,255,0.85); text-align: center; }
+    .credit { font-size: 0.62rem; color: rgba(255,255,255,0.85); text-align: center; }
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
   </style>
 </head>
@@ -306,18 +336,7 @@
     <a href="chess.html" class="active">♟️ שחמט</a>
   </nav>
 
-  <div class="column">
-    <div class="coach">
-      <div class="face" id="coachFace">🐧</div>
-      <div class="bubble" id="bubble">Hi! I'm Coach Pengu. Let's play chess!</div>
-    </div>
-
-    <div class="tray" id="trayTop">
-      <span class="who" id="topName">🦊 Fox</span>
-      <span class="caps" id="topCaps"></span>
-      <span class="lead" id="topLead"></span>
-    </div>
-
+  <div class="app">
     <div class="board-wrap" id="boardWrap">
       <div class="board" id="board"></div>
       <div class="pieces" id="pieces"></div>
@@ -357,22 +376,35 @@
       </div>
     </div>
 
-    <div class="tray" id="trayBottom">
-      <span class="who" id="bottomName">🙂 You</span>
-      <span class="caps" id="bottomCaps"></span>
-      <span class="lead" id="bottomLead"></span>
-    </div>
+    <div class="panel">
+      <div class="players">
+        <div class="tray" id="trayTop">
+          <div class="top"><span class="who" id="topName">🦊 Fox</span><span class="lead" id="topLead"></span></div>
+          <div class="caps" id="topCaps"></div>
+        </div>
+        <div class="tray" id="trayBottom">
+          <div class="top"><span class="who" id="bottomName">🙂 You</span><span class="lead" id="bottomLead"></span></div>
+          <div class="caps" id="bottomCaps"></div>
+        </div>
+      </div>
 
-    <div class="buttons">
-      <button id="undoBtn"><b>↩️</b>Undo</button>
-      <button id="hintBtn"><b>💡</b>Hint</button>
-      <button id="newBtn"><b>🔄</b>New</button>
-      <button id="themeBtn"><b>🎨</b>Colors</button>
-      <button id="soundBtn"><b>🔊</b>Sound</button>
+      <div class="coach">
+        <div class="face" id="coachFace">🐧</div>
+        <div class="bubble" id="bubble"><span>Hi! I'm Coach Pengu. Let's play chess!</span></div>
+      </div>
+
+      <div class="buttons">
+        <button id="undoBtn"><b>↩️</b>Undo</button>
+        <button id="hintBtn"><b>💡</b>Hint</button>
+        <button id="newBtn"><b>🔄</b>New</button>
+        <button id="themeBtn"><b>🎨</b>Colors</button>
+        <button id="soundBtn"><b>🔊</b>Sound</button>
+      </div>
+
+      <p class="credit">Chess rules: chess.js (BSD) · Pieces: Colin M.L. Burnett (BSD/GPL/GFDL)</p>
     </div>
   </div>
 
-  <p class="credit">Chess rules: chess.js (BSD) · Pieces: Colin M.L. Burnett (BSD/GPL/GFDL)</p>
   <canvas id="confetti"></canvas>
 
   <script type="module">
@@ -579,7 +611,7 @@
     let msgTimer;
     function coach(text, mood = '') {
       const b = $('bubble'), f = $('coachFace');
-      b.innerHTML = text;
+      b.innerHTML = `<span>${text}</span>`;
       b.className = 'bubble ' + mood;
       f.textContent = mood === 'oops' ? '🙈' : mood === 'yay' ? '🥳' : '🐧';
       f.classList.remove('talk'); void f.offsetWidth; f.classList.add('talk');
@@ -655,7 +687,7 @@
       sfx.pick();
       const p = game.get(sq);
       const n = game.moves({ square: sq, verbose: true }).length;
-      if (n === 0) coach(`${TIPS[p.type]} <br>This one can't move right now. Try another piece!`);
+      if (n === 0) coach(`This ${NAMES[p.type]} ${EMO[p.type]} can't move right now. Try another piece! 🙂`);
       else coach(TIPS[p.type]);
       renderMarks();
     }
