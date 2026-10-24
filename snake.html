@@ -24,7 +24,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 48px 8px 16px;
+      padding: 46px 4px 10px;
       overflow-x: hidden;
       touch-action: manipulation;
       user-select: none;
@@ -238,34 +238,36 @@
     .toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
 
     .controls {
-      margin-top: 12px;
+      margin-top: 8px;
       display: grid;
-      grid-template-columns: repeat(3, 62px);
-      grid-template-rows: repeat(2, 58px);
-      gap: 7px;
+      grid-template-columns: repeat(6, minmax(0, 54px));
+      grid-template-rows: 46px;
+      gap: 6px;
+      width: 100%;
+      justify-content: center;
     }
     @media (max-width: 560px) {
       .hint { display: none; }
-      h1 { font-size: 1.3rem; }
-      header, .stats, .hud2 { margin-bottom: 6px; }
+      header { display: none; }
+      .stats, .hud2 { margin-bottom: 5px; }
+      .pill { padding: 2px 6px; font-size: 0.95rem; border-radius: 12px; }
+      .pill small { display: inline; margin-inline-end: 4px; }
+      .hud2 { min-height: 26px; }
+      .hearts { font-size: 0.9rem; padding: 2px 8px; }
     }
     .controls button {
       border: none;
-      border-radius: 20px;
-      font-size: 1.9rem;
+      border-radius: 14px;
+      font-size: 1.45rem;
       background: var(--card);
-      box-shadow: 0 5px 0 rgba(0,0,0,0.15);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.15);
       cursor: pointer;
       color: var(--ink);
       touch-action: none;
     }
     .controls button:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.15); }
-    .controls .up { grid-column: 2; grid-row: 1; }
-    .controls .left { grid-column: 1; grid-row: 2; }
-    .controls .down { grid-column: 2; grid-row: 2; }
-    .controls .right { grid-column: 3; grid-row: 2; }
-    .controls .pause { grid-column: 3; grid-row: 1; font-size: 1.4rem; background: #fff3c4; }
-    .controls .sound { grid-column: 1; grid-row: 1; font-size: 1.4rem; background: #d9f3ff; }
+    .controls .pause { font-size: 1.2rem; background: #fff3c4; }
+    .controls .sound { font-size: 1.2rem; background: #d9f3ff; }
 
     .hint { margin-top: 10px; color: #fff; font-size: 0.9rem; text-shadow: 0 1px 2px rgba(0,0,0,0.2); text-align: center; }
 
@@ -341,11 +343,11 @@
 
   <div class="controls">
     <button class="sound" id="soundBtn" aria-label="Sound on or off">🔊</button>
-    <button class="up" data-dir="up" aria-label="Up">⬆️</button>
-    <button class="pause" id="pauseBtn" aria-label="Pause">⏸️</button>
     <button class="left" data-dir="left" aria-label="Left">⬅️</button>
+    <button class="up" data-dir="up" aria-label="Up">⬆️</button>
     <button class="down" data-dir="down" aria-label="Down">⬇️</button>
     <button class="right" data-dir="right" aria-label="Right">➡️</button>
+    <button class="pause" id="pauseBtn" aria-label="Pause">⏸️</button>
   </div>
   <p class="hint" id="hintText">Swipe, tap next to Ziggy, or use the arrow keys!</p>
 
@@ -494,8 +496,8 @@
       fillFruits();
     }
 
-    const extraRoom = () => Math.max(0, Math.floor((COLS * ROWS - 400) / 100)); // bigger boards get more
-    const desiredEnemies = () => Math.min(5, mode().enemies + Math.floor((level - 1) / 3) + (COLS * ROWS >= 600 ? 1 : 0));
+    const extraRoom = () => Math.max(0, Math.floor((COLS * ROWS - 256) / 80)); // bigger boards get more
+    const desiredEnemies = () => Math.min(5, mode().enemies + Math.floor((level - 1) / 3) + (COLS * ROWS >= 400 ? 1 : 0));
     const desiredFruits = () => Math.min(10, 3 + Math.floor(level / 2) + extraRoom());
     const allSnakes = () => [player, ...enemies];
 
@@ -998,7 +1000,7 @@
             drawStar(cx + Math.cos(a) * CELL * 0.62, cy + bob + Math.sin(a) * CELL * 0.62, 3.2);
           }
         }
-        const size = CELL * 1.15 * s;
+        const size = CELL * 1.25 * s;
         ctx.drawImage(emojiImg(it.emoji), cx - size / 2, cy - size / 2 + bob, size, size);
         ctx.restore();
       }
@@ -1021,9 +1023,9 @@
       const n = pts.length;
       s.gulp *= 0.88;
       const radius = i => {
-        if (i === 0) return CELL * 0.5 * (1 + s.gulp * 0.22);
+        if (i === 0) return CELL * 0.53 * (1 + s.gulp * 0.22);
         const k = n - 1 - i;
-        return CELL * 0.41 * (k < 3 ? 0.62 + k * 0.12 : 1);
+        return CELL * 0.44 * (k < 3 ? 0.62 + k * 0.12 : 1);
       };
       const color = i => s.isPlayer ? RAINBOW[i % RAINBOW.length] : (Math.floor(i / 2) % 2 ? s.skin.b : s.skin.a);
       const close = (a, b) => Math.abs(a.x - b.x) < CELL * 1.5 && Math.abs(a.y - b.y) < CELL * 1.5;
@@ -1285,16 +1287,16 @@
       const pad = 12; // board-wrap padding on both sides
       root.setProperty('--board-w', '100%'); root.setProperty('--board-h', 'auto');
       const top = boardWrap.getBoundingClientRect().top + scrollY;
-      const below = document.querySelector('.controls').offsetHeight + 12 +
-                    (getComputedStyle($('hintText')).display === 'none' ? 0 : $('hintText').offsetHeight + 10) + 18;
-      const availW = Math.min(innerWidth - 16, 1100);
+      const below = document.querySelector('.controls').offsetHeight + 8 +
+                    (getComputedStyle($('hintText')).display === 'none' ? 0 : $('hintText').offsetHeight + 10) + 22;
+      const availW = Math.min(innerWidth - 8, 1100);
       const availH = Math.max(280, innerHeight - top - below);
 
       if (!running) {
-        // the short side gets 20 cells, the long side as many as fit (up to 32)
-        const ratio = Math.max(0.62, Math.min(1.6, availW / availH));
-        if (ratio >= 1) { ROWS = 20; COLS = Math.min(32, Math.round(20 * ratio)); }
-        else { COLS = 20; ROWS = Math.min(32, Math.round(20 / ratio)); }
+        // the short side gets 16 big cells, the long side as many as fit (up to 26)
+        const ratio = Math.max(0.55, Math.min(1.7, availW / availH));
+        if (ratio >= 1) { ROWS = 16; COLS = Math.min(26, Math.round(16 * ratio)); }
+        else { COLS = 16; ROWS = Math.min(26, Math.round(16 / ratio)); }
         VIEW_W = COLS * CELL; VIEW_H = ROWS * CELL;
         canvas.width = VIEW_W * DPR; canvas.height = VIEW_H * DPR;
         buildBackground();
