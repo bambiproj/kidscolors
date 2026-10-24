@@ -81,8 +81,8 @@
     nav a:hover { background: rgba(255,255,255,0.3); }
     nav a.active { background: rgba(255,255,255,0.4); }
 
-    .panel { width: var(--board); display: flex; flex-direction: column; gap: 6px; }
-    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; } }
+    .panel { width: var(--board); display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-bottom: 6px; } /* sits at the bottom of the screen */
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; margin-top: 0; } }
 
     /* the two players */
     .players { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
