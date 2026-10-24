@@ -315,6 +315,7 @@
     <a href="hexmaze.html">⬡ משושים</a>
     <a href="snake.html">🐍 נחש</a>
     <a href="chess.html" class="active">♟️ שחמט</a>
+    <a href="checkers.html">🔴 דמקה</a>
   </nav>
 
   <div class="app">
@@ -588,7 +589,7 @@
     function renderAll(anims) { renderPieces(anims); renderMarks(); renderTrays(); }
 
     // ---------- Coach bubble ----------
-    let msgTimer;
+    let msgTimer, msgBusyUntil = 0;
     function coach(text, mood = '') {
       const b = $('bubble'), f = $('coachFace');
       b.innerHTML = `<span>${text}</span>`;
@@ -596,6 +597,7 @@
       f.textContent = mood === 'oops' ? '🙈' : mood === 'yay' ? '🥳' : '🐧';
       f.classList.remove('talk'); void f.offsetWidth; f.classList.add('talk');
       clearTimeout(msgTimer);
+      msgBusyUntil = mood ? Date.now() + 1800 : 0;
       if (mood) msgTimer = setTimeout(() => { if (!over) coach(turnText()); }, 3200);
     }
     function turnText() {
@@ -874,7 +876,7 @@
     function botTurn() {
       thinking = true;
       renderTrays();
-      coach(turnText());
+      if (Date.now() > msgBusyUntil) coach(turnText()); // keep a fresh cheer or warning on screen
       const started = performance.now();
       const myGame = game;
       setTimeout(() => {

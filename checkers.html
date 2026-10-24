@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kids Checkers</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #3b2a50;
+      --soft: #8a7a9e;
+      --btn: #ff6f61;
+      --btn-dark: #d94c3f;
+      --light: #fff1d0;
+      --dark: #2fa58f;
+      --vh: 100vh;
+      --board: clamp(260px, min(calc(100vw - 8px), calc(var(--vh) - 196px)), 900px);
+    }
+    @supports (height: 100dvh) { :root { --vh: 100dvh; } }
+    /* wide screens: board on the left, panel on the right */
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
+      :root { --board: clamp(260px, min(calc(var(--vh) - 80px), calc(100vw - 370px)), 1000px); }
+    }
+    body.theme-berry { --light: #ffe8f1; --dark: #a35fd6; }
+    body.theme-sky   { --light: #e9f7ff; --dark: #3c8fd2; }
+
+    /* the page never scrolls or bounces, so the board stays put while playing */
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      position: fixed;
+      inset: 0;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #ffd3a5 0%, #fd6585 100%);
+      color: var(--ink);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+    }
+    .app {
+      position: absolute;
+      top: 44px; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 4px 8px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
+      .app { flex-direction: row; justify-content: center; align-items: flex-start; gap: 18px; padding-top: 10px; }
+    }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.25);
+      display: flex;
+      gap: 5px;
+      padding: 6px 10px;
+      z-index: 50;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100vw;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.25);
+      white-space: nowrap;
+    }
+    nav a:hover { background: rgba(255,255,255,0.3); }
+    nav a.active { background: rgba(255,255,255,0.4); }
+
+    .panel { width: var(--board); display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-bottom: 6px; } /* sits at the bottom of the screen */
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; margin-top: 0; } }
+
+    /* the two players */
+    .players { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .tray {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 10px;
+      padding: 0 8px;
+      height: 30px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      overflow: hidden;
+      transition: box-shadow .2s, background .2s;
+    }
+    .tray .who { white-space: nowrap; flex: none; }
+    .tray .caps { display: flex; align-items: center; flex: 1; min-width: 0; height: 16px; overflow: hidden; }
+    .tray .caps svg { width: 16px; height: 16px; margin-right: -8px; flex: none; }
+    .tray .lead { color: #2e9d4f; white-space: nowrap; font-size: 0.75rem; }
+    .tray.turn { background: #fff; box-shadow: 0 0 0 2px #ffd23f; }
+    .thinking::after { content: ''; animation: dots 1s steps(4) infinite; }
+    @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+    /* coach message: small plain text, fixed height so nothing jumps */
+    .coach { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 4px; }
+    .coach .face { font-size: 1.4rem; }
+    .coach .face.talk { animation: hop .4s ease; }
+    @keyframes hop { 50% { transform: translateY(-6px) rotate(-6deg); } }
+    .bubble {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-size: clamp(0.72rem, 3vw, 0.88rem);
+      line-height: 1.2;
+      overflow: hidden;
+    }
+    .bubble span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .bubble.oops { color: #a63d00; }
+    .bubble.yay { color: #1c6b33; }
+
+    /* board */
+    .board-wrap {
+      position: relative;
+      flex: none;
+      width: var(--board);
+      height: var(--board);
+      border-radius: 16px;
+      box-shadow: 0 0 0 6px #fff, 0 10px 0 6px rgba(0,0,0,0.12), 0 20px 40px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+    .board {
+      position: absolute; inset: 0;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      touch-action: none;
+    }
+    .sq { position: relative; background: var(--light); }
+    .sq.dk { background: var(--dark); box-shadow: inset 0 0 calc(var(--board) / 40) rgba(0,0,0,0.18); }
+    .sq.last::before { content: ''; position: absolute; inset: 0; background: rgba(255, 214, 0, 0.38); }
+    .sq.sel::before { content: ''; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.35); }
+    .sq.hover::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 4px rgba(255,255,255,0.9); }
+    .sq.must::before {
+      content: ''; position: absolute; inset: 6%;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px #ffe14d, 0 0 18px 6px rgba(255, 225, 77, 0.9);
+      animation: pulse 0.7s ease-in-out infinite alternate;
+    }
+    .sq.bad::after {
+      content: '✋'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: calc(var(--board) / 14);
+      background: rgba(255, 80, 80, 0.45);
+      animation: fadeout 0.9s forwards;
+    }
+    @keyframes fadeout { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes pulse { from { opacity: 0.55; } to { opacity: 1; } }
+    .dot {
+      position: absolute; left: 50%; top: 50%;
+      width: 34%; height: 34%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 0 0 4px rgba(255, 225, 77, 0.9);
+      animation: breathe 1s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .dot.jump { background: rgba(255, 111, 97, 0.9); box-shadow: 0 0 0 4px #fff; }
+    @keyframes breathe { from { transform: translate(-50%, -50%) scale(0.8); } to { transform: translate(-50%, -50%) scale(1.08); } }
+
+    .pieces { position: absolute; inset: 0; pointer-events: none; }
+    .pc {
+      position: absolute;
+      left: 0; top: 0;
+      width: 12.5%; height: 12.5%;
+      transition: transform 0.28s cubic-bezier(.2,.9,.3,1.25);
+      will-change: transform;
+    }
+    .pc svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .pc.drag { transition: none; z-index: 10; }
+    .pc.drag svg, .pc.picked svg { transform: scale(1.18); }
+    .pc.picked svg { animation: wiggle 0.5s ease-in-out infinite alternate; }
+    @keyframes wiggle { from { transform: scale(1.15) rotate(-6deg); } to { transform: scale(1.15) rotate(6deg); } }
+    .pc.ready svg { animation: bob 1.4s ease-in-out infinite; }
+    @keyframes bob { 50% { transform: translateY(-5%); } }
+    .pc.shake { animation: shake 0.4s; }
+    @keyframes shake {
+      0%, 100% { margin-left: 0; } 20% { margin-left: -5%; } 40% { margin-left: 5%; }
+      60% { margin-left: -4%; } 80% { margin-left: 3%; }
+    }
+    .pc.poof { transition: transform .35s, opacity .35s; opacity: 0; }
+    .pc.crowned svg { animation: crowned 0.7s ease; }
+    @keyframes crowned { 40% { transform: scale(1.45) rotate(-10deg); } }
+
+    /* buttons */
+    .buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .buttons button {
+      border: none;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.78rem;
+      height: 50px;
+      padding: 4px 2px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.13);
+      cursor: pointer;
+      line-height: 1.1;
+    }
+    .buttons button b { display: block; font-size: 1.35rem; }
+    .buttons button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.13); }
+    .buttons button:disabled { opacity: 0.45; }
+
+    /* overlays */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: safe center;
+      gap: 10px;
+      padding: 12px;
+      text-align: center;
+      z-index: 20;
+      overflow-y: auto;
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { font-size: clamp(1.2rem, 5vw, 1.9rem); }
+    .overlay p { color: var(--soft); font-size: clamp(0.8rem, 3.4vw, 1rem); max-width: 420px; }
+    .big { display: flex; gap: 6px; justify-content: center; }
+    .big svg { width: clamp(52px, 15vw, 90px); height: clamp(52px, 15vw, 90px); animation: hop 1.2s infinite; }
+    .big svg + svg { animation-delay: .3s; }
+    .choices { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; max-width: 420px; }
+    .choice {
+      border: 3px solid transparent;
+      background: #fff1ea;
+      border-radius: 16px;
+      padding: 8px 4px;
+      font: inherit;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: clamp(0.8rem, 3.3vw, 1rem);
+    }
+    .choice b { display: block; font-size: clamp(1.6rem, 7vw, 2.4rem); }
+    .choice small { display: block; color: var(--soft); font-size: 0.75em; }
+    .choice.active { border-color: var(--btn); background: #ffe1d9; }
+    .play-btn {
+      border: none;
+      background: var(--btn);
+      color: #fff;
+      font: inherit;
+      font-size: 1.25rem;
+      font-weight: bold;
+      padding: 10px 34px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 5px 0 var(--btn-dark);
+    }
+    .play-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--btn-dark); }
+    .wins { font-size: 0.85rem; color: var(--soft); }
+    @media (max-width: 560px) {
+      #startScreen .big { display: none; }
+      .choices { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+      .choice { padding: 6px 2px; }
+      .play-btn { font-size: 1.1rem; padding: 8px 28px; }
+    }
+
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+  </style>
+</head>
+<body>
+  <!-- the checker pieces: round buddies with faces; kings wear a crown -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <radialGradient id="gRed" cx="38%" cy="32%" r="75%">
+        <stop offset="0" stop-color="#ff9aa8" /><stop offset="0.55" stop-color="#ff4d64" /><stop offset="1" stop-color="#c41f3b" />
+      </radialGradient>
+      <radialGradient id="gYel" cx="38%" cy="32%" r="75%">
+        <stop offset="0" stop-color="#fff6b0" /><stop offset="0.55" stop-color="#ffd23f" /><stop offset="1" stop-color="#e09a00" />
+      </radialGradient>
+      <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff3a0" /><stop offset="1" stop-color="#f0b400" />
+      </linearGradient>
+      <symbol id="crown" viewBox="0 0 100 100">
+        <path d="M27 26 L32 4 L42 17 L50 0 L58 17 L68 4 L73 26 Z" fill="url(#gGold)" stroke="#b07800" stroke-width="2.5" stroke-linejoin="round" />
+        <circle cx="50" cy="20" r="4" fill="#ff4d8d" /><circle cx="37" cy="22" r="3" fill="#4dc3ff" /><circle cx="63" cy="22" r="3" fill="#4dc3ff" />
+      </symbol>
+      <symbol id="pr" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="90" rx="36" ry="8" fill="rgba(0,0,0,0.28)" />
+        <circle cx="50" cy="54" r="40" fill="#a3162f" />
+        <circle cx="50" cy="50" r="40" fill="url(#gRed)" stroke="#a3162f" stroke-width="2.5" />
+        <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="3" stroke-dasharray="7 5" />
+        <ellipse cx="36" cy="26" rx="13" ry="6" fill="rgba(255,255,255,0.6)" transform="rotate(-25 36 26)" />
+        <circle cx="38" cy="47" r="8.5" fill="#fff" /><circle cx="62" cy="47" r="8.5" fill="#fff" />
+        <circle cx="39.5" cy="48.5" r="4.6" fill="#2a1e3a" /><circle cx="63.5" cy="48.5" r="4.6" fill="#2a1e3a" />
+        <circle cx="41" cy="46.5" r="1.6" fill="#fff" /><circle cx="65" cy="46.5" r="1.6" fill="#fff" />
+        <circle cx="28" cy="60" r="5" fill="#ffb3c1" opacity="0.85" /><circle cx="72" cy="60" r="5" fill="#ffb3c1" opacity="0.85" />
+        <path d="M40 62 Q50 72 60 62" stroke="#5a1020" stroke-width="3.5" fill="none" stroke-linecap="round" />
+      </symbol>
+      <symbol id="py" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="90" rx="36" ry="8" fill="rgba(0,0,0,0.28)" />
+        <circle cx="50" cy="54" r="40" fill="#b37400" />
+        <circle cx="50" cy="50" r="40" fill="url(#gYel)" stroke="#b37400" stroke-width="2.5" />
+        <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-dasharray="7 5" />
+        <ellipse cx="36" cy="26" rx="13" ry="6" fill="rgba(255,255,255,0.7)" transform="rotate(-25 36 26)" />
+        <circle cx="38" cy="46" r="8.5" fill="#fff" /><circle cx="62" cy="46" r="8.5" fill="#fff" />
+        <circle cx="37" cy="44.5" r="4.6" fill="#2a1e3a" /><circle cx="61" cy="44.5" r="4.6" fill="#2a1e3a" />
+        <circle cx="38.5" cy="42.5" r="1.6" fill="#fff" /><circle cx="62.5" cy="42.5" r="1.6" fill="#fff" />
+        <path d="M30 35 L44 38 M70 35 L56 38" stroke="#6b4100" stroke-width="3" stroke-linecap="round" />
+        <path d="M38 60 Q50 74 62 60 Z" fill="#7a2e00" stroke="#7a2e00" stroke-width="2" stroke-linejoin="round" />
+        <ellipse cx="54" cy="66" rx="5" ry="4" fill="#ff6f8f" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <nav dir="rtl">
+    <a href="index.html">🎨 צבעים</a>
+    <a href="math.html">➕ חשבון</a>
+    <a href="words.html">📖 מילים</a>
+    <a href="alef-bet.html">א-ב</a>
+    <a href="pokemon.html">⚡ פוקימון</a>
+    <a href="maze.html">🧩 מבוך</a>
+    <a href="hexmaze.html">⬡ משושים</a>
+    <a href="snake.html">🐍 נחש</a>
+    <a href="chess.html">♟️ שחמט</a>
+    <a href="checkers.html" class="active">🔴 דמקה</a>
+  </nav>
+
+  <div class="app">
+    <div class="board-wrap" id="boardWrap">
+      <div class="board" id="board"></div>
+      <div class="pieces" id="pieces"></div>
+
+      <div class="overlay" id="startScreen">
+        <div class="big"><svg viewBox="0 0 100 100"><use href="#pr" /></svg><svg viewBox="0 0 100 100"><use href="#py" /></svg></div>
+        <h2>🔴 Let's play checkers!</h2>
+        <p>You are the <b>red</b> team. Slide forward on the dark squares, and jump over the yellow pieces to capture them!</p>
+        <div class="choices">
+          <button class="choice" data-level="turtle"><b>🐢</b>Turtle<small>Just learning</small></button>
+          <button class="choice" data-level="kitty"><b>🐱</b>Kitty<small>A bit clever</small></button>
+          <button class="choice" data-level="lion"><b>🦁</b>Lion<small>Very smart!</small></button>
+          <button class="choice" data-level="friend"><b>👫</b>Friend<small>2 players</small></button>
+        </div>
+        <button class="play-btn" id="playBtn">▶ Play!</button>
+        <div class="wins" id="winsText"></div>
+      </div>
+
+      <div class="overlay hidden" id="overScreen">
+        <div class="big" id="overPieces"></div>
+        <h2 id="overTitle">You win!</h2>
+        <p id="overText"></p>
+        <button class="play-btn" id="againBtn">🔁 Play again</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="players">
+        <div class="tray" id="trayTop"><span class="who" id="topName">🐢 Turtle</span><span class="caps" id="topCaps"></span><span class="lead" id="topLead"></span></div>
+        <div class="tray" id="trayBottom"><span class="who" id="bottomName">🙂 You</span><span class="caps" id="bottomCaps"></span><span class="lead" id="bottomLead"></span></div>
+      </div>
+
+      <div class="coach">
+        <div class="face" id="coachFace">🐸</div>
+        <div class="bubble" id="bubble"><span>Hi! I'm Coach Froggy. Let's play checkers!</span></div>
+      </div>
+
+      <div class="buttons">
+        <button id="undoBtn"><b>↩️</b>Undo</button>
+        <button id="hintBtn"><b>💡</b>Hint</button>
+        <button id="newBtn"><b>🔄</b>New</button>
+        <button id="themeBtn"><b>🎨</b>Colors</button>
+        <button id="soundBtn"><b>🔊</b>Sound</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <script>
+    // ---------- Rules ----------
+    // Board: 64 cells, index = row * 8 + col, row 0 at the top.
+    // 1 = red piece (you, moves up), 2 = red king, -1 = yellow piece (moves down), -2 = yellow king.
+    const RED = 1, YEL = -1;
+    const DIAG = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+    const rowOf = i => i >> 3, colOf = i => i & 7;
+    const isDark = i => (rowOf(i) + colOf(i)) % 2 === 1;
+    const sideOf = v => Math.sign(v);
+
+    function startBoard() {
+      const b = new Array(64).fill(0);
+      for (let i = 0; i < 64; i++) {
+        if (!isDark(i)) continue;
+        if (rowOf(i) <= 2) b[i] = YEL;
+        if (rowOf(i) >= 5) b[i] = RED;
+      }
+      return b;
+    }
+
+    function dirsFor(v) {
+      if (Math.abs(v) === 2) return DIAG;
+      return v > 0 ? DIAG.slice(0, 2) : DIAG.slice(2);
+    }
+    const lastRow = side => side === RED ? 0 : 7;
+
+    // every legal move for `side`; jumps are compulsory, multi-jumps are one move
+    function genMoves(b, side) {
+      const jumps = [];
+      for (let i = 0; i < 64; i++) if (sideOf(b[i]) === side) findJumps(b, i, b[i], [i], [], jumps);
+      if (jumps.length) return jumps;
+      const steps = [];
+      for (let i = 0; i < 64; i++) {
+        if (sideOf(b[i]) !== side) continue;
+        for (const [dr, dc] of dirsFor(b[i])) {
+          const r = rowOf(i) + dr, c = colOf(i) + dc;
+          if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+          const t = r * 8 + c;
+          if (b[t] === 0) steps.push({ path: [i, t], caps: [], promote: Math.abs(b[i]) === 1 && r === lastRow(side) });
+        }
+      }
+      return steps;
+    }
+    function findJumps(b, from, v, path, caps, out) {
+      let found = false;
+      for (const [dr, dc] of dirsFor(v)) {
+        const r = rowOf(from) + dr * 2, c = colOf(from) + dc * 2;
+        if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+        const mid = from + dr * 8 + dc, land = r * 8 + c;
+        if (sideOf(b[mid]) !== -sideOf(v) || b[land] !== 0) continue;
+        found = true;
+        const nb = b.slice();
+        nb[from] = 0; nb[mid] = 0; nb[land] = v;
+        const promote = Math.abs(v) === 1 && r === lastRow(sideOf(v));
+        if (promote) out.push({ path: [...path, land], caps: [...caps, mid], promote: true }); // crowning ends the turn
+        else findJumps(nb, land, v, [...path, land], [...caps, mid], out);
+      }
+      if (!found && caps.length) out.push({ path, caps, promote: false });
+    }
+
+    function applyMove(b, m) {
+      const nb = b.slice();
+      const v = nb[m.path[0]];
+      nb[m.path[0]] = 0;
+      for (const c of m.caps) nb[c] = 0;
+      nb[m.path[m.path.length - 1]] = m.promote ? v * 2 : v;
+      return nb;
+    }
+
+    // ---------- Computer player (alpha-beta search) ----------
+    function evaluate(b, side) {
+      let s = 0;
+      for (let i = 0; i < 64; i++) {
+        const v = b[i];
+        if (!v) continue;
+        const r = rowOf(i), c = colOf(i);
+        let val;
+        if (Math.abs(v) === 2) val = 175 + (c >= 2 && c <= 5 && r >= 2 && r <= 5 ? 6 : 0);
+        else {
+          const adv = v > 0 ? 7 - r : r;          // how far it has marched
+          val = 100 + adv * 4 + (adv === 0 ? 8 : 0) + (c >= 2 && c <= 5 ? 3 : 0);
+        }
+        s += sideOf(v) * val;
+      }
+      return s * side;
+    }
+    const WIN = 100000;
+    let deadline = 0, nodes = 0;
+    const TIMEOUT = {};
+    function negamax(b, side, depth, alpha, beta, ply) {
+      if ((++nodes & 1023) === 0 && performance.now() > deadline) throw TIMEOUT;
+      const ms = genMoves(b, side);
+      if (!ms.length) return -WIN + ply;
+      if (depth <= 0 && !ms[0].caps.length) return evaluate(b, side);
+      for (const m of ms) {
+        const s = -negamax(applyMove(b, m), -side, depth - 1, -beta, -alpha, ply + 1);
+        if (s >= beta) return beta;
+        if (s > alpha) alpha = s;
+      }
+      return alpha;
+    }
+    const BOTS = {
+      turtle: { depth: 2, noise: 90, random: 0.35, time: 300 },
+      kitty:  { depth: 4, noise: 20, random: 0,    time: 700 },
+      lion:   { depth: 10, noise: 0, random: 0,    time: 1300 }
+    };
+    function think(b, side, cfg) {
+      const root = genMoves(b, side);
+      if (!root.length) return null;
+      if (root.length === 1) return root[0];
+      if (Math.random() < cfg.random) return root[Math.floor(Math.random() * root.length)];
+      deadline = performance.now() + cfg.time; nodes = 0;
+      let scores = root.map(() => 0);
+      for (let d = 1; d <= cfg.depth; d++) {
+        try {
+          scores = root.map(m => -negamax(applyMove(b, m), -side, d - 1, -WIN - 1, WIN + 1, 1));
+        } catch (e) { if (e !== TIMEOUT) throw e; break; }
+      }
+      let best = 0, bestScore = -Infinity;
+      scores.forEach((s, i) => {
+        const v = s + (Math.random() - 0.5) * cfg.noise * (Math.abs(s) > WIN / 2 ? 0 : 1);
+        if (v > bestScore) { bestScore = v; best = i; }
+      });
+      return root[best];
+    }
+
+    // ---------- Settings & storage ----------
+    function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
+    function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
+    const LEVELS = {
+      turtle: { emoji: '🐢', name: 'Turtle' },
+      kitty:  { emoji: '🐱', name: 'Kitty' },
+      lion:   { emoji: '🦁', name: 'Lion' },
+      friend: { emoji: '👫', name: 'Friend' }
+    };
+    let level = load('checkers-level', 'turtle');
+    if (!LEVELS[level]) level = 'turtle';
+    let soundOn = load('checkers-sound', true);
+    let theme = load('checkers-theme', 0);
+    let wins = load('checkers-wins', { turtle: 0, kitty: 0, lion: 0 });
+    const THEMES = ['', 'theme-berry', 'theme-sky'];
+    const CHEERS = ['Nice move! 👍', 'Good thinking! 🧠', 'Great job! ⭐', 'Smart! 😎', 'Well played! 🎉'];
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    const $ = id => document.getElementById(id);
+
+    // ---------- Sound ----------
+    let audio = null;
+    function tone(freq, dur = 0.12, type = 'sine', when = 0, vol = 0.15, slide = 0) {
+      if (!soundOn) return;
+      try {
+        audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+        if (audio.state === 'suspended') audio.resume();
+        const t = audio.currentTime + when;
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t);
+        if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g).connect(audio.destination);
+        o.start(t); o.stop(t + dur + 0.02);
+      } catch {}
+    }
+    const sfx = {
+      pick()  { tone(700, .06, 'triangle', 0, .08, 1.3); },
+      move()  { tone(300, .08, 'triangle', 0, .2); tone(220, .06, 'sine', .02, .1); },
+      jump()  { tone(420, .1, 'square', 0, .07, 1.8); tone(900, .12, 'triangle', .08, .12); },
+      king()  { [659, 784, 988, 1319].forEach((f, i) => tone(f, .14, 'triangle', i * .08, .12)); },
+      oops()  { tone(400, .25, 'sine', 0, .14, .5); },
+      win()   { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .18, 'triangle', i * .12, .13)); },
+      lose()  { [392, 330, 262].forEach((f, i) => tone(f, .25, 'triangle', i * .18, .12)); }
+    };
+    function say(text) {
+      if (!soundOn || !('speechSynthesis' in window)) return;
+      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.pitch = 1.3; u.rate = 1.05; u.lang = 'en-US'; speechSynthesis.speak(u); } catch {}
+    }
+
+    // ---------- Game state ----------
+    let board = startBoard(), turn = RED;
+    let legal = [], selected = null, partial = [], view = board;   // `view` shows a multi-jump in progress
+    let lastPath = null, playing = false, over = false, thinking = false, drag = null;
+    let quiet = 0, history = [];
+    const vsBot = () => level !== 'friend';
+    const humanTurn = () => playing && !over && !thinking && (!vsBot() || turn === RED);
+    const teamName = side => vsBot() ? (side === RED ? 'You' : LEVELS[level].name) : (side === RED ? 'Red' : 'Yellow');
+
+    // ---------- Board drawing ----------
+    const boardEl = $('board'), piecesEl = $('pieces');
+    const cells = [];
+    for (let i = 0; i < 64; i++) {
+      const d = document.createElement('div');
+      d.className = 'sq' + (isDark(i) ? ' dk' : '');
+      boardEl.appendChild(d);
+      cells.push(d);
+    }
+    const pos = i => ({ x: colOf(i) * 100, y: rowOf(i) * 100 });
+    const pieceSvg = v => {
+      const id = v > 0 ? 'pr' : 'py';
+      if (Math.abs(v) !== 2) return `<svg viewBox="0 0 100 100"><use href="#${id}" /></svg>`;
+      // kings: a slightly smaller buddy wearing a crown, all inside the square
+      return `<svg viewBox="0 0 100 100"><g transform="translate(8 13) scale(0.84)"><use href="#${id}" width="100" height="100" /></g><use href="#crown" width="100" height="100" y="-1" /></svg>`;
+    };
+
+    function renderPieces(anim) {
+      piecesEl.innerHTML = '';
+      const els = {};
+      const ready = playing && !over && !thinking && partial.length < 2;
+      for (let i = 0; i < 64; i++) {
+        const v = view[i];
+        if (!v) continue;
+        const el = document.createElement('div');
+        el.className = 'pc';
+        if (ready && sideOf(v) === turn && humanTurn() && i !== selected) el.classList.add('ready');
+        if (i === selected) el.classList.add('picked');
+        el.dataset.i = i;
+        el.innerHTML = pieceSvg(v);
+        const p = pos(i);
+        el.style.transform = `translate(${p.x}%, ${p.y}%)`;
+        piecesEl.appendChild(el);
+        els[i] = el;
+      }
+      if (anim) {
+        const el = els[anim.to];
+        if (el) {
+          const a = pos(anim.from), b = pos(anim.to);
+          el.style.transition = 'none';
+          el.style.transform = `translate(${a.x}%, ${a.y}%)`;
+          el.style.zIndex = 5;
+          void el.offsetWidth;
+          el.style.transition = '';
+          el.style.transform = `translate(${b.x}%, ${b.y}%)`;
+        }
+      }
+      return els;
+    }
+
+    function renderMarks() {
+      cells.forEach(c => { c.classList.remove('sel', 'last', 'must'); c.querySelectorAll('.dot').forEach(d => d.remove()); });
+      if (lastPath) lastPath.forEach(i => cells[i].classList.add('last'));
+      if (selected !== null) {
+        cells[selected].classList.add('sel');
+        for (const t of nextTargets()) {
+          const dot = document.createElement('div');
+          dot.className = 'dot' + (legal[0] && legal[0].caps.length ? ' jump' : '');
+          cells[t].appendChild(dot);
+        }
+      }
+    }
+    function flashJumpers() {
+      const from = new Set(legal.map(m => m.path[0]));
+      from.forEach(i => cells[i].classList.add('must'));
+      setTimeout(() => from.forEach(i => cells[i].classList.remove('must')), 1800);
+    }
+
+    function counts() {
+      let red = 0, yel = 0, redK = 0, yelK = 0;
+      for (const v of board) {
+        if (v > 0) { red++; if (v === 2) redK++; }
+        if (v < 0) { yel++; if (v === -2) yelK++; }
+      }
+      return { red, yel, redK, yelK };
+    }
+    function renderTrays() {
+      const c = counts();
+      const mini = (v, n) => Array.from({ length: n }, () => `<svg viewBox="0 0 100 100"><use href="#${v > 0 ? 'pr' : 'py'}" /></svg>`).join('');
+      $('bottomCaps').innerHTML = mini(YEL, 12 - c.yel);   // yellow pieces you captured
+      $('topCaps').innerHTML = mini(RED, 12 - c.red);
+      $('bottomLead').textContent = c.redK ? `👑${c.redK}` : '';
+      $('topLead').textContent = c.yelK ? `👑${c.yelK}` : '';
+      $('topName').textContent = vsBot() ? `${LEVELS[level].emoji} ${LEVELS[level].name}` : '🟡 Yellow';
+      $('bottomName').textContent = vsBot() ? '🙂 You' : '🔴 Red';
+      $('trayTop').classList.toggle('turn', playing && !over && turn === YEL);
+      $('trayBottom').classList.toggle('turn', playing && !over && turn === RED);
+      $('topName').classList.toggle('thinking', thinking);
+      $('undoBtn').disabled = thinking || !history.length;
+      $('hintBtn').disabled = !humanTurn() || partial.length > 1;
+    }
+    function renderAll(anim) { renderPieces(anim); renderMarks(); renderTrays(); }
+
+    // ---------- Coach ----------
+    let msgTimer, msgBusyUntil = 0;
+    function coach(text, mood = '') {
+      const b = $('bubble'), f = $('coachFace');
+      b.innerHTML = `<span>${text}</span>`;
+      b.className = 'bubble ' + mood;
+      f.textContent = mood === 'oops' ? '🙈' : mood === 'yay' ? '🥳' : '🐸';
+      f.classList.remove('talk'); void f.offsetWidth; f.classList.add('talk');
+      clearTimeout(msgTimer);
+      msgBusyUntil = mood ? Date.now() + 1800 : 0;
+      if (mood) msgTimer = setTimeout(() => { if (!over) coach(turnText()); }, 3200);
+    }
+    function turnText() {
+      if (!playing) return "Hi! I'm Coach Froggy. Let's play checkers!";
+      if (thinking) return `${LEVELS[level].emoji} ${LEVELS[level].name} is thinking... 🤔`;
+      const jumping = legal[0] && legal[0].caps.length;
+      const who = vsBot() ? 'Your turn!' : (turn === RED ? "🔴 Red's turn!" : "🟡 Yellow's turn!");
+      return jumping ? `${who} You can jump! 🦘 Find the glowing piece.` : `${who} Tap a piece, then tap a dot.`;
+    }
+
+    // ---------- Friendly explanations ----------
+    function explain(from, to) {
+      const v = view[from], side = sideOf(v);
+      const dr = rowOf(to) - rowOf(from), dc = colOf(to) - colOf(from);
+      if (!isDark(to)) return 'Checkers only live on the dark squares! Pick a dark one. 🙂';
+      if (view[to]) return 'That square is already taken! Pieces need an empty square to land on.';
+      if (Math.abs(dr) !== Math.abs(dc)) return 'Checkers only move diagonally ↗️ ↖️, like a little zig-zag!';
+      const forward = side === RED ? dr < 0 : dr > 0;
+      if (Math.abs(v) === 1 && !forward) return 'Regular pieces only move forward! Reach the other side to become a King 👑 who can go backward.';
+      if (Math.abs(dr) > 2) return 'Too far! Move just 1 step, or jump over 1 enemy piece.';
+      if (partial.length > 1) return 'Keep jumping! 🦘 Your piece can jump again. Follow the red dots!';
+      const mustJump = legal[0] && legal[0].caps.length;
+      if (Math.abs(dr) === 2) {
+        const mid = view[from + (dr / 2) * 8 + dc / 2];
+        if (!mid) return 'You can only jump when there is an enemy piece to hop over!';
+        if (sideOf(mid) === side) return "You can't jump over your own piece! Jump over the other team's pieces.";
+      }
+      if (mustJump) return 'You have to jump! 🦘 When you can capture, you must. Look for the glowing piece!';
+      return 'Oops, that move is not allowed. Try a dot!';
+    }
+
+    function oops(text, sq, from) {
+      sfx.oops();
+      coach(text, 'oops');
+      if (sq !== undefined && sq !== null) {
+        const d = cells[sq];
+        d.classList.remove('bad'); void d.offsetWidth; d.classList.add('bad');
+        setTimeout(() => d.classList.remove('bad'), 950);
+      }
+      const el = from !== undefined && piecesEl.querySelector(`.pc[data-i="${from}"]`);
+      if (el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+    }
+
+    // ---------- Moving ----------
+    const movesFrom = i => legal.filter(m => m.path[0] === i);
+    function nextTargets() {
+      if (selected === null) return [];
+      const k = partial.length;
+      return [...new Set(legal.filter(m => partial.every((s, j) => m.path[j] === s) && m.path.length > k).map(m => m.path[k]))];
+    }
+
+    function select(i) {
+      selected = i; partial = [i];
+      sfx.pick();
+      const jumping = legal[0].caps.length;
+      coach(Math.abs(board[i]) === 2 ? 'A King 👑 can move forward AND backward!' :
+            jumping ? 'Jump over the enemy piece! 🦘 Tap the red dot.' : 'Tap a glowing dot to move there. ✨');
+      renderPieces(); renderMarks();
+    }
+
+    // one hop (a step, or one jump of a multi-jump)
+    function hop(to) {
+      const k = partial.length;
+      const cands = legal.filter(m => partial.every((s, j) => m.path[j] === s) && m.path[k] === to);
+      if (!cands.length) { oops(explain(partial[k - 1], to), to, partial[k - 1]); return false; }
+      const from = partial[k - 1];
+      const v = view[from];
+      view = view.slice();
+      view[from] = 0;
+      view[to] = v;
+      if (cands[0].caps.length) {
+        const cap = cands[0].caps[k - 1];
+        poof(view[cap], cap);
+        view[cap] = 0;
+      }
+      partial.push(to);
+      const done = cands.find(m => m.path.length === partial.length);
+      if (done) { finish(done); return true; }
+      // more jumps to make with the same piece
+      selected = to;
+      renderAll({ from, to });
+      sfx.jump();
+      coach('Great jump! 🦘 You can jump again. Keep going!', 'yay');
+      return true;
+    }
+
+    function finish(m) {
+      history.push({ board, turn, lastPath, quiet });
+      const from = partial.length >= 2 ? partial[partial.length - 2] : m.path[m.path.length - 2];
+      const moved = board[m.path[0]];
+      board = applyMove(board, m);
+      view = board;
+      quiet = m.caps.length || Math.abs(moved) === 1 ? 0 : quiet + 1;
+      lastPath = m.path;
+      selected = null; partial = [];
+      const mover = turn;
+      turn = -turn;
+      legal = genMoves(board, turn);
+      const els = renderPieces({ from, to: m.path[m.path.length - 1] });
+      renderMarks(); renderTrays();
+
+      const human = !vsBot() || mover === RED;
+      if (m.promote) {
+        sfx.king(); say('King me!');
+        const el = els[m.path[m.path.length - 1]];
+        if (el) el.classList.add('crowned');
+        coach(human ? 'King me! 👑 Your piece is now a King and can move backward too!' :
+                      `${teamName(mover)} got a King 👑! Watch out, it can move backward.`, human ? 'yay' : 'oops');
+      } else if (m.caps.length) {
+        sfx.jump();
+        const n = m.caps.length;
+        if (human) coach(n > 1 ? `WOW! A ${n}-piece double jump! 🤩` : `Yum! You captured a piece! ${pick(['🎉', '⭐', '💥'])}`, 'yay');
+        else coach(`Oh no, ${teamName(mover)} jumped ${n > 1 ? n + ' of your pieces' : 'your piece'}! You can do it! 💪`, 'oops');
+      } else {
+        sfx.move();
+        if (human && vsBot() && Math.random() < 0.25) coach(pick(CHEERS), 'yay');
+        else coach(turnText());
+      }
+
+      if (!legal.length || quiet >= 50) return setTimeout(endGame, 500);
+      if (vsBot() && turn === YEL) botTurn();
+    }
+
+    function poof(v, i) {
+      const el = document.createElement('div');
+      el.className = 'pc';
+      el.innerHTML = pieceSvg(v);
+      const p = pos(i);
+      el.style.transform = `translate(${p.x}%, ${p.y}%)`;
+      el.style.zIndex = 4;
+      piecesEl.appendChild(el);
+      requestAnimationFrame(() => { el.classList.add('poof'); el.style.transform += ' scale(1.7) rotate(40deg)'; });
+      setTimeout(() => el.remove(), 380);
+    }
+
+    function botTurn() {
+      thinking = true;
+      renderTrays(); renderPieces();
+      if (Date.now() > msgBusyUntil) coach(turnText()); // keep a fresh cheer or warning on screen
+      const started = performance.now();
+      const myBoard = board;
+      setTimeout(() => {
+        const m = think(board, YEL, BOTS[level]);
+        const wait = Math.max(0, 650 - (performance.now() - started));
+        setTimeout(() => {
+          if (myBoard !== board || over || !playing) return;
+          thinking = false;
+          if (!m) return;
+          playBotMove(m);
+        }, wait);
+      }, 60);
+    }
+    // show the computer's jumps one hop at a time
+    function playBotMove(m) {
+      partial = [m.path[0]];
+      selected = m.path[0];
+      let k = 1;
+      const step = () => {
+        const to = m.path[k];
+        if (k === m.path.length - 1) { if (m.caps.length) poof(view[m.caps[k - 1]], m.caps[k - 1]); partial.push(to); finish(m); return; }
+        const from = m.path[k - 1], v = view[from];
+        view = view.slice(); view[from] = 0; view[to] = v;
+        const cap = m.caps[k - 1]; poof(view[cap], cap); view[cap] = 0;
+        partial.push(to); selected = to;
+        renderPieces({ from, to }); sfx.jump();
+        k++;
+        setTimeout(step, 380);
+      };
+      step();
+    }
+
+    function endGame() {
+      over = true;
+      renderAll();
+      let title, text, piecesHtml;
+      const winner = !legal.length ? -turn : 0;
+      if (!winner) {
+        title = "It's a tie! 🤝"; text = 'Nobody could win this time. Nice playing!';
+        piecesHtml = pieceSvg(2) + pieceSvg(-2); sfx.move(); say("It's a tie!");
+      } else if (!vsBot()) {
+        title = `${winner === RED ? '🔴 Red' : '🟡 Yellow'} wins!`; text = 'What a great game! High five! 🙌';
+        piecesHtml = pieceSvg(winner * 2); sfx.win(); confetti(160); say(`${winner === RED ? 'Red' : 'Yellow'} wins!`);
+      } else if (winner === RED) {
+        wins[level] = (wins[level] || 0) + 1; save('checkers-wins', wins);
+        title = 'You win! 🏆'; text = `You beat ${LEVELS[level].emoji} ${LEVELS[level].name}! You are a checkers champion! 🌟`;
+        piecesHtml = pieceSvg(2); sfx.win(); confetti(180); say('You win!');
+      } else {
+        title = `${LEVELS[level].name} wins this time`; text = 'Good try! Every game makes you better. Want to play again?';
+        piecesHtml = pieceSvg(-2); sfx.lose(); say('Good game!');
+      }
+      $('overPieces').innerHTML = piecesHtml;
+      $('overTitle').textContent = title;
+      $('overText').textContent = text;
+      coach(title, winner === RED || (!vsBot() && winner) ? 'yay' : '');
+      $('overScreen').classList.remove('hidden');
+    }
+
+    // ---------- Input: tap or drag ----------
+    function cellAt(e) {
+      const r = boardEl.getBoundingClientRect();
+      const c = Math.floor((e.clientX - r.left) / r.width * 8), k = Math.floor((e.clientY - r.top) / r.height * 8);
+      if (c < 0 || c > 7 || k < 0 || k > 7) return null;
+      return k * 8 + c;
+    }
+    let hoverCell = null;
+    function setHover(i) {
+      if (hoverCell !== null) cells[hoverCell].classList.remove('hover');
+      hoverCell = i;
+      if (i !== null) cells[i].classList.add('hover');
+    }
+
+    function onPress(i) {
+      const v = view[i];
+      // in the middle of a multi-jump: only the next landing square works
+      if (partial.length > 1) {
+        if (i === selected) return 'keep';
+        hop(i);
+        return 'done';
+      }
+      if (v && sideOf(v) === turn) {
+        const mine = movesFrom(i);
+        if (!mine.length) {
+          if (legal[0] && legal[0].caps.length) { oops('You have to jump! 🦘 When you can capture, you must. Look for the glowing piece!', null, i); flashJumpers(); }
+          else oops('This piece is stuck right now. Try another one! 🙂', null, i);
+          return 'done';
+        }
+        if (selected !== i) select(i);
+        return 'picked';
+      }
+      if (selected !== null) { hop(i); return 'done'; }
+      if (v) oops(vsBot() ? `That's ${LEVELS[level].name}'s piece! You are the <b>red</b> team. 🔴` :
+                            `It's ${turn === RED ? '🔴 Red' : '🟡 Yellow'}'s turn!`, i);
+      else coach('Tap one of your pieces first, then tap a dot! 👆');
+      return 'done';
+    }
+
+    boardEl.addEventListener('pointerdown', e => {
+      if (!playing || over) return;
+      if (thinking) { coach(`Wait a moment, ${LEVELS[level].name} is thinking... 🤔`); return; }
+      const i = cellAt(e);
+      if (i === null) return;
+      const wasSelected = selected === i;
+      const r = onPress(i);
+      if (r === 'picked' || r === 'keep') {
+        drag = { i, el: piecesEl.querySelector(`.pc[data-i="${i}"]`), moved: false, wasSelected, x: e.clientX, y: e.clientY };
+        boardEl.setPointerCapture(e.pointerId);
+      }
+    });
+    boardEl.addEventListener('pointermove', e => {
+      if (!drag) return;
+      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 8) return;
+      drag.moved = true;
+      const r = boardEl.getBoundingClientRect(), cell = r.width / 8;
+      const x = (e.clientX - r.left - cell / 2) / cell * 100, y = (e.clientY - r.top - cell * 0.7) / cell * 100;
+      if (drag.el) { drag.el.classList.add('drag'); drag.el.style.transform = `translate(${x}%, ${y}%)`; }
+      setHover(cellAt(e));
+    });
+    function endDrag(e) {
+      if (!drag) return;
+      const d = drag;
+      drag = null;
+      setHover(null);
+      if (d.el) d.el.classList.remove('drag');
+      const i = e && cellAt(e);
+      const back = () => { if (d.el && d.el.isConnected) { const p = pos(d.i); d.el.style.transform = `translate(${p.x}%, ${p.y}%)`; } };
+      if (d.moved && i !== null && i !== d.i) { if (!hop(i)) back(); return; }
+      back();
+      if (!d.moved && d.wasSelected && partial.length < 2) { selected = null; partial = []; renderPieces(); renderMarks(); coach(turnText()); }
+    }
+    boardEl.addEventListener('pointerup', endDrag);
+    boardEl.addEventListener('pointercancel', () => endDrag(null));
+
+    // ---------- Buttons ----------
+    function newGame() {
+      board = startBoard(); view = board; turn = RED;
+      legal = genMoves(board, turn);
+      selected = null; partial = []; lastPath = null; history = []; quiet = 0;
+      thinking = false; over = false; playing = true;
+      $('startScreen').classList.add('hidden');
+      $('overScreen').classList.add('hidden');
+      renderAll();
+      coach(vsBot() ? `You're playing against ${LEVELS[level].emoji} ${LEVELS[level].name}. Red goes first! 👆`
+                    : 'Two players! 🔴 Red goes first. Take turns. 🙂');
+    }
+    function showStart() {
+      playing = false; thinking = false; over = false;
+      board = startBoard(); view = board; turn = RED; legal = genMoves(board, turn);
+      selected = null; partial = []; lastPath = null; history = [];
+      renderAll();
+      $('overScreen').classList.add('hidden');
+      $('startScreen').classList.remove('hidden');
+      updateWinsText();
+      coach(turnText());
+    }
+    $('playBtn').addEventListener('click', newGame);
+    $('againBtn').addEventListener('click', showStart);
+    $('newBtn').addEventListener('click', showStart);
+
+    $('undoBtn').addEventListener('click', () => {
+      if (thinking || !history.length) return;
+      let h = history.pop();
+      if (vsBot() && h.turn === YEL && history.length) h = history.pop(); // take back the computer's move too
+      ({ board, turn, lastPath, quiet } = h);
+      view = board; legal = genMoves(board, turn);
+      selected = null; partial = []; over = false;
+      $('overScreen').classList.add('hidden');
+      renderAll();
+      coach('Take-back! ↩️ Try a different move.', 'yay');
+    });
+
+    $('hintBtn').addEventListener('click', () => {
+      if (!humanTurn() || partial.length > 1) return;
+      coach('Let me think... 🤔');
+      setTimeout(() => {
+        const m = think(board, turn, { depth: 6, noise: 0, random: 0, time: 800 });
+        if (!m) return;
+        select(m.path[0]);
+        const t = m.path[1];
+        cells[t].classList.add('must');
+        setTimeout(() => cells[t].classList.remove('must'), 2500);
+        coach(m.caps.length ? '💡 Try this jump! Tap the glowing square. 🦘' : '💡 Try moving this piece to the glowing square!', 'yay');
+      }, 30);
+    });
+
+    $('themeBtn').addEventListener('click', () => { theme = (theme + 1) % THEMES.length; applyTheme(); save('checkers-theme', theme); sfx.pick(); });
+    function applyTheme() { THEMES.forEach(t => t && document.body.classList.remove(t)); if (THEMES[theme]) document.body.classList.add(THEMES[theme]); }
+    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>Sound`; }
+    $('soundBtn').addEventListener('click', () => {
+      soundOn = !soundOn; save('checkers-sound', soundOn); updateSoundBtn();
+      if (!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+    });
+
+    const choiceBtns = document.querySelectorAll('.choice');
+    function markLevel() { choiceBtns.forEach(b => b.classList.toggle('active', b.dataset.level === level)); renderTrays(); }
+    choiceBtns.forEach(b => b.addEventListener('click', () => { level = b.dataset.level; save('checkers-level', level); markLevel(); sfx.pick(); }));
+    function updateWinsText() {
+      const w = wins;
+      $('winsText').textContent = (w.turtle || w.kitty || w.lion) ? `🏅 Your wins: 🐢 ${w.turtle || 0} · 🐱 ${w.kitty || 0} · 🦁 ${w.lion || 0}` : '';
+    }
+
+    // ---------- Confetti ----------
+    const cc = $('confetti'), cctx = cc.getContext('2d');
+    let bits = [], confettiRunning = false;
+    const COLORS = ['#ff5f6d', '#ff9a3c', '#ffd23f', '#5fd068', '#3fa9f5', '#7c5cff', '#e45bd8'];
+    function sizeConfetti() { cc.width = innerWidth; cc.height = innerHeight; }
+    addEventListener('resize', sizeConfetti); sizeConfetti();
+    function confetti(n) {
+      for (let i = 0; i < n; i++)
+        bits.push({ x: Math.random() * cc.width, y: -20 - Math.random() * cc.height * 0.3, vx: (Math.random() - .5) * 2,
+          vy: 2 + Math.random() * 3, r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3, s: 6 + Math.random() * 6, c: COLORS[i % COLORS.length] });
+      if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(confettiLoop); }
+    }
+    function confettiLoop() {
+      cctx.clearRect(0, 0, cc.width, cc.height);
+      bits = bits.filter(b => b.y < cc.height + 20);
+      for (const b of bits) {
+        b.x += b.vx; b.y += b.vy; b.r += b.vr;
+        cctx.save(); cctx.translate(b.x, b.y); cctx.rotate(b.r); cctx.fillStyle = b.c; cctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2); cctx.restore();
+      }
+      if (bits.length) requestAnimationFrame(confettiLoop); else { confettiRunning = false; cctx.clearRect(0, 0, cc.width, cc.height); }
+    }
+
+    // ---------- Start ----------
+    legal = genMoves(board, turn);
+    applyTheme();
+    updateSoundBtn();
+    markLevel();
+    updateWinsText();
+    renderAll();
+    window.__checkers = { // handy for testing
+      get board() { return board; }, get turn() { return turn; }, genMoves, think, BOTS, newGame,
+      load(b, t = RED) { board = b.slice(); view = board; turn = t; legal = genMoves(board, turn); selected = null; partial = []; renderAll(); }
+    };
+  </script>
+</body>
+</html>
