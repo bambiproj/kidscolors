@@ -12,16 +12,17 @@
       --soft: #8a7a9e;
       --btn: #ff6f61;
       --btn-dark: #d94c3f;
-      --light: #fff1d0;
-      --dark: #2fa58f;
+      --light: #ffffff;
+      --dark: #1e1e24;
       --vh: 100vh;
-      --board: clamp(260px, min(calc(100vw - 8px), calc(var(--vh) - 196px)), 900px);
+      --board: clamp(260px, min(calc(100vw - 8px), calc(var(--vh) - 206px)), 900px);
     }
     @supports (height: 100dvh) { :root { --vh: 100dvh; } }
     /* wide screens: board on the left, panel on the right */
     @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
       :root { --board: clamp(260px, min(calc(var(--vh) - 80px), calc(100vw - 370px)), 1000px); }
     }
+    body.theme-teal  { --light: #fff1d0; --dark: #2fa58f; }
     body.theme-berry { --light: #ffe8f1; --dark: #a35fd6; }
     body.theme-sky   { --light: #e9f7ff; --dark: #3c8fd2; }
 
@@ -45,12 +46,12 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      padding: 4px 4px 8px;
+      padding: 14px 4px 8px;
       overflow-y: auto;
       overscroll-behavior: contain;
     }
     @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
-      .app { flex-direction: row; justify-content: center; align-items: flex-start; gap: 18px; padding-top: 10px; }
+      .app { flex-direction: row; justify-content: center; align-items: center; gap: 18px; padding-top: 10px; }
     }
 
     nav {
@@ -82,7 +83,7 @@
     nav a.active { background: rgba(255,255,255,0.4); }
 
     .panel { width: var(--board); display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-bottom: 6px; } /* sits at the bottom of the screen */
-    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; margin-top: 0; } }
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; margin-top: 0; } .board-wrap { margin-top: 0; } }
 
     /* the two players */
     .players { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -127,6 +128,7 @@
 
     /* board */
     .board-wrap {
+      margin-top: auto; /* shares the free space with the panel, so the board sits in the middle */
       position: relative;
       flex: none;
       width: var(--board);
@@ -526,7 +528,7 @@
     let soundOn = load('checkers-sound', true);
     let theme = load('checkers-theme', 0);
     let wins = load('checkers-wins', { turtle: 0, kitty: 0, lion: 0 });
-    const THEMES = ['', 'theme-berry', 'theme-sky'];
+    const THEMES = ['', 'theme-teal', 'theme-berry', 'theme-sky'];
     const CHEERS = ['Nice move! 👍', 'Good thinking! 🧠', 'Great job! ⭐', 'Smart! 😎', 'Well played! 🎉'];
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
     const $ = id => document.getElementById(id);

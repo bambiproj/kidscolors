@@ -15,7 +15,7 @@
       --light: #f4fbe9;
       --dark: #86c98a;
       --vh: 100vh;
-      --board: clamp(260px, min(calc(100vw - 8px), calc(var(--vh) - 196px)), 900px);
+      --board: clamp(260px, min(calc(100vw - 8px), calc(var(--vh) - 206px)), 900px);
     }
     @supports (height: 100dvh) { :root { --vh: 100dvh; } }
     /* wide screens: board on the left, panel on the right */
@@ -45,12 +45,12 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      padding: 4px 4px 8px;
+      padding: 14px 4px 8px;
       overflow-y: auto;
       overscroll-behavior: contain;
     }
     @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
-      .app { flex-direction: row; justify-content: center; align-items: flex-start; gap: 18px; padding-top: 10px; }
+      .app { flex-direction: row; justify-content: center; align-items: center; gap: 18px; padding-top: 10px; }
     }
 
     nav {
@@ -82,7 +82,7 @@
     nav a.active { background: rgba(255,255,255,0.4); }
 
     .panel { width: var(--board); display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-bottom: 6px; } /* sits at the bottom of the screen */
-    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; margin-top: 0; } }
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; margin-top: 0; } .board-wrap { margin-top: 0; } }
 
     /* the two players */
     .players { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -129,6 +129,7 @@
 
     /* board */
     .board-wrap {
+      margin-top: auto; /* shares the free space with the panel, so the board sits in the middle */
       position: relative;
       width: var(--board);
       height: var(--board);
