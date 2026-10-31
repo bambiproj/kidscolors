@@ -6,6 +6,8 @@
   <title>Kids Chess</title>
   <link rel="stylesheet" href="lib/pieces.css" />
   <style>
+    html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+    button { touch-action: manipulation; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -1062,6 +1064,19 @@
     updateWinsText();
     renderAll();
     window.__chess = { get game() { return game; }, think, tryMove, newGame, explain, BOTS, load(fen) { game = new Chess(fen); lastMove = null; selected = null; renderAll(); } }; // handy for testing
+  </script>
+  <script>
+    // stop accidental zooming when little fingers tap fast (iPhone double-tap zoom and pinch zoom)
+    (function () {
+      let lastTouch = 0;
+      document.addEventListener('touchend', e => {
+        const now = Date.now();
+        if (now - lastTouch < 350) e.preventDefault();
+        lastTouch = now;
+      }, { passive: false });
+      ['gesturestart', 'gesturechange', 'gestureend', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+      document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    })();
   </script>
 </body>
 </html>

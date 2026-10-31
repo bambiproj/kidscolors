@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>פקמן לילדים</title>
   <style>
+    html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+    button { touch-action: manipulation; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -946,6 +948,19 @@
     makeDots(); resetActors();
     requestAnimationFrame(frame);
     window.__pac = { get state() { return { phase, score, level, lives, dots: dots.size, pac: { ...pac }, ghosts: ghosts.map(g => ({ x: g.x, y: g.y, state: g.state, fright: g.fright })) }; }, setDir, open, keepOnly(list) { const keep = new Set(list.map(([x, y]) => y * COLS + x)); for (const k of [...dots.keys()]) if (!keep.has(k)) dots.delete(k); }, frightLeft: () => frightUntil - clock };
+  </script>
+  <script>
+    // stop accidental zooming when little fingers tap fast (iPhone double-tap zoom and pinch zoom)
+    (function () {
+      let lastTouch = 0;
+      document.addEventListener('touchend', e => {
+        const now = Date.now();
+        if (now - lastTouch < 350) e.preventDefault();
+        lastTouch = now;
+      }, { passive: false });
+      ['gesturestart', 'gesturechange', 'gestureend', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+      document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    })();
   </script>
 </body>
 </html>
