@@ -372,9 +372,9 @@
         </div>
       </div>
 
-      <div class="coach">
+      <div class="coach" dir="rtl">
         <div class="face" id="coachFace">🐧</div>
-        <div class="bubble" id="bubble"><span>Hi! I'm Coach Pengu. Let's play chess!</span></div>
+        <div class="bubble" id="bubble"><span>היי! אני המאמן פינגו. בואו נשחק שחמט!</span></div>
       </div>
 
       <div class="buttons" dir="rtl">
@@ -394,15 +394,15 @@
     import { Chess } from './lib/chess.js';
 
     // ---------- Kid-friendly names and tips ----------
-    const NAMES = { k: 'King', q: 'Queen', r: 'Castle', b: 'Bishop', n: 'Horsey', p: 'Pawn' };
+    const NAMES = { k: 'מלך', q: 'מלכה', r: 'צריח', b: 'רץ', n: 'סוס', p: 'רגלי' };
     const EMO   = { k: '🤴', q: '👸', r: '🏰', b: '⛪', n: '🐴', p: '💂' };
     const TIPS = {
-      k: 'The King 🤴 is the most important! He walks just 1 step in any direction.',
-      q: 'The Queen 👸 is super strong! She slides in straight lines AND diagonals.',
-      r: 'The Castle 🏰 (rook) slides in straight lines: up, down, left and right.',
-      b: 'The Bishop ⛪ slides only on diagonals, like the letter X.',
-      n: 'The Horsey 🐴 (knight) jumps in an L shape, and it can jump over pieces!',
-      p: 'The Pawn 💂 marches forward 1 step (2 on its first move) and captures diagonally.'
+      k: 'המלך 🤴 הכי חשוב! הוא הולך רק צעד אחד לכל כיוון.',
+      q: 'המלכה 👸 הכי חזקה! היא נעה בקווים ישרים וגם באלכסון.',
+      r: 'הצריח 🏰 נע בקווים ישרים: למעלה, למטה, ימינה ושמאלה.',
+      b: 'הרץ ⛪ נע רק באלכסון, כמו האות X.',
+      n: 'הסוס 🐴 קופץ בצורת L, והוא יכול לקפוץ מעל כלים!',
+      p: 'הרגלי 💂 צועד קדימה צעד אחד (2 בצעד הראשון) ואוכל באלכסון.'
     };
     const VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
     const LEVELS = {
@@ -411,7 +411,7 @@
       owl:    { emoji: '🦉', name: 'Owl', he: 'ינשוף' },
       friend: { emoji: '👫', name: 'Friend', he: 'חבר' }
     };
-    const CHEERS = ['Nice move! 👍', 'Good thinking! 🧠', 'Great job! ⭐', 'Smart! 😎', 'Well played! 🎉'];
+    const CHEERS = ['מהלך יפה! 👍', 'חשיבה טובה! 🧠', 'כל הכבוד! ⭐', 'חכם! 😎', 'שיחקת יפה! 🎉'];
     const FILES = 'abcdefgh';
 
     // ---------- Storage (safe) ----------
@@ -457,7 +457,7 @@
     };
     function say(text) {
       if (!soundOn || !('speechSynthesis' in window)) return;
-      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.pitch = 1.3; u.rate = 1.05; u.lang = 'en-US'; speechSynthesis.speak(u); } catch {}
+      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.pitch = 1.3; u.rate = 1.05; u.lang = 'he-IL'; speechSynthesis.speak(u); } catch {}
     }
 
     // ---------- Game state ----------
@@ -603,10 +603,10 @@
       if (mood) msgTimer = setTimeout(() => { if (!over) coach(turnText()); }, 3200);
     }
     function turnText() {
-      if (!playing) return "Hi! I'm Coach Pengu. Let's play chess!";
-      if (thinking) return `${LEVELS[level].emoji} ${LEVELS[level].name} is thinking... 🤔`;
-      if (!vsBot()) return game.turn() === 'w' ? "⚪ White's turn! Tap a white piece." : "⚫ Black's turn! Tap a black piece.";
-      return game.inCheck() ? 'Your King is in check! ⚠️ Save him!' : 'Your turn! Tap one of your white pieces. 👆';
+      if (!playing) return 'היי! אני המאמן פינגו. בואו נשחק שחמט!';
+      if (thinking) return `ה${LEVELS[level].he} ${LEVELS[level].emoji} חושב... 🤔`;
+      if (!vsBot()) return game.turn() === 'w' ? '⚪ תור הלבן! לחצו על כלי לבן.' : '⚫ תור השחור! לחצו על כלי שחור.';
+      return game.inCheck() ? 'המלך שלכם בשח! ⚠️ הצילו אותו!' : 'תורכם! לחצו על אחד הכלים הלבנים. 👆';
     }
 
     // ---------- Friendly explanations for moves that aren't allowed ----------
@@ -614,7 +614,7 @@
       const p = game.get(from), target = game.get(to);
       const name = `${NAMES[p.type]} ${EMO[p.type]}`;
       if (target && target.color === p.color)
-        return `You can't land on your own ${NAMES[target.type]}! Try an empty square or capture an enemy piece.`;
+        return `אי אפשר לנחות על ה${NAMES[target.type]} שלכם! נסו משבצת ריקה או כלי של היריב.`;
       const fx = FILES.indexOf(from[0]), fy = Number(from[1]), tx = FILES.indexOf(to[0]), ty = Number(to[1]);
       const dx = tx - fx, dy = ty - fy, ax = Math.abs(dx), ay = Math.abs(dy);
       const dir = p.color === 'w' ? 1 : -1;
@@ -629,27 +629,27 @@
       }
       if (!shapeOk) {
         if (p.type === 'p') {
-          if (dy * dir <= 0) return 'Pawns 💂 can only march forward, never backward or sideways!';
-          if (ax >= 1 && !target) return 'Pawns 💂 only go diagonally when they capture an enemy piece!';
-          return 'Pawns 💂 move 1 square forward (or 2 on their very first move).';
+          if (dy * dir <= 0) return 'רגלי 💂 צועד רק קדימה, אף פעם לא אחורה או הצידה!';
+          if (ax >= 1 && !target) return 'רגלי 💂 הולך באלכסון רק כשהוא אוכל כלי של היריב!';
+          return 'רגלי 💂 זז משבצת אחת קדימה (או 2 בצעד הראשון שלו).';
         }
-        if (p.type === 'n') return 'The Horsey 🐴 jumps in an L shape: 2 squares one way, then 1 to the side!';
-        if (p.type === 'b') return 'The Bishop ⛪ can only slide on diagonals ↗️ ↘️, like the letter X!';
-        if (p.type === 'r') return 'The Castle 🏰 slides in straight lines ⬆️ ➡️, no diagonals!';
-        if (p.type === 'q') return "The Queen 👸 moves in straight lines or diagonals, but she can't jump like a Horsey!";
-        if (p.type === 'k') return 'The King 🤴 walks just 1 step at a time.';
+        if (p.type === 'n') return 'הסוס 🐴 קופץ בצורת L: 2 משבצות לכיוון אחד ואז 1 הצידה!';
+        if (p.type === 'b') return 'הרץ ⛪ נע רק באלכסון ↗️ ↘️, כמו האות X!';
+        if (p.type === 'r') return 'הצריח 🏰 נע בקווים ישרים ⬆️ ➡️, בלי אלכסונים!';
+        if (p.type === 'q') return 'המלכה 👸 נעה בקווים ישרים או באלכסון, אבל לא קופצת כמו סוס!';
+        if (p.type === 'k') return 'המלך 🤴 הולך רק צעד אחד בכל פעם.';
       }
-      if (p.type === 'k' && ax === 2) return "You can't castle right now. The King and Castle must not have moved, and the King can't pass through danger!";
-      if (p.type === 'p' && dx === 0 && target) return 'Pawns 💂 are blocked by a piece in front of them. They capture diagonally!';
-      if (p.type === 'p' && ax === 1 && !target) return 'Pawns 💂 only go diagonally when they capture an enemy piece!';
+      if (p.type === 'k' && ax === 2) return 'אי אפשר להצריח עכשיו. המלך והצריח לא זזו קודם, והמלך לא יכול לעבור דרך סכנה!';
+      if (p.type === 'p' && dx === 0 && target) return 'יש כלי מול הרגלי 💂 והוא חסום. רגלי אוכל באלכסון!';
+      if (p.type === 'p' && ax === 1 && !target) return 'רגלי 💂 הולך באלכסון רק כשהוא אוכל כלי של היריב!';
       // something in the way?
       if ('bqrp'.includes(p.type)) {
         const sx = Math.sign(dx), sy = Math.sign(dy);
         for (let x = fx + sx, y = fy + sy; x !== tx || y !== ty; x += sx, y += sy)
-          if (game.get(FILES[x] + y)) return `Something is in the way! The ${name} can't jump over pieces. Only the Horsey 🐴 can jump!`;
+          if (game.get(FILES[x] + y)) return `משהו חוסם את הדרך! ה${name} לא יכול לקפוץ מעל כלים. רק הסוס 🐴 קופץ!`;
       }
-      if (game.inCheck()) return 'Your King is in check! ⚠️ First you must save him: move him, block, or capture the attacker.';
-      return `Oops! That move would leave your King 🤴 in danger. Try another one!`;
+      if (game.inCheck()) return 'המלך שלכם בשח! ⚠️ קודם צריך להציל אותו: להזיז אותו, לחסום, או לאכול את התוקף.';
+      return 'אופס! המהלך הזה ישאיר את המלך 🤴 בסכנה. נסו מהלך אחר!';
     }
 
     function oops(text, sq, fromSq) {
@@ -671,7 +671,7 @@
       sfx.pick();
       const p = game.get(sq);
       const n = game.moves({ square: sq, verbose: true }).length;
-      if (n === 0) coach(`This ${NAMES[p.type]} ${EMO[p.type]} can't move right now. Try another piece! 🙂`);
+      if (n === 0) coach(`ה${NAMES[p.type]} ${EMO[p.type]} לא יכול לזוז עכשיו. נסו כלי אחר! 🙂`);
       else coach(TIPS[p.type]);
       renderMarks();
     }
@@ -698,14 +698,14 @@
       const human = !vsBot() || m.color === 'w';
       if (game.isGameOver()) return setTimeout(endGame, 450);
       if (game.inCheck()) {
-        sfx.check(); say('Check!');
-        coach(human ? (vsBot() ? `Check! ♚ ${LEVELS[level].name}'s King is in danger!` : 'Check! The King is in danger! ⚠️')
-                    : 'Uh oh, check! ⚠️ Your King is in danger. Move him, block, or capture the attacker!', human ? 'yay' : 'oops');
+        sfx.check(); say('שח!');
+        coach(human ? (vsBot() ? `שח! ♚ המלך של ה${LEVELS[level].he} בסכנה!` : 'שח! המלך בסכנה! ⚠️')
+                    : 'אוי, שח! ⚠️ המלך שלכם בסכנה. הזיזו אותו, חסמו, או אכלו את התוקף!', human ? 'yay' : 'oops');
       } else if (m.captured) {
-        if (human) coach(`Yum! You captured a ${NAMES[m.captured]} ${EMO[m.captured]}! +${VALUE[m.captured]} ⭐`, 'yay');
-        else coach(`Oh no, ${LEVELS[level].name} took your ${NAMES[m.captured]} ${EMO[m.captured]}! You'll get it back! 💪`, 'oops');
+        if (human) coach(`יאמי! אכלתם ${NAMES[m.captured]} ${EMO[m.captured]}! +${VALUE[m.captured]} ⭐`, 'yay');
+        else coach(`אוי, ה${LEVELS[level].he} אכל לכם ${NAMES[m.captured]} ${EMO[m.captured]}! עוד תחזירו לו! 💪`, 'oops');
       } else if (m.flags.includes('k') || m.flags.includes('q')) {
-        coach('Castling! 🏰 The King is safe and the Castle joins the fun!', 'yay');
+        coach('הצרחה! 🏰 המלך מוגן והצריח מצטרף למשחק!', 'yay');
       } else if (human && Math.random() < 0.3) {
         coach(vsBot() ? pick(CHEERS) : pick(CHEERS) + '<br>' + turnText(), 'yay');
       } else coach(turnText());
@@ -745,14 +745,14 @@
         const winner = game.turn() === 'w' ? 'b' : 'w';
         if (!vsBot()) {
           emoji = '🏆'; title = `שח-מט! ${winner === 'w' ? '⚪ הלבן' : '⚫ השחור'} ניצח!`; text = 'איזה משחק! כיף גדול! 🙌';
-          sfx.win(); confetti(160); say('Checkmate!');
+          sfx.win(); confetti(160); say('שח מט!');
         } else if (winner === 'w') {
           wins[level] = (wins[level] || 0) + 1; save('chess-wins', wins);
           emoji = '🏆'; title = 'שח-מט! ניצחת! 🏆'; text = `ניצחת את ה${LEVELS[level].he} ${LEVELS[level].emoji}! איזה אלוף שחמט! 🌟`;
-          sfx.win(); confetti(180); say('Checkmate! You win!');
+          sfx.win(); confetti(180); say('שח מט! ניצחת!');
         } else {
           emoji = '🤗'; title = `ה${LEVELS[level].he} ניצח הפעם`; text = 'ניסיון יפה! כל משחק עושה אותך חכם יותר. עוד משחק?';
-          sfx.lose(); say('Good game!');
+          sfx.lose(); say('משחק יפה!');
         }
       } else {
         emoji = '🤝';
@@ -760,7 +760,7 @@
         text = game.isStalemate() ? 'פט! למלך אין לאן לזוז אבל הוא לא בשח, אז אין מנצח.' :
                game.isInsufficientMaterial() ? 'לא נשארו מספיק כלים בשביל מט, אז אין מנצח.' :
                'המשחק נגמר בתיקו. שיחקתם יפה!';
-        sfx.move(); say("It's a tie!");
+        sfx.move(); say('תיקו!');
       }
       $('overEmoji').textContent = emoji;
       $('overTitle').textContent = title;
@@ -909,7 +909,7 @@
 
     boardEl.addEventListener('pointerdown', e => {
       if (!playing || over || pendingPromo) return;
-      if (thinking) { coach(`Wait a moment, ${LEVELS[level].name} is thinking... 🤔`); return; }
+      if (thinking) { coach(`רגע, ה${LEVELS[level].he} חושב... 🤔`); return; }
       const sq = squareAt(e);
       if (!sq) return;
       const p = game.get(sq);
@@ -923,10 +923,10 @@
       }
       if (selected) { tryMove(selected, sq); return; }
       if (p) {
-        oops(vsBot() ? `That's ${LEVELS[level].name}'s piece! You play with the <b>white</b> pieces. 🙂`
-                     : `It's ${game.turn() === 'w' ? '⚪ White' : '⚫ Black'}'s turn! Tap one of those pieces.`, sq);
+        oops(vsBot() ? `זה כלי של ה${LEVELS[level].he}! אתם משחקים עם הכלים ה<b>לבנים</b>. 🙂`
+                     : `עכשיו תור ${game.turn() === 'w' ? '⚪ הלבן' : '⚫ השחור'}! לחצו על אחד הכלים שלו.`, sq);
       } else {
-        coach('Tap one of your pieces first, then tap where it should go! 👆');
+        coach('קודם לחצו על אחד הכלים שלכם, ואז על המקום שאליו הוא ילך! 👆');
       }
     });
 
@@ -969,8 +969,8 @@
       $('overScreen').classList.add('hidden');
       $('promoScreen').classList.add('hidden');
       renderAll();
-      coach(vsBot() ? `You're playing against ${LEVELS[level].emoji} ${LEVELS[level].name}. You go first! Tap a piece. 👆`
-                    : 'Two players! ⚪ White goes first. Take turns. 🙂');
+      coach(vsBot() ? `אתם משחקים נגד ה${LEVELS[level].he} ${LEVELS[level].emoji}. אתם מתחילים! לחצו על כלי. 👆`
+                    : 'שני שחקנים! ⚪ הלבן מתחיל. משחקים בתורות. 🙂');
     }
 
     $('playBtn').addEventListener('click', newGame);
@@ -996,12 +996,12 @@
       lastMove = h[h.length - 1] || null;
       selected = null; hintMove = null;
       renderAll();
-      coach('Take-back! ↩️ Try a different move.', 'yay');
+      coach('חזרנו אחורה! ↩️ נסו מהלך אחר.', 'yay');
     });
 
     $('hintBtn').addEventListener('click', () => {
       if (!humanTurn()) return;
-      coach('Let me think... 🤔');
+      coach('רגע, אני חושב... 🤔');
       setTimeout(() => {
         const mv = think(game.fen(), { depth: 3, noise: 0, random: 0, time: 900 });
         if (!mv) return;
@@ -1009,7 +1009,7 @@
         selected = null;
         renderMarks();
         const p = game.get(mv.from);
-        coach(`💡 Try moving your ${NAMES[p.type]} ${EMO[p.type]} from <b>${mv.from}</b> to <b>${mv.to}</b>! Follow the orange arrow.`, 'yay');
+        coach(`💡 נסו להזיז את ה${NAMES[p.type]} ${EMO[p.type]} מ-<b>${mv.from}</b> ל-<b>${mv.to}</b>! לכו לפי החץ הכתום.`, 'yay');
       }, 30);
     });
 

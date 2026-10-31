@@ -306,7 +306,7 @@
 
   <div class="board-wrap">
     <canvas id="board"></canvas>
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" dir="rtl"></div>
 
     <div dir="rtl" class="overlay" id="startScreen">
       <div class="big-emoji">🐍</div>
@@ -372,32 +372,32 @@
     const MAX_LIVES = 5;
 
     const FRUITS = [
-      { emoji: '🍎', color: 'Red' },    { emoji: '🍓', color: 'Red' },     { emoji: '🍒', color: 'Red' },
-      { emoji: '🍊', color: 'Orange' }, { emoji: '🥕', color: 'Orange' },  { emoji: '🍋', color: 'Yellow' },
-      { emoji: '🍌', color: 'Yellow' }, { emoji: '🍏', color: 'Green' },   { emoji: '🥝', color: 'Green' },
-      { emoji: '🍐', color: 'Green' },  { emoji: '🫐', color: 'Blue' },    { emoji: '🍇', color: 'Purple' },
-      { emoji: '🍆', color: 'Purple' }, { emoji: '🍉', color: 'Pink' },    { emoji: '🍑', color: 'Pink' },
-      { emoji: '🧁', color: 'Pink' },   { emoji: '🍪', color: 'Brown' },   { emoji: '🥥', color: 'Brown' }
+      { emoji: '🍎', color: 'אדום' },    { emoji: '🍓', color: 'אדום' },     { emoji: '🍒', color: 'אדום' },
+      { emoji: '🍊', color: 'כתום' }, { emoji: '🥕', color: 'כתום' },  { emoji: '🍋', color: 'צהוב' },
+      { emoji: '🍌', color: 'צהוב' }, { emoji: '🍏', color: 'ירוק' },   { emoji: '🥝', color: 'ירוק' },
+      { emoji: '🍐', color: 'ירוק' },  { emoji: '🫐', color: 'כחול' },    { emoji: '🍇', color: 'סגול' },
+      { emoji: '🍆', color: 'סגול' }, { emoji: '🍉', color: 'ורוד' },    { emoji: '🍑', color: 'ורוד' },
+      { emoji: '🧁', color: 'ורוד' },   { emoji: '🍪', color: 'חום' },   { emoji: '🥥', color: 'חום' }
     ];
     const SPECIALS = {
-      star:   { emoji: '⭐', points: 5, say: 'Star! Five points!',          glow: '#ffd23f', w: 3 },
-      gem:    { emoji: '💎', points: 3, say: 'Diamond!',                    glow: '#7fdcff', w: 3 },
-      shield: { emoji: '🛡️', power: 'shield', dur: 6000, say: 'Super shield!', glow: '#9d7bff', w: 2 },
-      magnet: { emoji: '🧲', power: 'magnet', dur: 7000, say: 'Magnet!',       glow: '#ff5f6d', w: 2 },
-      turbo:  { emoji: '⚡', power: 'turbo',  dur: 5000, say: 'Super speed! Double points!', glow: '#ffe14d', w: 2 },
-      freeze: { emoji: '❄️', power: 'freeze', dur: 5000, say: 'Freeze!',       glow: '#bfefff', w: 2 },
-      heart:  { emoji: '❤️', life: 1, say: 'Extra heart!',                  glow: '#ff7aa2', w: 1 }
+      star:   { emoji: '⭐', points: 5, say: 'כוכב! חמש נקודות!',          glow: '#ffd23f', w: 3 },
+      gem:    { emoji: '💎', points: 3, say: 'יהלום!',                    glow: '#7fdcff', w: 3 },
+      shield: { emoji: '🛡️', power: 'shield', dur: 6000, say: 'מגן-על!', glow: '#9d7bff', w: 2 },
+      magnet: { emoji: '🧲', power: 'magnet', dur: 7000, say: 'מגנט!',       glow: '#ff5f6d', w: 2 },
+      turbo:  { emoji: '⚡', power: 'turbo',  dur: 5000, say: 'מהירות-על! נקודות כפולות!', glow: '#ffe14d', w: 2 },
+      freeze: { emoji: '❄️', power: 'freeze', dur: 5000, say: 'הקפאה!',       glow: '#bfefff', w: 2 },
+      heart:  { emoji: '❤️', life: 1, say: 'לב נוסף!',                  glow: '#ff7aa2', w: 1 }
     };
     const POWER_EMOJI = { shield: '🛡️', magnet: '🧲', turbo: '⚡', freeze: '❄️' };
 
     const RAINBOW = ['#ff5f6d', '#ff9a3c', '#ffd23f', '#5fd068', '#3fa9f5', '#7c5cff', '#e45bd8'];
     const ENEMY_SKINS = [
-      { name: 'Wiggles', a: '#8e44ec', b: '#c39bff' },
-      { name: 'Noodle',  a: '#0097e6', b: '#6fd0ff' },
-      { name: 'Sneaky',  a: '#e84393', b: '#ff9ccd' },
-      { name: 'Zappy',   a: '#ff7f1f', b: '#ffc078' }
+      { name: 'פתלתל', a: '#8e44ec', b: '#c39bff' },
+      { name: 'אטריה',  a: '#0097e6', b: '#6fd0ff' },
+      { name: 'ערמומי',  a: '#e84393', b: '#ff9ccd' },
+      { name: 'זיפזיפ',  a: '#ff7f1f', b: '#ffc078' }
     ];
-    const CHEERS = ['Yummy!', 'Great!', 'Wow!', 'Super!', 'Nom nom!', 'You rock!', 'Awesome!'];
+    const CHEERS = ['יאמי!', 'מעולה!', 'וואו!', 'סופר!', 'נום נום!', 'אלופים!', 'מדהים!'];
     const DIRS = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
     const DIR_LIST = Object.values(DIRS);
     const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
@@ -452,7 +452,7 @@
         if (speechSynthesis.speaking && !important) return;
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.rate = 1.05; u.pitch = 1.4; u.lang = 'en-US';
+        u.rate = 1.05; u.pitch = 1.4; u.lang = 'he-IL';
         speechSynthesis.speak(u);
       } catch {}
     }
@@ -675,7 +675,7 @@
         sfx.eat(combo);
         burst(it.x, it.y, RAINBOW, 16);
         floater(it.x, it.y, `+${pts}`, '#ff5f6d');
-        showToast(combo >= 3 ? `🔥 Combo x${combo}!` : `${it.emoji} ${pick(CHEERS)}`);
+        showToast(combo >= 3 ? `🔥 רצף x${combo}!` : `${it.emoji} ${pick(CHEERS)}`);
         say(`${it.color}!`);
         addScore(pts);
         fillFruits();
@@ -713,7 +713,7 @@
         level = newLevel;
         $('level').textContent = level;
         bump('levelPill');
-        setTimeout(() => { sfx.level(); showToast(`🏆 Level ${level}!`); }, 300);
+        setTimeout(() => { sfx.level(); showToast(`🏆 שלב ${level}!`); }, 300);
         confetti(70);
         const missing = desiredEnemies() - enemies.length - enemyQueue.length;
         for (let i = 0; i < missing; i++) enemyQueue.push(gameTime + 2500 + i * 2000);
@@ -731,7 +731,7 @@
       player.queue = [];
       if (lives <= 0) { gameOver(); return; }
       hurtUntil = gameTime + 2200;
-      showToast(`💫 Oops! ${lives} ❤️ left`);
+      showToast(`💫 אופס! נשארו ${lives} ❤️`);
     }
 
     // ---------- Enemies ----------
@@ -807,9 +807,9 @@
         if (!itemAt(c) && !snakeAt(c)) { addItem(c, 'fruit', pick(FRUITS)); dropped++; }
       }
       if (byPlayer) {
-        floater(e.body[0].x, e.body[0].y, '+3 POP!', '#7c5cff');
-        showToast(`💥 ${e.skin.name} went POP!`);
-        say('Pop!', true);
+        floater(e.body[0].x, e.body[0].y, '+3 💥', '#7c5cff');
+        showToast(`💥 ${e.skin.name} התפוצץ!`);
+        say('פוף!', true);
         addScore(3);
       }
       enemyQueue.push(gameTime + 6000);
