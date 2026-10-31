@@ -290,13 +290,13 @@
   </nav>
 
   <header>
-    <h1><span>🐍</span> <span>R</span><span>a</span><span>i</span><span>n</span><span>b</span><span>o</span><span>w</span> <span>S</span><span>n</span><span>a</span><span>k</span><span>e</span></h1>
+    <h1 dir="rtl"><span>🐍</span> <span>נחש</span> <span>הקשת</span></h1>
   </header>
 
-  <div class="stats">
-    <div class="pill" id="scorePill"><small>Points</small><span id="score">0</span> 🍎</div>
-    <div class="pill"><small>Best</small><span id="best">0</span> ⭐</div>
-    <div class="pill" id="levelPill"><small>Level</small><span id="level">1</span> 🏆</div>
+  <div class="stats" dir="rtl">
+    <div class="pill" id="scorePill"><small>נקודות</small><span id="score">0</span> 🍎</div>
+    <div class="pill"><small>שיא</small><span id="best">0</span> ⭐</div>
+    <div class="pill" id="levelPill"><small>שלב</small><span id="level">1</span> 🏆</div>
   </div>
 
   <div class="hud2">
@@ -308,39 +308,39 @@
     <canvas id="board"></canvas>
     <div class="toast" id="toast"></div>
 
-    <div class="overlay" id="startScreen">
+    <div dir="rtl" class="overlay" id="startScreen">
       <div class="big-emoji">🐍</div>
-      <h2>🐍 Hi! I'm Ziggy the Snake!</h2>
-      <p>Eat yummy fruits and grow! Other snakes want the fruit too. If they bump into you, they go POP! 💥</p>
+      <h2>🐍 היי! אני זיגי הנחש!</h2>
+      <p>אכלו פירות טעימים ותגדלו! גם נחשים אחרים רוצים את הפירות. אם הם נתקלים בכם, הם מתפוצצים! 💥</p>
       <div class="legend">
-        <div><b>⭐</b>+5 points</div>
-        <div><b>💎</b>+3 points</div>
-        <div><b>🛡️</b>Shield</div>
-        <div><b>🧲</b>Magnet</div>
-        <div><b>⚡</b>Fast &amp; x2</div>
-        <div><b>❄️</b>Freeze</div>
-        <div><b>❤️</b>Extra heart</div>
-        <div><b>💥</b>Pop = +3</div>
+        <div><b>⭐</b>+5 נקודות</div>
+        <div><b>💎</b>+3 נקודות</div>
+        <div><b>🛡️</b>מגן</div>
+        <div><b>🧲</b>מגנט</div>
+        <div><b>⚡</b>מהיר ו-x2</div>
+        <div><b>❄️</b>הקפאה</div>
+        <div><b>❤️</b>לב נוסף</div>
+        <div><b>💥</b>פיצוץ = +3</div>
       </div>
       <div class="speed-row" id="speedRow">
-        <button class="speed-btn active" data-speed="turtle"><span class="e">🐢</span>Slow</button>
-        <button class="speed-btn" data-speed="bunny"><span class="e">🐰</span>Medium</button>
-        <button class="speed-btn" data-speed="cheetah"><span class="e">🐆</span>Fast</button>
+        <button class="speed-btn active" data-speed="turtle"><span class="e">🐢</span>איטי</button>
+        <button class="speed-btn" data-speed="bunny"><span class="e">🐰</span>בינוני</button>
+        <button class="speed-btn" data-speed="cheetah"><span class="e">🐆</span>מהיר</button>
       </div>
-      <button class="play-btn" id="playBtn">▶ Play!</button>
+      <button class="play-btn" id="playBtn">▶ שחקו!</button>
     </div>
 
-    <div class="overlay hidden" id="pauseScreen">
+    <div dir="rtl" class="overlay hidden" id="pauseScreen">
       <div class="big-emoji">😴</div>
-      <h2>Ziggy is resting</h2>
-      <button class="play-btn" id="resumeBtn">▶ Keep going</button>
+      <h2>זיגי נח</h2>
+      <button class="play-btn" id="resumeBtn">▶ ממשיכים</button>
     </div>
 
-    <div class="overlay hidden" id="overScreen">
+    <div dir="rtl" class="overlay hidden" id="overScreen">
       <div class="big-emoji" id="overEmoji">🎉</div>
-      <h2 id="overTitle">Great job!</h2>
+      <h2 id="overTitle">כל הכבוד!</h2>
       <p id="overText"></p>
-      <button class="play-btn" id="againBtn">🔁 Play again</button>
+      <button class="play-btn" id="againBtn">🔁 עוד משחק</button>
     </div>
   </div>
 
@@ -352,7 +352,7 @@
     <button class="right" data-dir="right" aria-label="Right">➡️</button>
     <button class="pause" id="pauseBtn" aria-label="Pause">⏸️</button>
   </div>
-  <p class="hint" id="hintText">Swipe, tap next to Ziggy, or use the arrow keys!</p>
+  <p class="hint" id="hintText" dir="rtl">החליקו, לחצו ליד זיגי או השתמשו במקשי החצים!</p>
 
   <canvas id="confetti"></canvas>
 
@@ -584,9 +584,9 @@
       const newBest = score > 0 && score >= best;
       if (score > best) { best = score; save('snake-best', best); $('best').textContent = best; }
       $('overEmoji').textContent = score >= 40 ? '🏆' : score >= 10 ? '🎉' : '🤗';
-      $('overTitle').textContent = score >= 40 ? 'Snake Champion!' : score >= 10 ? 'Great job!' : 'Good try!';
-      $('overText').textContent = `You got ${score} point${score === 1 ? '' : 's'} and reached level ${level}! ` +
-        (newBest ? '⭐ New best score! ⭐' : 'Can you beat your best?');
+      $('overTitle').textContent = score >= 40 ? 'אלוף הנחשים!' : score >= 10 ? 'כל הכבוד!' : 'ניסיון יפה!';
+      $('overText').textContent = `צברת ${score} נקודות והגעת לשלב ${level}! ` +
+        (newBest ? '⭐ שיא חדש! ⭐' : 'אפשר לשבור את השיא?');
       setTimeout(() => overScreen.classList.remove('hidden'), 700);
       if (newBest) confetti(140);
     }

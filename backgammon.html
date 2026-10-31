@@ -13,12 +13,12 @@
       --btn: #7048e8;
       --btn-dark: #5233c4;
       --vh: 100vh;
-      /* the board is 1000 x 760, so its height is 0.76 x its width */
-      --bw: clamp(260px, min(calc(100vw - 8px), calc((var(--vh) - 300px) * 1.3158)), 1100px);
+      /* the board is 1000 x 900, so its height is 0.9 x its width */
+      --bw: clamp(260px, min(calc(100vw - 6px), calc((var(--vh) - 300px) * 1.111)), 1100px);
     }
     @supports (height: 100dvh) { :root { --vh: 100dvh; } }
     @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
-      :root { --bw: clamp(260px, min(calc((var(--vh) - 80px) * 1.3158), calc(100vw - 370px)), 1100px); }
+      :root { --bw: clamp(260px, min(calc((var(--vh) - 70px) * 1.111), calc(100vw - 370px)), 1100px); }
     }
 
     /* the page never scrolls or bounces, so the board stays put while playing */
@@ -41,7 +41,7 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      padding: 14px 4px 8px;
+      padding: 14px 3px 8px;
       overflow-y: auto;
       overscroll-behavior: contain;
     }
@@ -83,7 +83,7 @@
       position: relative;
       flex: none;
       width: var(--bw);
-      height: calc(var(--bw) * 0.76);
+      height: calc(var(--bw) * 0.9);
       border-radius: 16px;
       box-shadow: 0 10px 0 rgba(0,0,0,0.12), 0 20px 40px rgba(0,0,0,0.25);
       overflow: hidden;
@@ -159,23 +159,37 @@
     @keyframes nudge { 50% { transform: scale(1.03); } }
     .dicebox .label { font-weight: bold; font-size: 1rem; }
     .die {
-      width: 54px; height: 54px;
-      border-radius: 12px;
-      background: linear-gradient(145deg, #ffffff, #e9e4ff);
-      box-shadow: 0 4px 0 rgba(0,0,0,0.15), inset 0 0 0 3px #ff4d64;
+      width: 56px; height: 56px;
+      border-radius: 13px;
+      background: radial-gradient(circle at 30% 25%, #ffffff 0%, #f6f3ea 45%, #ddd6c6 100%);
+      box-shadow: 0 7px 10px rgba(0,0,0,0.28), 0 2px 0 #b9b19e,
+                  inset -4px -5px 8px rgba(0,0,0,0.16), inset 3px 3px 5px rgba(255,255,255,0.95);
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
-      padding: 7px;
-      transition: opacity .2s, transform .2s;
+      padding: 8px;
+      transform: perspective(240px) rotateX(10deg) rotateY(-10deg);
+      transition: opacity .25s, transform .25s;
     }
-    .die.yel { box-shadow: 0 4px 0 rgba(0,0,0,0.15), inset 0 0 0 3px #e0a800; }
-    .die.small { width: 42px; height: 42px; padding: 5px; border-radius: 10px; }
-    .die i { width: 76%; height: 76%; margin: auto; border-radius: 50%; background: #2a1e3a; visibility: hidden; }
+    .die + .die { transform: perspective(240px) rotateX(8deg) rotateY(12deg) rotateZ(4deg); }
+    .die.small { width: 44px; height: 44px; padding: 6px; border-radius: 11px; }
+    .die i {
+      width: 72%; height: 72%; margin: auto; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #5a5a66 0%, #15151c 65%);
+      box-shadow: inset 0 2px 2px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.8);
+      visibility: hidden;
+    }
     .die i.on { visibility: visible; }
-    .die.used { opacity: 0.28; transform: scale(0.85); }
-    .die.roll { animation: tumble .14s linear infinite; }
-    @keyframes tumble { 0% { transform: rotate(0) translateY(0); } 50% { transform: rotate(14deg) translateY(-6px); } 100% { transform: rotate(-10deg) translateY(0); } }
+    .die.used { opacity: 0.3; transform: perspective(240px) scale(0.85); }
+    .die.roll { animation: tumble .32s linear infinite; }
+    .die.roll + .die.roll { animation-duration: .27s; animation-direction: reverse; }
+    @keyframes tumble {
+      0%   { transform: perspective(240px) rotateX(0) rotateY(0) translateY(0); }
+      25%  { transform: perspective(240px) rotateX(90deg) rotateY(30deg) translateY(-10px); }
+      50%  { transform: perspective(240px) rotateX(180deg) rotateY(90deg) translateY(-4px); }
+      75%  { transform: perspective(240px) rotateX(270deg) rotateY(140deg) translateY(-10px); }
+      100% { transform: perspective(240px) rotateX(360deg) rotateY(180deg) translateY(0); }
+    }
     .dicebox .sum { font-size: 0.8rem; color: var(--soft); font-weight: bold; }
 
     /* buttons */
@@ -284,7 +298,7 @@
         <ellipse cx="54" cy="67" rx="5.5" ry="4.5" fill="#ff6f8f" />
       </symbol>
       <marker id="arrowHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto">
-        <path d="M0,0 L10,5 L0,10 z" fill="rgba(112,72,232,0.6)" />
+        <path d="M0,0 L10,5 L0,10 z" fill="rgba(60,60,80,0.65)" />
       </marker>
     </defs>
   </svg>
@@ -305,42 +319,42 @@
 
   <div class="app">
     <div class="board-wrap" id="boardWrap">
-      <svg id="board" viewBox="0 0 1000 760"></svg>
+      <svg id="board" viewBox="0 0 1000 900"></svg>
 
-      <div class="overlay" id="startScreen">
-        <h2>🎲 Let's play backgammon!</h2>
+      <div dir="rtl" class="overlay" id="startScreen">
+        <h2>🎲 בואו נשחק שש-בש!</h2>
         <div class="choices">
-          <button class="choice" data-level="bunny"><b>🐰</b>Bunny<small>Just learning</small></button>
-          <button class="choice" data-level="bear"><b>🐻</b>Bear<small>A bit clever</small></button>
-          <button class="choice" data-level="dragon"><b>🐉</b>Dragon<small>Very smart!</small></button>
-          <button class="choice" data-level="friend"><b>👫</b>Friend<small>2 players</small></button>
+          <button class="choice" data-level="bunny"><b>🐰</b>ארנב<small>רק לומד</small></button>
+          <button class="choice" data-level="bear"><b>🐻</b>דוב<small>די חכם</small></button>
+          <button class="choice" data-level="dragon"><b>🐉</b>דרקון<small>חכם מאוד!</small></button>
+          <button class="choice" data-level="friend"><b>👫</b>חבר<small>2 שחקנים</small></button>
         </div>
-        <button class="play-btn" id="playBtn">▶ Play!</button>
+        <button class="play-btn" id="playBtn">▶ שחקו!</button>
         <div class="small-note" id="winsText"></div>
       </div>
 
-      <div class="overlay hidden" id="guideScreen">
-        <h2>🎓 How to play</h2>
-        <div class="guide">
-          <div>🎲 <b>Tap the dice</b> to roll. Each die tells how many steps one checker walks.</div>
-          <div>🐾 Your <b>red</b> checkers walk along the arrow to your <b>home 🏠</b> (bottom right).</div>
-          <div>💥 Land on a <b>lonely</b> enemy checker to send it to the middle! 🚧 You can't land where 2 or more enemies stand.</div>
-          <div>🏁 When all 15 are home, <b>take them off</b>. First to take off all 15 wins!</div>
+      <div dir="rtl" class="overlay hidden" id="guideScreen">
+        <h2>🎓 איך משחקים</h2>
+        <div class="guide" style="text-align: right">
+          <div>🎲 <b>לחצו על הקוביות</b> כדי להטיל. כל קובייה אומרת כמה צעדים אבן אחת הולכת.</div>
+          <div>🐾 האבנים ה<b>אדומות</b> שלכם הולכות לפי החץ אל ה<b>בית 🏠</b> (למטה מימין).</div>
+          <div>💥 נחתו על אבן <b>בודדה</b> של היריב כדי לשלוח אותה לאמצע! 🚧 אי אפשר לנחות במקום שיש בו 2 אבנים של היריב או יותר.</div>
+          <div>🏁 כשכל 15 האבנים בבית, <b>מוציאים אותן</b> מהלוח. מי שמוציא ראשון את כל ה-15 מנצח!</div>
         </div>
-        <button class="play-btn" id="guideBtn">👍 Got it!</button>
+        <button class="play-btn" id="guideBtn">👍 הבנתי!</button>
       </div>
 
-      <div class="overlay hidden" id="overScreen">
-        <h2 id="overTitle">You win!</h2>
+      <div dir="rtl" class="overlay hidden" id="overScreen">
+        <h2 id="overTitle">ניצחת!</h2>
         <p id="overText"></p>
-        <button class="play-btn" id="againBtn">🔁 Play again</button>
+        <button class="play-btn" id="againBtn">🔁 עוד משחק</button>
       </div>
     </div>
 
     <div class="panel">
-      <div class="players">
-        <div class="tray" id="trayTop"><span id="topName">🐰 Bunny</span><span class="info" id="topInfo"></span></div>
-        <div class="tray" id="trayBottom"><span id="bottomName">🙂 You</span><span class="info" id="bottomInfo"></span></div>
+      <div class="players" dir="rtl">
+        <div class="tray" id="trayTop"><span id="topName">🐰 ארנב</span><span class="info" id="topInfo" dir="ltr"></span></div>
+        <div class="tray" id="trayBottom"><span id="bottomName">🙂 אני</span><span class="info" id="bottomInfo" dir="ltr"></span></div>
       </div>
 
       <div class="coach">
@@ -348,14 +362,14 @@
         <div class="bubble" id="bubble"><span>Hi! I'm Coach Panda. Let's play backgammon!</span></div>
       </div>
 
-      <div class="dicebox" id="dicebox"><span class="label">🎲 Tap to roll!</span></div>
+      <div class="dicebox" id="dicebox" dir="rtl"><span class="label">🎲 לחצו להטלה!</span></div>
 
-      <div class="buttons">
-        <button id="undoBtn"><b>↩️</b>Undo</button>
-        <button id="hintBtn"><b>💡</b>Hint</button>
-        <button id="learnBtn"><b>🎓</b>Learn</button>
-        <button id="newBtn"><b>🔄</b>New</button>
-        <button id="soundBtn"><b>🔊</b>Sound</button>
+      <div class="buttons" dir="rtl">
+        <button id="undoBtn"><b>↩️</b>ביטול</button>
+        <button id="hintBtn"><b>💡</b>רמז</button>
+        <button id="learnBtn"><b>🎓</b>לימוד</button>
+        <button id="newBtn"><b>🔄</b>חדש</button>
+        <button id="soundBtn"><b>🔊</b>צליל</button>
       </div>
     </div>
   </div>
@@ -526,10 +540,10 @@
     function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
     function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
     const LEVELS = {
-      bunny:  { emoji: '🐰', name: 'Bunny' },
-      bear:   { emoji: '🐻', name: 'Bear' },
-      dragon: { emoji: '🐉', name: 'Dragon' },
-      friend: { emoji: '👫', name: 'Friend' }
+      bunny:  { emoji: '🐰', name: 'Bunny', he: 'ארנב' },
+      bear:   { emoji: '🐻', name: 'Bear', he: 'דוב' },
+      dragon: { emoji: '🐉', name: 'Dragon', he: 'דרקון' },
+      friend: { emoji: '👫', name: 'Friend', he: 'חבר' }
     };
     let level = load('bg-level', 'bunny');
     if (!LEVELS[level]) level = 'bunny';
@@ -580,9 +594,10 @@
     const nameOf = s => vsBot() ? (s === RED ? 'You' : LEVELS[level].name) : (s === RED ? 'Red' : 'Yellow');
     const enemyWord = s => s === RED ? 'yellow' : 'red';
 
-    // ---------- Board geometry (1000 x 760) ----------
-    const F = 20, HW = 421, PW = HW / 6, R = 30, L = 310;
-    const LEFT0 = 20, BAR0 = 441, BAR1 = 497, RIGHT1 = 918, OFFX = 950;
+    // ---------- Board geometry (1000 x 900) ----------
+    const H = 900, MID = H / 2;
+    const F = 10, HW = 451, PW = HW / 6, R = 36, L = 380;
+    const LEFT0 = 10, BAR0 = 461, BAR1 = 493, RIGHT1 = 944, OFFX = 969, TRAY0 = 949, TRAYW = 40;
     function pointX(p) {
       if (p <= 6) return RIGHT1 - (p - 0.5) * PW;
       if (p <= 12) return LEFT0 + HW - (p - 6.5) * PW;
@@ -592,17 +607,17 @@
     const isTop = p => p >= 13;
     function checkerXY(p, k, n) {
       const sp = n <= 5 ? 2 * R : (L - 2 * R) / (n - 1);
-      return { x: pointX(p), y: isTop(p) ? F + R + k * sp : 760 - F - R - k * sp };
+      return { x: pointX(p), y: isTop(p) ? F + R + k * sp : H - F - R - k * sp };
     }
-    const barXY = (s, k) => ({ x: (BAR0 + BAR1) / 2, y: s === RED ? 430 + R + k * 46 : 330 - R - k * 46 });
+    const barXY = (s, k) => ({ x: (BAR0 + BAR1) / 2, y: s === RED ? MID + 40 + R + k * 50 : MID - 40 - R - k * 50 });
     function topXY(state, where, s) {            // where the top checker of a spot sits
       if (where === 'bar') return barXY(s, Math.max(0, state.bar[s] - 1));
-      if (where === 'off') return { x: OFFX, y: s === RED ? 700 : 60 };
+      if (where === 'off') return { x: OFFX, y: s === RED ? H - 80 : 80 };
       const n = Math.abs(state.pts[where]);
       return checkerXY(where, Math.max(0, n - 1), Math.max(1, n));
     }
     function landXY(state, where, s) {          // where a new checker would land
-      if (where === 'off') return { x: OFFX, y: s === RED ? 680 : 80 };
+      if (where === 'off') return { x: OFFX, y: s === RED ? H - 100 : 100 };
       const n = own(state.pts[where], s) ? Math.abs(state.pts[where]) : 0;
       return checkerXY(where, n, n + 1);
     }
@@ -613,35 +628,35 @@
     function render(anim) {
       let h = '';
       // frame, field, bar and home tray
-      h += `<rect x="0" y="0" width="1000" height="760" rx="26" fill="#6c4bd8" />`;
-      h += `<rect x="${F}" y="${F}" width="${RIGHT1 - F}" height="${760 - 2 * F}" rx="10" fill="#fff8e7" />`;
-      h += `<rect x="${BAR0}" y="${F}" width="${BAR1 - BAR0}" height="${760 - 2 * F}" fill="#5a3bc4" />`;
-      h += `<rect x="924" y="${F}" width="52" height="${760 - 2 * F}" rx="10" fill="#8f75ea" />`;
-      h += `<text x="${OFFX}" y="392" text-anchor="middle" font-size="30">🏠</text>`;
+      h += `<rect x="0" y="0" width="1000" height="${H}" rx="22" fill="#1e1e24" />`;
+      h += `<rect x="${F}" y="${F}" width="${RIGHT1 - F}" height="${H - 2 * F}" rx="8" fill="#e4e4ea" />`;
+      h += `<rect x="${BAR0}" y="${F}" width="${BAR1 - BAR0}" height="${H - 2 * F}" fill="#1e1e24" />`;
+      h += `<rect x="${TRAY0}" y="${F}" width="${TRAYW}" height="${H - 2 * F}" rx="8" fill="#3a3a44" />`;
+      h += `<text x="${OFFX}" y="${MID + 10}" text-anchor="middle" font-size="28">🏠</text>`;
       // points
       for (let p = 1; p <= 24; p++) {
         const x = pointX(p), top = isTop(p);
-        const col = p % 2 ? '#ff8fab' : '#74c0fc';
-        const base = top ? F : 760 - F, tip = top ? F + L : 760 - F - L;
-        h += `<path d="M${x - PW / 2 + 3} ${base} L${x + PW / 2 - 3} ${base} L${x} ${tip} Z" fill="${col}" />`;
+        const dark = p % 2 === 1;
+        const base = top ? F : H - F, tip = top ? F + L : H - F - L;
+        h += `<path d="M${x - PW / 2 + 2} ${base} L${x + PW / 2 - 2} ${base} L${x} ${tip} Z" fill="${dark ? '#1e1e24' : '#ffffff'}" stroke="${dark ? '#1e1e24' : '#b9b9c2'}" stroke-width="2" />`;
       }
       // learning helpers: the path to walk and point numbers
       if (learn && phase !== 'idle') {
         const walker = human() ? turn : RED;
         h += walker === RED
-          ? `<path d="M 890 370 L 60 370 Q 34 380 60 390 L 885 390" fill="none" stroke="rgba(112,72,232,0.45)" stroke-width="6" stroke-dasharray="14 10" marker-end="url(#arrowHead)" />`
-          : `<path d="M 890 390 L 60 390 Q 34 380 60 370 L 885 370" fill="none" stroke="rgba(112,72,232,0.45)" stroke-width="6" stroke-dasharray="14 10" marker-end="url(#arrowHead)" />`;
+          ? `<path d="M 920 ${MID - 12} L 50 ${MID - 12} Q 24 ${MID} 50 ${MID + 12} L 915 ${MID + 12}" fill="none" stroke="rgba(60,60,80,0.5)" stroke-width="6" stroke-dasharray="14 10" marker-end="url(#arrowHead)" />`
+          : `<path d="M 920 ${MID + 12} L 50 ${MID + 12} Q 24 ${MID} 50 ${MID - 12} L 915 ${MID - 12}" fill="none" stroke="rgba(60,60,80,0.5)" stroke-width="6" stroke-dasharray="14 10" marker-end="url(#arrowHead)" />`;
         for (let p = 1; p <= 24; p++) {
           const label = walker === RED ? p : 25 - p;
-          h += `<text x="${pointX(p)}" y="${isTop(p) ? 352 : 424}" text-anchor="middle" font-size="22" font-weight="bold" fill="rgba(60,40,90,0.55)" font-family="Segoe UI, Arial">${label}</text>`;
+          h += `<text x="${pointX(p)}" y="${isTop(p) ? F + L + 26 : H - F - L - 10}" text-anchor="middle" font-size="24" font-weight="bold" fill="rgba(30,30,40,0.6)" font-family="Segoe UI, Arial">${label}</text>`;
         }
       }
       // target highlights
       const targets = selected !== null ? firstMoves.filter(m => m.from === selected) : [];
       for (const m of targets) {
-        if (m.to === 'off') { h += `<rect x="924" y="${turn === RED ? 400 : F}" width="52" height="340" rx="10" class="tgt" />`; continue; }
+        if (m.to === 'off') { h += `<rect x="${TRAY0}" y="${turn === RED ? MID : F}" width="${TRAYW}" height="${MID - F}" rx="8" class="tgt" />`; continue; }
         const x = pointX(m.to), top = isTop(m.to);
-        h += `<rect x="${x - PW / 2}" y="${top ? F : 760 - F - L}" width="${PW}" height="${L}" class="tgt" />`;
+        h += `<rect x="${x - PW / 2}" y="${top ? F : H - F - L}" width="${PW}" height="${L}" class="tgt" />`;
       }
       // checkers on points
       for (let p = 1; p <= 24; p++) {
@@ -662,8 +677,8 @@
       }
       // checkers taken off
       for (const s of [RED, YEL]) for (let k = 0; k < st.off[s]; k++) {
-        const y = s === RED ? 760 - F - 8 - (k + 1) * 21 : F + 8 + k * 21;
-        h += `<rect x="930" y="${y}" width="40" height="17" rx="6" fill="${s === RED ? '#ff4d64' : '#ffd23f'}" stroke="${s === RED ? '#a3162f' : '#b37400'}" stroke-width="2" />`;
+        const y = s === RED ? H - F - 8 - (k + 1) * 24 : F + 8 + k * 24;
+        h += `<rect x="${TRAY0 + 3}" y="${y}" width="${TRAYW - 6}" height="20" rx="6" fill="${s === RED ? '#ff4d64' : '#ffd23f'}" stroke="${s === RED ? '#a3162f' : '#b37400'}" stroke-width="2" />`;
       }
       // glows: checkers that can move (learning mode) and the chosen one
       if (phase === 'move' && human()) {
@@ -680,9 +695,9 @@
         }
       }
       // tap areas
-      for (let p = 1; p <= 24; p++) h += `<rect data-hit="${p}" x="${pointX(p) - PW / 2}" y="${isTop(p) ? 0 : 380}" width="${PW}" height="380" fill="transparent" />`;
-      h += `<rect data-hit="bar" x="${BAR0}" y="0" width="${BAR1 - BAR0}" height="760" fill="transparent" />`;
-      h += `<rect data-hit="off" x="920" y="0" width="80" height="760" fill="transparent" />`;
+      for (let p = 1; p <= 24; p++) h += `<rect data-hit="${p}" x="${pointX(p) - PW / 2}" y="${isTop(p) ? 0 : MID}" width="${PW}" height="${MID}" fill="transparent" />`;
+      h += `<rect data-hit="bar" x="${BAR0 - 6}" y="0" width="${BAR1 - BAR0 + 12}" height="${H}" fill="transparent" />`;
+      h += `<rect data-hit="off" x="${TRAY0 - 4}" y="0" width="${1000 - TRAY0 + 4}" height="${H}" fill="transparent" />`;
       svg.innerHTML = h;
 
       // slide the checker that just moved
@@ -702,7 +717,7 @@
         svg.insertAdjacentHTML('beforeend', ckSvg(anim.side, anim.x, anim.y, 'id="leaving"'));
         const el = $('leaving');
         void el.getBoundingClientRect();
-        el.style.transform = `translate(${OFFX}px, ${anim.side === RED ? 690 : 70}px) scale(0.5)`;
+        el.style.transform = `translate(${OFFX}px, ${anim.side === RED ? H - 90 : 90}px) scale(0.5)`;
         el.classList.add('poof');
         setTimeout(() => el.remove(), 400);
       }
@@ -712,9 +727,9 @@
     function flashBad(where) {
       if (where === null || where === undefined) return;
       let r;
-      if (where === 'bar') r = `<rect x="${BAR0}" y="${F}" width="${BAR1 - BAR0}" height="${760 - 2 * F}" class="bad" />`;
-      else if (where === 'off') r = `<rect x="924" y="${F}" width="52" height="${760 - 2 * F}" class="bad" />`;
-      else r = `<rect x="${pointX(where) - PW / 2}" y="${isTop(where) ? F : 760 - F - L}" width="${PW}" height="${L}" class="bad" />`;
+      if (where === 'bar') r = `<rect x="${BAR0}" y="${F}" width="${BAR1 - BAR0}" height="${H - 2 * F}" class="bad" />`;
+      else if (where === 'off') r = `<rect x="${TRAY0}" y="${F}" width="${TRAYW}" height="${H - 2 * F}" class="bad" />`;
+      else r = `<rect x="${pointX(where) - PW / 2}" y="${isTop(where) ? F : H - F - L}" width="${PW}" height="${L}" class="bad" />`;
       svg.insertAdjacentHTML('beforeend', r);
       const el = svg.lastElementChild;
       setTimeout(() => el.remove(), 950);
@@ -722,8 +737,8 @@
 
     function renderInfo() {
       const lv = LEVELS[level];
-      $('topName').textContent = vsBot() ? `${lv.emoji} ${lv.name}` : '🟡 Yellow';
-      $('bottomName').textContent = vsBot() ? '🙂 You' : '🔴 Red';
+      $('topName').textContent = vsBot() ? `${lv.emoji} ${lv.he}` : '🟡 צהוב';
+      $('bottomName').textContent = vsBot() ? '🙂 אני' : '🔴 אדום';
       const info = s => learn ? `🏁${pips(st, s)} · 🏠${st.off[s]}` : `🏠 ${st.off[s]}/15`;
       $('topInfo').textContent = info(YEL);
       $('bottomInfo').textContent = info(RED);
@@ -749,7 +764,7 @@
       const waiting = phase === 'roll' && human();
       box.classList.toggle('ready', waiting);
       if (!shown.length || (waiting && !rolling)) {
-        box.innerHTML = `<span class="label">${waiting ? (vsBot() ? '🎲 Tap here to roll!' : `🎲 ${turn === RED ? 'Red' : 'Yellow'}: tap to roll!`) : '🎲'}</span>`;
+        box.innerHTML = `<span class="label">${waiting ? (vsBot() ? '🎲 לחצו כאן להטלה!' : `🎲 ${turn === RED ? 'אדום' : 'צהוב'}: לחצו להטלה!`) : '🎲'}</span>`;
         return;
       }
       const color = turn === YEL ? 'yel' : '';
@@ -762,8 +777,8 @@
         if (i >= 0) left.splice(i, 1);
         return dieHtml(v, `${color} ${small} ${used ? 'used' : ''} ${rolling ? 'roll' : ''}`);
       }).join('');
-      const sum = !rolling && learn && shown.length === 2 ? `<span class="sum">${shown[0]} + ${shown[1]} = ${shown[0] + shown[1]}</span>` :
-                  !rolling && shown.length === 4 ? `<span class="sum">Double! ×4</span>` : '';
+      const sum = !rolling && learn && shown.length === 2 ? `<span class="sum" dir="ltr">${shown[0]} + ${shown[1]} = ${shown[0] + shown[1]}</span>` :
+                  !rolling && shown.length === 4 ? `<span class="sum">דאבל! ×4</span>` : '';
       box.innerHTML = html + sum;
     }
     function rollAnim(done) {
@@ -931,12 +946,12 @@
       phase = 'over';
       render();
       let title, text;
-      if (!vsBot()) { title = `${winner === RED ? '🔴 Red' : '🟡 Yellow'} wins! 🏆`; text = 'What a great game! High five! 🙌'; sfx.win(); confetti(160); say(`${winner === RED ? 'Red' : 'Yellow'} wins!`); }
+      if (!vsBot()) { title = `${winner === RED ? '🔴 האדום' : '🟡 הצהוב'} ניצח! 🏆`; text = 'איזה משחק! כיף גדול! 🙌'; sfx.win(); confetti(160); say(`${winner === RED ? 'Red' : 'Yellow'} wins!`); }
       else if (winner === RED) {
         wins[level] = (wins[level] || 0) + 1; save('bg-wins', wins);
-        title = 'You win! 🏆'; text = `All 15 checkers home! You beat ${LEVELS[level].emoji} ${LEVELS[level].name}! 🌟`;
+        title = 'ניצחת! 🏆'; text = `כל 15 האבנים הגיעו הביתה! ניצחת את ה${LEVELS[level].he} ${LEVELS[level].emoji}! 🌟`;
         sfx.win(); confetti(180); say('You win!');
-      } else { title = `${LEVELS[level].name} wins this time`; text = 'Good try! The dice can be tricky. Want to play again?'; sfx.lose(); say('Good game!'); }
+      } else { title = `ה${LEVELS[level].he} ניצח הפעם`; text = 'ניסיון יפה! הקוביות יכולות להיות מסובכות. עוד משחק?'; sfx.lose(); say('Good game!'); }
       $('overTitle').textContent = title;
       $('overText').textContent = text;
       coach(title, winner === RED || !vsBot() ? 'yay' : '');
@@ -1046,7 +1061,7 @@
       if (learn && phase !== 'idle' && phase !== 'over') $('guideScreen').classList.remove('hidden');
     });
 
-    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>Sound`; }
+    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>צליל`; }
     $('soundBtn').addEventListener('click', () => {
       soundOn = !soundOn; save('bg-sound', soundOn); updateSoundBtn();
       if (!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel();
@@ -1057,7 +1072,7 @@
     choiceBtns.forEach(b => b.addEventListener('click', () => { level = b.dataset.level; save('bg-level', level); markLevel(); sfx.pick(); }));
     function updateWinsText() {
       const w = wins;
-      $('winsText').textContent = (w.bunny || w.bear || w.dragon) ? `🏅 Your wins: 🐰 ${w.bunny || 0} · 🐻 ${w.bear || 0} · 🐉 ${w.dragon || 0}` : '🎓 Tip: keep Learning mode on to see numbers and the path!';
+      $('winsText').textContent = (w.bunny || w.bear || w.dragon) ? `🏅 הניצחונות שלך: 🐰 ${w.bunny || 0} · 🐻 ${w.bear || 0} · 🐉 ${w.dragon || 0}` : '🎓 טיפ: השאירו את מצב הלימוד דלוק כדי לראות מספרים ואת הדרך!';
     }
 
     // ---------- Confetti ----------

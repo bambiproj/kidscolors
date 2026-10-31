@@ -344,32 +344,32 @@
       <div class="board" id="board"></div>
       <div class="pieces" id="pieces"></div>
 
-      <div class="overlay" id="startScreen">
+      <div dir="rtl" class="overlay" id="startScreen">
         <div class="big"><svg viewBox="0 0 100 100"><use href="#pr" /></svg><svg viewBox="0 0 100 100"><use href="#py" /></svg></div>
-        <h2>🔴 Let's play checkers!</h2>
-        <p>You are the <b>red</b> team. Slide forward on the dark squares, and jump over the yellow pieces to capture them!</p>
+        <h2>🔴 בואו נשחק דמקה!</h2>
+        <p>אתם הקבוצה ה<b>אדומה</b>. זזים קדימה באלכסון על המשבצות הכהות, וקופצים מעל הכלים הצהובים כדי לאכול אותם!</p>
         <div class="choices">
-          <button class="choice" data-level="turtle"><b>🐢</b>Turtle<small>Just learning</small></button>
-          <button class="choice" data-level="kitty"><b>🐱</b>Kitty<small>A bit clever</small></button>
-          <button class="choice" data-level="lion"><b>🦁</b>Lion<small>Very smart!</small></button>
-          <button class="choice" data-level="friend"><b>👫</b>Friend<small>2 players</small></button>
+          <button class="choice" data-level="turtle"><b>🐢</b>צב<small>רק לומד</small></button>
+          <button class="choice" data-level="kitty"><b>🐱</b>חתלתול<small>די חכם</small></button>
+          <button class="choice" data-level="lion"><b>🦁</b>אריה<small>חכם מאוד!</small></button>
+          <button class="choice" data-level="friend"><b>👫</b>חבר<small>2 שחקנים</small></button>
         </div>
-        <button class="play-btn" id="playBtn">▶ Play!</button>
+        <button class="play-btn" id="playBtn">▶ שחקו!</button>
         <div class="wins" id="winsText"></div>
       </div>
 
-      <div class="overlay hidden" id="overScreen">
+      <div dir="rtl" class="overlay hidden" id="overScreen">
         <div class="big" id="overPieces"></div>
-        <h2 id="overTitle">You win!</h2>
+        <h2 id="overTitle">ניצחת!</h2>
         <p id="overText"></p>
-        <button class="play-btn" id="againBtn">🔁 Play again</button>
+        <button class="play-btn" id="againBtn">🔁 עוד משחק</button>
       </div>
     </div>
 
     <div class="panel">
-      <div class="players">
-        <div class="tray" id="trayTop"><span class="who" id="topName">🐢 Turtle</span><span class="caps" id="topCaps"></span><span class="lead" id="topLead"></span></div>
-        <div class="tray" id="trayBottom"><span class="who" id="bottomName">🙂 You</span><span class="caps" id="bottomCaps"></span><span class="lead" id="bottomLead"></span></div>
+      <div class="players" dir="rtl">
+        <div class="tray" id="trayTop"><span class="who" id="topName">🐢 צב</span><span class="caps" id="topCaps"></span><span class="lead" id="topLead"></span></div>
+        <div class="tray" id="trayBottom"><span class="who" id="bottomName">🙂 אני</span><span class="caps" id="bottomCaps"></span><span class="lead" id="bottomLead"></span></div>
       </div>
 
       <div class="coach">
@@ -377,12 +377,12 @@
         <div class="bubble" id="bubble"><span>Hi! I'm Coach Froggy. Let's play checkers!</span></div>
       </div>
 
-      <div class="buttons">
-        <button id="undoBtn"><b>↩️</b>Undo</button>
-        <button id="hintBtn"><b>💡</b>Hint</button>
-        <button id="newBtn"><b>🔄</b>New</button>
-        <button id="themeBtn"><b>🎨</b>Colors</button>
-        <button id="soundBtn"><b>🔊</b>Sound</button>
+      <div class="buttons" dir="rtl">
+        <button id="undoBtn"><b>↩️</b>ביטול</button>
+        <button id="hintBtn"><b>💡</b>רמז</button>
+        <button id="newBtn"><b>🔄</b>חדש</button>
+        <button id="themeBtn"><b>🎨</b>צבעים</button>
+        <button id="soundBtn"><b>🔊</b>צליל</button>
       </div>
     </div>
   </div>
@@ -519,10 +519,10 @@
     function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
     function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
     const LEVELS = {
-      turtle: { emoji: '🐢', name: 'Turtle' },
-      kitty:  { emoji: '🐱', name: 'Kitty' },
-      lion:   { emoji: '🦁', name: 'Lion' },
-      friend: { emoji: '👫', name: 'Friend' }
+      turtle: { emoji: '🐢', name: 'Turtle', he: 'צב' },
+      kitty:  { emoji: '🐱', name: 'Kitty', he: 'חתלתול' },
+      lion:   { emoji: '🦁', name: 'Lion', he: 'אריה' },
+      friend: { emoji: '👫', name: 'Friend', he: 'חבר' }
     };
     let level = load('checkers-level', 'turtle');
     if (!LEVELS[level]) level = 'turtle';
@@ -658,8 +658,8 @@
       $('topCaps').innerHTML = mini(RED, 12 - c.red);
       $('bottomLead').textContent = c.redK ? `👑${c.redK}` : '';
       $('topLead').textContent = c.yelK ? `👑${c.yelK}` : '';
-      $('topName').textContent = vsBot() ? `${LEVELS[level].emoji} ${LEVELS[level].name}` : '🟡 Yellow';
-      $('bottomName').textContent = vsBot() ? '🙂 You' : '🔴 Red';
+      $('topName').textContent = vsBot() ? `${LEVELS[level].emoji} ${LEVELS[level].he}` : '🟡 צהוב';
+      $('bottomName').textContent = vsBot() ? '🙂 אני' : '🔴 אדום';
       $('trayTop').classList.toggle('turn', playing && !over && turn === YEL);
       $('trayBottom').classList.toggle('turn', playing && !over && turn === RED);
       $('topName').classList.toggle('thinking', thinking);
@@ -855,17 +855,17 @@
       let title, text, piecesHtml;
       const winner = !legal.length ? -turn : 0;
       if (!winner) {
-        title = "It's a tie! 🤝"; text = 'Nobody could win this time. Nice playing!';
+        title = 'תיקו! 🤝'; text = 'אף אחד לא ניצח הפעם. שיחקתם יפה!';
         piecesHtml = pieceSvg(2) + pieceSvg(-2); sfx.move(); say("It's a tie!");
       } else if (!vsBot()) {
-        title = `${winner === RED ? '🔴 Red' : '🟡 Yellow'} wins!`; text = 'What a great game! High five! 🙌';
+        title = `${winner === RED ? '🔴 האדום' : '🟡 הצהוב'} ניצח!`; text = 'איזה משחק! כיף גדול! 🙌';
         piecesHtml = pieceSvg(winner * 2); sfx.win(); confetti(160); say(`${winner === RED ? 'Red' : 'Yellow'} wins!`);
       } else if (winner === RED) {
         wins[level] = (wins[level] || 0) + 1; save('checkers-wins', wins);
-        title = 'You win! 🏆'; text = `You beat ${LEVELS[level].emoji} ${LEVELS[level].name}! You are a checkers champion! 🌟`;
+        title = 'ניצחת! 🏆'; text = `ניצחת את ה${LEVELS[level].he} ${LEVELS[level].emoji}! איזה אלוף דמקה! 🌟`;
         piecesHtml = pieceSvg(2); sfx.win(); confetti(180); say('You win!');
       } else {
-        title = `${LEVELS[level].name} wins this time`; text = 'Good try! Every game makes you better. Want to play again?';
+        title = `ה${LEVELS[level].he} ניצח הפעם`; text = 'ניסיון יפה! כל משחק עושה אותך טוב יותר. עוד משחק?';
         piecesHtml = pieceSvg(-2); sfx.lose(); say('Good game!');
       }
       $('overPieces').innerHTML = piecesHtml;
@@ -1004,7 +1004,7 @@
 
     $('themeBtn').addEventListener('click', () => { theme = (theme + 1) % THEMES.length; applyTheme(); save('checkers-theme', theme); sfx.pick(); });
     function applyTheme() { THEMES.forEach(t => t && document.body.classList.remove(t)); if (THEMES[theme]) document.body.classList.add(THEMES[theme]); }
-    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>Sound`; }
+    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>צליל`; }
     $('soundBtn').addEventListener('click', () => {
       soundOn = !soundOn; save('checkers-sound', soundOn); updateSoundBtn();
       if (!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel();
@@ -1015,7 +1015,7 @@
     choiceBtns.forEach(b => b.addEventListener('click', () => { level = b.dataset.level; save('checkers-level', level); markLevel(); sfx.pick(); }));
     function updateWinsText() {
       const w = wins;
-      $('winsText').textContent = (w.turtle || w.kitty || w.lion) ? `🏅 Your wins: 🐢 ${w.turtle || 0} · 🐱 ${w.kitty || 0} · 🦁 ${w.lion || 0}` : '';
+      $('winsText').textContent = (w.turtle || w.kitty || w.lion) ? `🏅 הניצחונות שלך: 🐢 ${w.turtle || 0} · 🐱 ${w.kitty || 0} · 🦁 ${w.lion || 0}` : '';
     }
 
     // ---------- Confetti ----------

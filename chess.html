@@ -332,42 +332,42 @@
         </defs>
       </svg>
 
-      <div class="overlay" id="startScreen">
+      <div dir="rtl" class="overlay" id="startScreen">
         <div class="big">♟️</div>
-        <h2>♟️ Let's play chess!</h2>
-        <p>You are the <b>white</b> team. Tap a piece to see where it can go, then tap a glowing dot. You can drag pieces too!</p>
+        <h2>♟️ בואו נשחק שחמט!</h2>
+        <p>אתם הצבא ה<b>לבן</b>. לחצו על כלי כדי לראות לאן הוא יכול ללכת, ואז לחצו על נקודה זוהרת. אפשר גם לגרור!</p>
         <div class="choices" id="choices">
-          <button class="choice" data-level="chick"><b>🐣</b>Chick<small>Just learning</small></button>
-          <button class="choice" data-level="fox"><b>🦊</b>Fox<small>A bit clever</small></button>
-          <button class="choice" data-level="owl"><b>🦉</b>Owl<small>Very smart!</small></button>
-          <button class="choice" data-level="friend"><b>👫</b>Friend<small>2 players</small></button>
+          <button class="choice" data-level="chick"><b>🐣</b>אפרוח<small>רק לומד</small></button>
+          <button class="choice" data-level="fox"><b>🦊</b>שועל<small>די חכם</small></button>
+          <button class="choice" data-level="owl"><b>🦉</b>ינשוף<small>חכם מאוד!</small></button>
+          <button class="choice" data-level="friend"><b>👫</b>חבר<small>2 שחקנים</small></button>
         </div>
-        <button class="play-btn" id="playBtn">▶ Play!</button>
+        <button class="play-btn" id="playBtn">▶ שחקו!</button>
         <div class="wins" id="winsText"></div>
       </div>
 
-      <div class="overlay hidden" id="promoScreen">
-        <h2>🎉 Your pawn made it to the end!</h2>
-        <p>Pick what it turns into:</p>
+      <div dir="rtl" class="overlay hidden" id="promoScreen">
+        <h2>🎉 הרגלי הגיע עד הסוף!</h2>
+        <p>בחרו למה הוא יהפוך:</p>
         <div class="promo" id="promoChoices"></div>
       </div>
 
-      <div class="overlay hidden" id="overScreen">
+      <div dir="rtl" class="overlay hidden" id="overScreen">
         <div class="big" id="overEmoji">🏆</div>
-        <h2 id="overTitle">You win!</h2>
+        <h2 id="overTitle">ניצחת!</h2>
         <p id="overText"></p>
-        <button class="play-btn" id="againBtn">🔁 Play again</button>
+        <button class="play-btn" id="againBtn">🔁 עוד משחק</button>
       </div>
     </div>
 
     <div class="panel">
-      <div class="players">
+      <div class="players" dir="rtl">
         <div class="tray" id="trayTop">
-          <div class="top"><span class="who" id="topName">🦊 Fox</span><span class="lead" id="topLead"></span></div>
+          <div class="top"><span class="who" id="topName">🦊 שועל</span><span class="lead" id="topLead"></span></div>
           <div class="caps" id="topCaps"></div>
         </div>
         <div class="tray" id="trayBottom">
-          <div class="top"><span class="who" id="bottomName">🙂 You</span><span class="lead" id="bottomLead"></span></div>
+          <div class="top"><span class="who" id="bottomName">🙂 אני</span><span class="lead" id="bottomLead"></span></div>
           <div class="caps" id="bottomCaps"></div>
         </div>
       </div>
@@ -377,12 +377,12 @@
         <div class="bubble" id="bubble"><span>Hi! I'm Coach Pengu. Let's play chess!</span></div>
       </div>
 
-      <div class="buttons">
-        <button id="undoBtn"><b>↩️</b>Undo</button>
-        <button id="hintBtn"><b>💡</b>Hint</button>
-        <button id="newBtn"><b>🔄</b>New</button>
-        <button id="themeBtn"><b>🎨</b>Colors</button>
-        <button id="soundBtn"><b>🔊</b>Sound</button>
+      <div class="buttons" dir="rtl">
+        <button id="undoBtn"><b>↩️</b>ביטול</button>
+        <button id="hintBtn"><b>💡</b>רמז</button>
+        <button id="newBtn"><b>🔄</b>חדש</button>
+        <button id="themeBtn"><b>🎨</b>צבעים</button>
+        <button id="soundBtn"><b>🔊</b>צליל</button>
       </div>
 
     </div>
@@ -406,10 +406,10 @@
     };
     const VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
     const LEVELS = {
-      chick:  { emoji: '🐣', name: 'Chick' },
-      fox:    { emoji: '🦊', name: 'Fox' },
-      owl:    { emoji: '🦉', name: 'Owl' },
-      friend: { emoji: '👫', name: 'Friend' }
+      chick:  { emoji: '🐣', name: 'Chick', he: 'אפרוח' },
+      fox:    { emoji: '🦊', name: 'Fox', he: 'שועל' },
+      owl:    { emoji: '🦉', name: 'Owl', he: 'ינשוף' },
+      friend: { emoji: '👫', name: 'Friend', he: 'חבר' }
     };
     const CHEERS = ['Nice move! 👍', 'Good thinking! 🧠', 'Great job! ⭐', 'Smart! 😎', 'Well played! 🎉'];
     const FILES = 'abcdefgh';
@@ -579,8 +579,8 @@
       $('bottomLead').textContent = mat > 0 ? `+${mat} ⭐` : '';
       $('topLead').textContent = mat < 0 ? `+${-mat} ⭐` : '';
       const lv = LEVELS[level];
-      $('topName').textContent = vsBot() ? `${lv.emoji} ${lv.name}` : '⚫ Black';
-      $('bottomName').textContent = vsBot() ? '🙂 You' : '⚪ White';
+      $('topName').textContent = vsBot() ? `${lv.emoji} ${lv.he}` : '⚫ שחור';
+      $('bottomName').textContent = vsBot() ? '🙂 אני' : '⚪ לבן';
       $('trayTop').classList.toggle('turn', playing && !over && game.turn() === 'b');
       $('trayBottom').classList.toggle('turn', playing && !over && game.turn() === 'w');
       $('topName').classList.toggle('thinking', thinking);
@@ -744,22 +744,22 @@
       if (game.isCheckmate()) {
         const winner = game.turn() === 'w' ? 'b' : 'w';
         if (!vsBot()) {
-          emoji = '🏆'; title = `Checkmate! ${winner === 'w' ? '⚪ White' : '⚫ Black'} wins!`; text = 'What a great game! High five! 🙌';
+          emoji = '🏆'; title = `שח-מט! ${winner === 'w' ? '⚪ הלבן' : '⚫ השחור'} ניצח!`; text = 'איזה משחק! כיף גדול! 🙌';
           sfx.win(); confetti(160); say('Checkmate!');
         } else if (winner === 'w') {
           wins[level] = (wins[level] || 0) + 1; save('chess-wins', wins);
-          emoji = '🏆'; title = 'Checkmate! You win!'; text = `You beat ${LEVELS[level].emoji} ${LEVELS[level].name}! You are a chess champion! 🌟`;
+          emoji = '🏆'; title = 'שח-מט! ניצחת! 🏆'; text = `ניצחת את ה${LEVELS[level].he} ${LEVELS[level].emoji}! איזה אלוף שחמט! 🌟`;
           sfx.win(); confetti(180); say('Checkmate! You win!');
         } else {
-          emoji = '🤗'; title = `${LEVELS[level].name} wins this time`; text = 'Good try! Every game makes you smarter. Want to play again?';
+          emoji = '🤗'; title = `ה${LEVELS[level].he} ניצח הפעם`; text = 'ניסיון יפה! כל משחק עושה אותך חכם יותר. עוד משחק?';
           sfx.lose(); say('Good game!');
         }
       } else {
         emoji = '🤝';
-        title = "It's a tie!";
-        text = game.isStalemate() ? "Stalemate! The King can't move but isn't in check, so nobody wins." :
-               game.isInsufficientMaterial() ? 'Not enough pieces left to checkmate, so nobody wins.' :
-               'The game is a draw. Nice playing!';
+        title = 'תיקו! 🤝';
+        text = game.isStalemate() ? 'פט! למלך אין לאן לזוז אבל הוא לא בשח, אז אין מנצח.' :
+               game.isInsufficientMaterial() ? 'לא נשארו מספיק כלים בשביל מט, אז אין מנצח.' :
+               'המשחק נגמר בתיקו. שיחקתם יפה!';
         sfx.move(); say("It's a tie!");
       }
       $('overEmoji').textContent = emoji;
@@ -1016,7 +1016,7 @@
     $('themeBtn').addEventListener('click', () => { theme = (theme + 1) % THEMES.length; applyTheme(); save('chess-theme', theme); sfx.pick(); });
     function applyTheme() { THEMES.forEach(t => t && document.body.classList.remove(t)); if (THEMES[theme]) document.body.classList.add(THEMES[theme]); }
 
-    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>Sound`; }
+    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>צליל`; }
     $('soundBtn').addEventListener('click', () => {
       soundOn = !soundOn; save('chess-sound', soundOn); updateSoundBtn();
       if (!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel();
@@ -1027,7 +1027,7 @@
     choiceBtns.forEach(b => b.addEventListener('click', () => { level = b.dataset.level; save('chess-level', level); markLevel(); sfx.pick(); }));
     function updateWinsText() {
       const w = wins;
-      $('winsText').textContent = (w.chick || w.fox || w.owl) ? `🏅 Your wins: 🐣 ${w.chick || 0} · 🦊 ${w.fox || 0} · 🦉 ${w.owl || 0}` : '';
+      $('winsText').textContent = (w.chick || w.fox || w.owl) ? `🏅 הניצחונות שלך: 🐣 ${w.chick || 0} · 🦊 ${w.fox || 0} · 🦉 ${w.owl || 0}` : '';
     }
 
     // ---------- Confetti ----------
