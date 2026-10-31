@@ -104,7 +104,7 @@
     .tray .caps { display: flex; align-items: center; flex: 1; min-width: 0; height: 16px; overflow: hidden; }
     .tray .caps svg { width: 16px; height: 16px; margin-right: -8px; flex: none; }
     .tray .lead { color: #2e9d4f; white-space: nowrap; font-size: 0.75rem; }
-    .tray.turn { background: #fff; box-shadow: 0 0 0 2px #ffd23f; }
+    .tray.turn { background: #fff; box-shadow: 0 0 0 3px #00c853; }
     .thinking::after { content: ''; animation: dots 1s steps(4) infinite; }
     @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
 
@@ -146,7 +146,7 @@
     }
     .sq { position: relative; background: var(--light); }
     .sq.dk { background: var(--dark); box-shadow: inset 0 0 calc(var(--board) / 40) rgba(0,0,0,0.18); }
-    .sq.last::before { content: ''; position: absolute; inset: 0; background: rgba(255, 214, 0, 0.38); }
+    .sq.last::before { content: ''; position: absolute; inset: 0; background: rgba(41, 98, 255, 0.35); }
     /* green = must/can move, blue = picked (same colors as backgammon) */
     .sq.sel::before { content: ''; position: absolute; inset: 9%; border-radius: 50%; box-shadow: 0 0 0 3px #fff, 0 0 0 7px #2962ff; }
     .sq.hover::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 4px rgba(255,255,255,0.9); }
