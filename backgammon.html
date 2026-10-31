@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kids Backgammon</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #3b2a50;
+      --soft: #8a7a9e;
+      --btn: #7048e8;
+      --btn-dark: #5233c4;
+      --vh: 100vh;
+      /* the board is 1000 x 760, so its height is 0.76 x its width */
+      --bw: clamp(260px, min(calc(100vw - 8px), calc((var(--vh) - 300px) * 1.3158)), 1100px);
+    }
+    @supports (height: 100dvh) { :root { --vh: 100dvh; } }
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
+      :root { --bw: clamp(260px, min(calc((var(--vh) - 80px) * 1.3158), calc(100vw - 370px)), 1100px); }
+    }
+
+    /* the page never scrolls or bounces, so the board stays put while playing */
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      position: fixed;
+      inset: 0;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #a1ffce 0%, #74c0fc 100%);
+      color: var(--ink);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+    }
+    .app {
+      position: absolute;
+      top: 44px; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 4px 8px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) {
+      .app { flex-direction: row; justify-content: center; align-items: center; gap: 18px; padding-top: 10px; }
+    }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.25);
+      display: flex;
+      gap: 5px;
+      padding: 6px 10px;
+      z-index: 50;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100vw;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.25);
+      white-space: nowrap;
+    }
+    nav a:hover { background: rgba(255,255,255,0.3); }
+    nav a.active { background: rgba(255,255,255,0.4); }
+
+    /* board */
+    .board-wrap {
+      margin-top: auto; /* shares the free space with the panel, so the board sits in the middle */
+      position: relative;
+      flex: none;
+      width: var(--bw);
+      height: calc(var(--bw) * 0.76);
+      border-radius: 16px;
+      box-shadow: 0 10px 0 rgba(0,0,0,0.12), 0 20px 40px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+    svg#board { display: block; width: 100%; height: 100%; touch-action: none; }
+    .ck { transition: transform 0.38s cubic-bezier(.2,.9,.3,1.15); }
+    .ck.poof { transition: transform .35s, opacity .35s; opacity: 0; }
+    .ring { fill: none; stroke: #ffe14d; stroke-width: 7; animation: pulse 0.7s ease-in-out infinite alternate; }
+    .ring.sel { stroke: #fff; stroke-width: 8; }
+    .tgt { fill: rgba(255, 225, 77, 0.45); animation: pulse 0.7s ease-in-out infinite alternate; }
+    .ghost { fill: rgba(255,255,255,0.8); stroke: #ffe14d; stroke-width: 5; animation: pulse 0.7s ease-in-out infinite alternate; }
+    .bad { fill: rgba(255, 80, 80, 0.5); animation: fadeout 0.9s forwards; }
+    @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
+    @keyframes fadeout { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+
+    .panel { width: var(--bw); display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-bottom: 6px; }
+    @media (min-width: 700px) and (min-aspect-ratio: 5/4) { .panel { width: 330px; margin-top: 0; } .board-wrap { margin-top: 0; } }
+
+    /* the two players */
+    .players { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .tray {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 10px;
+      padding: 0 8px;
+      height: 30px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: box-shadow .2s, background .2s;
+    }
+    .tray .info { font-size: 0.72rem; color: var(--soft); }
+    .tray.turn { background: #fff; box-shadow: 0 0 0 2px #ffd23f; }
+    .thinking::after { content: ''; animation: dots 1s steps(4) infinite; }
+    @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+    /* coach message */
+    .coach { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 4px; }
+    .coach .face { font-size: 1.4rem; }
+    .coach .face.talk { animation: hop .4s ease; }
+    @keyframes hop { 50% { transform: translateY(-6px) rotate(-6deg); } }
+    .bubble {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-size: clamp(0.72rem, 3vw, 0.88rem);
+      line-height: 1.2;
+      overflow: hidden;
+    }
+    .bubble span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .bubble.oops { color: #a63d00; }
+    .bubble.yay { color: #1c6b33; }
+
+    /* dice */
+    .dicebox {
+      height: 72px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      position: relative;
+      border: 3px dashed transparent;
+    }
+    .dicebox.ready { border-color: #fff; background: rgba(255,255,255,0.7); animation: nudge 1.2s ease-in-out infinite; }
+    @keyframes nudge { 50% { transform: scale(1.03); } }
+    .dicebox .label { font-weight: bold; font-size: 1rem; }
+    .die {
+      width: 54px; height: 54px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #ffffff, #e9e4ff);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.15), inset 0 0 0 3px #ff4d64;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 7px;
+      transition: opacity .2s, transform .2s;
+    }
+    .die.yel { box-shadow: 0 4px 0 rgba(0,0,0,0.15), inset 0 0 0 3px #e0a800; }
+    .die.small { width: 42px; height: 42px; padding: 5px; border-radius: 10px; }
+    .die i { width: 76%; height: 76%; margin: auto; border-radius: 50%; background: #2a1e3a; visibility: hidden; }
+    .die i.on { visibility: visible; }
+    .die.used { opacity: 0.28; transform: scale(0.85); }
+    .die.roll { animation: tumble .14s linear infinite; }
+    @keyframes tumble { 0% { transform: rotate(0) translateY(0); } 50% { transform: rotate(14deg) translateY(-6px); } 100% { transform: rotate(-10deg) translateY(0); } }
+    .dicebox .sum { font-size: 0.8rem; color: var(--soft); font-weight: bold; }
+
+    /* buttons */
+    .buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .buttons button {
+      border: none;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.78rem;
+      height: 50px;
+      padding: 4px 2px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.13);
+      cursor: pointer;
+      line-height: 1.1;
+    }
+    .buttons button b { display: block; font-size: 1.35rem; }
+    .buttons button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.13); }
+    .buttons button:disabled { opacity: 0.45; }
+    .buttons button.on { background: #fff6c9; box-shadow: 0 4px 0 #e0b800; }
+
+    /* overlays on the board */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.93);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: safe center;
+      gap: 8px;
+      padding: 10px;
+      text-align: center;
+      z-index: 20;
+      overflow-y: auto;
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { font-size: clamp(1.05rem, 4.6vw, 1.8rem); }
+    .overlay p { color: var(--soft); font-size: clamp(0.75rem, 3.2vw, 1rem); max-width: 460px; }
+    .choices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 460px; }
+    .choice {
+      border: 3px solid transparent;
+      background: #eef0ff;
+      border-radius: 14px;
+      padding: 5px 2px;
+      font: inherit;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: clamp(0.72rem, 3vw, 1rem);
+    }
+    .choice b { display: block; font-size: clamp(1.4rem, 6vw, 2.2rem); }
+    .choice small { display: block; color: var(--soft); font-size: 0.75em; }
+    .choice.active { border-color: var(--btn); background: #e3dcff; }
+    .play-btn {
+      border: none;
+      background: var(--btn);
+      color: #fff;
+      font: inherit;
+      font-size: 1.15rem;
+      font-weight: bold;
+      padding: 8px 30px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 5px 0 var(--btn-dark);
+    }
+    .play-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--btn-dark); }
+    .small-note { font-size: 0.75rem; color: var(--soft); }
+    .guide { text-align: left; max-width: 520px; display: grid; gap: 4px; font-size: clamp(0.72rem, 3vw, 0.98rem); }
+    .guide div { background: #f3f0ff; border-radius: 10px; padding: 4px 8px; }
+
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+  </style>
+</head>
+<body>
+  <!-- the checkers are the same round buddies as in the checkers game -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <radialGradient id="gRed" cx="38%" cy="32%" r="75%">
+        <stop offset="0" stop-color="#ff9aa8" /><stop offset="0.55" stop-color="#ff4d64" /><stop offset="1" stop-color="#c41f3b" />
+      </radialGradient>
+      <radialGradient id="gYel" cx="38%" cy="32%" r="75%">
+        <stop offset="0" stop-color="#fff6b0" /><stop offset="0.55" stop-color="#ffd23f" /><stop offset="1" stop-color="#e09a00" />
+      </radialGradient>
+      <symbol id="pr" viewBox="0 0 100 100">
+        <circle cx="50" cy="54" r="44" fill="#a3162f" />
+        <circle cx="50" cy="50" r="44" fill="url(#gRed)" stroke="#a3162f" stroke-width="2.5" />
+        <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="3" stroke-dasharray="7 5" />
+        <ellipse cx="34" cy="24" rx="13" ry="6" fill="rgba(255,255,255,0.6)" transform="rotate(-25 34 24)" />
+        <circle cx="37" cy="47" r="9.5" fill="#fff" /><circle cx="63" cy="47" r="9.5" fill="#fff" />
+        <circle cx="38.5" cy="48.5" r="5" fill="#2a1e3a" /><circle cx="64.5" cy="48.5" r="5" fill="#2a1e3a" />
+        <circle cx="40" cy="46.5" r="1.8" fill="#fff" /><circle cx="66" cy="46.5" r="1.8" fill="#fff" />
+        <circle cx="26" cy="61" r="5.5" fill="#ffb3c1" opacity="0.85" /><circle cx="74" cy="61" r="5.5" fill="#ffb3c1" opacity="0.85" />
+        <path d="M39 63 Q50 74 61 63" stroke="#5a1020" stroke-width="4" fill="none" stroke-linecap="round" />
+      </symbol>
+      <symbol id="py" viewBox="0 0 100 100">
+        <circle cx="50" cy="54" r="44" fill="#b37400" />
+        <circle cx="50" cy="50" r="44" fill="url(#gYel)" stroke="#b37400" stroke-width="2.5" />
+        <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-dasharray="7 5" />
+        <ellipse cx="34" cy="24" rx="13" ry="6" fill="rgba(255,255,255,0.7)" transform="rotate(-25 34 24)" />
+        <circle cx="37" cy="46" r="9.5" fill="#fff" /><circle cx="63" cy="46" r="9.5" fill="#fff" />
+        <circle cx="36" cy="44.5" r="5" fill="#2a1e3a" /><circle cx="62" cy="44.5" r="5" fill="#2a1e3a" />
+        <circle cx="37.5" cy="42.5" r="1.8" fill="#fff" /><circle cx="63.5" cy="42.5" r="1.8" fill="#fff" />
+        <path d="M27 34 L43 37 M73 34 L57 37" stroke="#6b4100" stroke-width="3.5" stroke-linecap="round" />
+        <path d="M37 60 Q50 76 63 60 Z" fill="#7a2e00" stroke="#7a2e00" stroke-width="2" stroke-linejoin="round" />
+        <ellipse cx="54" cy="67" rx="5.5" ry="4.5" fill="#ff6f8f" />
+      </symbol>
+      <marker id="arrowHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="rgba(112,72,232,0.6)" />
+      </marker>
+    </defs>
+  </svg>
+
+  <nav dir="rtl">
+    <a href="index.html">🎨 צבעים</a>
+    <a href="math.html">➕ חשבון</a>
+    <a href="words.html">📖 מילים</a>
+    <a href="alef-bet.html">א-ב</a>
+    <a href="pokemon.html">⚡ פוקימון</a>
+    <a href="maze.html">🧩 מבוך</a>
+    <a href="hexmaze.html">⬡ משושים</a>
+    <a href="snake.html">🐍 נחש</a>
+    <a href="chess.html">♟️ שחמט</a>
+    <a href="checkers.html">🔴 דמקה</a>
+    <a href="backgammon.html" class="active">🎲 שש-בש</a>
+  </nav>
+
+  <div class="app">
+    <div class="board-wrap" id="boardWrap">
+      <svg id="board" viewBox="0 0 1000 760"></svg>
+
+      <div class="overlay" id="startScreen">
+        <h2>🎲 Let's play backgammon!</h2>
+        <div class="choices">
+          <button class="choice" data-level="bunny"><b>🐰</b>Bunny<small>Just learning</small></button>
+          <button class="choice" data-level="bear"><b>🐻</b>Bear<small>A bit clever</small></button>
+          <button class="choice" data-level="dragon"><b>🐉</b>Dragon<small>Very smart!</small></button>
+          <button class="choice" data-level="friend"><b>👫</b>Friend<small>2 players</small></button>
+        </div>
+        <button class="play-btn" id="playBtn">▶ Play!</button>
+        <div class="small-note" id="winsText"></div>
+      </div>
+
+      <div class="overlay hidden" id="guideScreen">
+        <h2>🎓 How to play</h2>
+        <div class="guide">
+          <div>🎲 <b>Tap the dice</b> to roll. Each die tells how many steps one checker walks.</div>
+          <div>🐾 Your <b>red</b> checkers walk along the arrow to your <b>home 🏠</b> (bottom right).</div>
+          <div>💥 Land on a <b>lonely</b> enemy checker to send it to the middle! 🚧 You can't land where 2 or more enemies stand.</div>
+          <div>🏁 When all 15 are home, <b>take them off</b>. First to take off all 15 wins!</div>
+        </div>
+        <button class="play-btn" id="guideBtn">👍 Got it!</button>
+      </div>
+
+      <div class="overlay hidden" id="overScreen">
+        <h2 id="overTitle">You win!</h2>
+        <p id="overText"></p>
+        <button class="play-btn" id="againBtn">🔁 Play again</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="players">
+        <div class="tray" id="trayTop"><span id="topName">🐰 Bunny</span><span class="info" id="topInfo"></span></div>
+        <div class="tray" id="trayBottom"><span id="bottomName">🙂 You</span><span class="info" id="bottomInfo"></span></div>
+      </div>
+
+      <div class="coach">
+        <div class="face" id="coachFace">🐼</div>
+        <div class="bubble" id="bubble"><span>Hi! I'm Coach Panda. Let's play backgammon!</span></div>
+      </div>
+
+      <div class="dicebox" id="dicebox"><span class="label">🎲 Tap to roll!</span></div>
+
+      <div class="buttons">
+        <button id="undoBtn"><b>↩️</b>Undo</button>
+        <button id="hintBtn"><b>💡</b>Hint</button>
+        <button id="learnBtn"><b>🎓</b>Learn</button>
+        <button id="newBtn"><b>🔄</b>New</button>
+        <button id="soundBtn"><b>🔊</b>Sound</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <script>
+    // ---------- Rules ----------
+    // Points 1..24. Positive numbers are red checkers (you), negative are yellow.
+    // Red walks from 24 down to 1 (home is 1-6); yellow walks from 1 up to 24 (home is 19-24).
+    const RED = 1, YEL = -1;
+
+    function startState() {
+      const pts = new Array(25).fill(0);
+      pts[24] = 2; pts[13] = 5; pts[8] = 3; pts[6] = 5;
+      pts[1] = -2; pts[12] = -5; pts[17] = -3; pts[19] = -5;
+      return { pts, bar: { 1: 0, '-1': 0 }, off: { 1: 0, '-1': 0 } };
+    }
+    const clone = st => ({ pts: st.pts.slice(), bar: { ...st.bar }, off: { ...st.off } });
+    const own = (v, s) => v * s > 0;
+    const inHome = (s, p) => s === RED ? p <= 6 : p >= 19;
+    const entry = (s, d) => s === RED ? 25 - d : d;
+    const opens = (st, s, t) => -st.pts[t] * s < 2;          // fewer than 2 enemy checkers there
+
+    function allHome(st, s) {
+      if (st.bar[s]) return false;
+      for (let p = 1; p <= 24; p++) if (own(st.pts[p], s) && !inHome(s, p)) return false;
+      return true;
+    }
+
+    function singleMoves(st, s, d) {
+      const out = [];
+      if (st.bar[s]) {
+        const t = entry(s, d);
+        if (opens(st, s, t)) out.push({ from: 'bar', to: t, die: d });
+        return out;
+      }
+      const home = allHome(st, s);
+      for (let p = 1; p <= 24; p++) {
+        if (!own(st.pts[p], s)) continue;
+        const t = s === RED ? p - d : p + d;
+        if (t >= 1 && t <= 24) { if (opens(st, s, t)) out.push({ from: p, to: t, die: d }); continue; }
+        if (!home) continue;
+        const exact = s === RED ? t === 0 : t === 25;
+        let farther = false; // a checker farther from home must move first when the die is too big
+        if (!exact) for (let q = s === RED ? p + 1 : 19; s === RED ? q <= 6 : q < p; q++) if (own(st.pts[q], s)) farther = true;
+        if (exact || !farther) out.push({ from: p, to: 'off', die: d });
+      }
+      return out;
+    }
+
+    function applyMove(st, s, m) {
+      const n = clone(st);
+      if (m.from === 'bar') n.bar[s]--; else n.pts[m.from] -= s;
+      if (m.to === 'off') { n.off[s]++; return n; }
+      if (n.pts[m.to] === -s) { n.pts[m.to] = 0; n.bar[-s]++; m.hit = true; }
+      n.pts[m.to] += s;
+      return n;
+    }
+
+    const keyOf = st => st.pts.join(',') + '|' + st.bar[1] + ',' + st.bar[-1] + '|' + st.off[1] + ',' + st.off[-1];
+
+    // all ways to play the dice; you must use as many dice as you can (and the bigger one if only one fits)
+    function sequences(st, s, dice) {
+      const out = [], seen = new Set();
+      (function rec(cur, left, seq) {
+        const k = keyOf(cur) + '#' + left.slice().sort().join('');
+        if (seen.has(k)) return;
+        seen.add(k);
+        let moved = false;
+        for (const d of [...new Set(left)]) {
+          for (const m of singleMoves(cur, s, d)) {
+            moved = true;
+            const rest = left.slice(); rest.splice(rest.indexOf(d), 1);
+            rec(applyMove(cur, s, m), rest, [...seq, m]);
+          }
+        }
+        if (!moved) out.push({ seq, st: cur });
+      })(st, dice, []);
+      const max = Math.max(...out.map(o => o.seq.length));
+      let best = out.filter(o => o.seq.length === max);
+      if (max === 1 && dice.length === 2 && dice[0] !== dice[1]) {
+        const big = Math.max(...dice);
+        if (best.some(o => o.seq[0].die === big)) best = best.filter(o => o.seq[0].die === big);
+      }
+      return max === 0 ? [] : best;
+    }
+
+    // the first moves a player may make: each must start a way of using as many dice as possible
+    function legalFirst(st, s, dice) {
+      const memo = new Map();
+      const depth = (cur, left) => {
+        if (!left.length) return 0;
+        const k = keyOf(cur) + '#' + left.slice().sort().join('');
+        if (memo.has(k)) return memo.get(k);
+        let best = 0;
+        for (const d of [...new Set(left)]) {
+          for (const m of singleMoves(cur, s, d)) {
+            const rest = left.slice(); rest.splice(rest.indexOf(d), 1);
+            best = Math.max(best, 1 + depth(applyMove(cur, s, { ...m }), rest));
+            if (best === left.length) break;
+          }
+          if (best === left.length) break;
+        }
+        memo.set(k, best);
+        return best;
+      };
+      const opts = [];
+      for (const d of [...new Set(dice)]) {
+        for (const m of singleMoves(st, s, d)) {
+          const rest = dice.slice(); rest.splice(rest.indexOf(d), 1);
+          opts.push({ m, n: 1 + depth(applyMove(st, s, { ...m }), rest) });
+        }
+      }
+      if (!opts.length) return [];
+      const max = Math.max(...opts.map(o => o.n));
+      let moves = opts.filter(o => o.n === max).map(o => o.m);
+      if (max === 1 && dice.length === 2 && dice[0] !== dice[1]) {
+        const big = Math.max(...dice);
+        if (moves.some(m => m.die === big)) moves = moves.filter(m => m.die === big);
+      }
+      return moves;
+    }
+
+    const pips = (st, s) => {
+      let n = st.bar[s] * 25;
+      for (let p = 1; p <= 24; p++) if (own(st.pts[p], s)) n += Math.abs(st.pts[p]) * (s === RED ? p : 25 - p);
+      return n;
+    };
+
+    // ---------- Computer player ----------
+    function evaluate(st, s) {
+      const o = -s;
+      let score = (pips(st, o) - pips(st, s)) + st.off[s] * 4 + st.bar[o] * 12 - st.bar[s] * 12;
+      let run = 0;
+      for (let i = 1; i <= 24; i++) {
+        const p = s === RED ? i : 25 - i;                       // walk from home outward
+        const c = st.pts[p] * s;
+        if (c >= 2) { score += 5 + (inHome(s, p) ? 4 : 0); run++; score += run >= 2 ? run * 2 : 0; }
+        else run = 0;
+        if (c === 1) {
+          let shots = 0;                                         // enemy checkers that could land on this blot
+          for (let q = 1; q <= 24; q++) {
+            if (!own(st.pts[q], o)) continue;
+            const dist = o === RED ? q - p : p - q;
+            if (dist >= 1 && dist <= 12) shots += Math.abs(st.pts[q]);
+          }
+          if (st.bar[o]) { const dist = o === RED ? 25 - p : p; if (dist <= 12) shots += st.bar[o]; }
+          if (shots) score -= 6 + Math.min(shots, 4) * 2 + (inHome(o, p) ? 4 : 0);
+        }
+      }
+      return score;
+    }
+    const BOTS = { bunny: { random: 0.45, noise: 30 }, bear: { random: 0.1, noise: 28 }, dragon: { random: 0, noise: 0 } };
+    function choose(st, s, dice, cfg) {
+      const all = sequences(st, s, dice);
+      if (!all.length) return null;
+      if (Math.random() < cfg.random) return all[Math.floor(Math.random() * all.length)];
+      let best = all[0], bestScore = -Infinity;
+      for (const o of all) {
+        const v = evaluate(o.st, s) + (Math.random() - 0.5) * cfg.noise;
+        if (v > bestScore) { bestScore = v; best = o; }
+      }
+      return best;
+    }
+
+    // ---------- Settings ----------
+    function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
+    function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
+    const LEVELS = {
+      bunny:  { emoji: '🐰', name: 'Bunny' },
+      bear:   { emoji: '🐻', name: 'Bear' },
+      dragon: { emoji: '🐉', name: 'Dragon' },
+      friend: { emoji: '👫', name: 'Friend' }
+    };
+    let level = load('bg-level', 'bunny');
+    if (!LEVELS[level]) level = 'bunny';
+    let soundOn = load('bg-sound', true);
+    let learn = load('bg-learn', true);
+    let wins = load('bg-wins', { bunny: 0, bear: 0, dragon: 0 });
+    const $ = id => document.getElementById(id);
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+    // ---------- Sound ----------
+    let audio = null;
+    function tone(freq, dur = 0.12, type = 'sine', when = 0, vol = 0.15, slide = 0) {
+      if (!soundOn) return;
+      try {
+        audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+        if (audio.state === 'suspended') audio.resume();
+        const t = audio.currentTime + when;
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t);
+        if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g).connect(audio.destination);
+        o.start(t); o.stop(t + dur + 0.02);
+      } catch {}
+    }
+    const sfx = {
+      rattle() { for (let i = 0; i < 6; i++) tone(500 + Math.random() * 600, .04, 'square', i * .07, .04); },
+      pick()   { tone(700, .06, 'triangle', 0, .08, 1.3); },
+      move()   { tone(300, .08, 'triangle', 0, .2); tone(220, .06, 'sine', .02, .1); },
+      hit()    { tone(420, .1, 'square', 0, .07, 1.8); tone(900, .12, 'triangle', .08, .12); },
+      off()    { tone(660, .1, 'triangle', 0, .12); tone(990, .14, 'triangle', .08, .12); },
+      oops()   { tone(400, .25, 'sine', 0, .14, .5); },
+      win()    { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .18, 'triangle', i * .12, .13)); },
+      lose()   { [392, 330, 262].forEach((f, i) => tone(f, .25, 'triangle', i * .18, .12)); }
+    };
+    function say(text) {
+      if (!soundOn || !('speechSynthesis' in window)) return;
+      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.pitch = 1.3; u.rate = 1.05; u.lang = 'en-US'; speechSynthesis.speak(u); } catch {}
+    }
+
+    // ---------- Game state ----------
+    let st = startState(), turn = RED, dice = [], shown = [], phase = 'idle';
+    let firstMoves = [], selected = null, turnStack = [], lastMove = null;
+    const vsBot = () => level !== 'friend';
+    const human = () => !vsBot() || turn === RED;
+    const nameOf = s => vsBot() ? (s === RED ? 'You' : LEVELS[level].name) : (s === RED ? 'Red' : 'Yellow');
+    const enemyWord = s => s === RED ? 'yellow' : 'red';
+
+    // ---------- Board geometry (1000 x 760) ----------
+    const F = 20, HW = 421, PW = HW / 6, R = 30, L = 310;
+    const LEFT0 = 20, BAR0 = 441, BAR1 = 497, RIGHT1 = 918, OFFX = 950;
+    function pointX(p) {
+      if (p <= 6) return RIGHT1 - (p - 0.5) * PW;
+      if (p <= 12) return LEFT0 + HW - (p - 6.5) * PW;
+      if (p <= 18) return LEFT0 + (p - 12.5) * PW;
+      return BAR1 + (p - 18.5) * PW;
+    }
+    const isTop = p => p >= 13;
+    function checkerXY(p, k, n) {
+      const sp = n <= 5 ? 2 * R : (L - 2 * R) / (n - 1);
+      return { x: pointX(p), y: isTop(p) ? F + R + k * sp : 760 - F - R - k * sp };
+    }
+    const barXY = (s, k) => ({ x: (BAR0 + BAR1) / 2, y: s === RED ? 430 + R + k * 46 : 330 - R - k * 46 });
+    function topXY(state, where, s) {            // where the top checker of a spot sits
+      if (where === 'bar') return barXY(s, Math.max(0, state.bar[s] - 1));
+      if (where === 'off') return { x: OFFX, y: s === RED ? 700 : 60 };
+      const n = Math.abs(state.pts[where]);
+      return checkerXY(where, Math.max(0, n - 1), Math.max(1, n));
+    }
+    function landXY(state, where, s) {          // where a new checker would land
+      if (where === 'off') return { x: OFFX, y: s === RED ? 680 : 80 };
+      const n = own(state.pts[where], s) ? Math.abs(state.pts[where]) : 0;
+      return checkerXY(where, n, n + 1);
+    }
+
+    const svg = $('board');
+    const ckSvg = (s, x, y, extra = '') => `<g class="ck" ${extra} style="transform: translate(${x}px, ${y}px)"><use href="#${s === RED ? 'pr' : 'py'}" x="${-R}" y="${-R}" width="${2 * R}" height="${2 * R}" /></g>`;
+
+    function render(anim) {
+      let h = '';
+      // frame, field, bar and home tray
+      h += `<rect x="0" y="0" width="1000" height="760" rx="26" fill="#6c4bd8" />`;
+      h += `<rect x="${F}" y="${F}" width="${RIGHT1 - F}" height="${760 - 2 * F}" rx="10" fill="#fff8e7" />`;
+      h += `<rect x="${BAR0}" y="${F}" width="${BAR1 - BAR0}" height="${760 - 2 * F}" fill="#5a3bc4" />`;
+      h += `<rect x="924" y="${F}" width="52" height="${760 - 2 * F}" rx="10" fill="#8f75ea" />`;
+      h += `<text x="${OFFX}" y="392" text-anchor="middle" font-size="30">🏠</text>`;
+      // points
+      for (let p = 1; p <= 24; p++) {
+        const x = pointX(p), top = isTop(p);
+        const col = p % 2 ? '#ff8fab' : '#74c0fc';
+        const base = top ? F : 760 - F, tip = top ? F + L : 760 - F - L;
+        h += `<path d="M${x - PW / 2 + 3} ${base} L${x + PW / 2 - 3} ${base} L${x} ${tip} Z" fill="${col}" />`;
+      }
+      // learning helpers: the path to walk and point numbers
+      if (learn && phase !== 'idle') {
+        const walker = human() ? turn : RED;
+        h += walker === RED
+          ? `<path d="M 890 370 L 60 370 Q 34 380 60 390 L 885 390" fill="none" stroke="rgba(112,72,232,0.45)" stroke-width="6" stroke-dasharray="14 10" marker-end="url(#arrowHead)" />`
+          : `<path d="M 890 390 L 60 390 Q 34 380 60 370 L 885 370" fill="none" stroke="rgba(112,72,232,0.45)" stroke-width="6" stroke-dasharray="14 10" marker-end="url(#arrowHead)" />`;
+        for (let p = 1; p <= 24; p++) {
+          const label = walker === RED ? p : 25 - p;
+          h += `<text x="${pointX(p)}" y="${isTop(p) ? 352 : 424}" text-anchor="middle" font-size="22" font-weight="bold" fill="rgba(60,40,90,0.55)" font-family="Segoe UI, Arial">${label}</text>`;
+        }
+      }
+      // target highlights
+      const targets = selected !== null ? firstMoves.filter(m => m.from === selected) : [];
+      for (const m of targets) {
+        if (m.to === 'off') { h += `<rect x="924" y="${turn === RED ? 400 : F}" width="52" height="340" rx="10" class="tgt" />`; continue; }
+        const x = pointX(m.to), top = isTop(m.to);
+        h += `<rect x="${x - PW / 2}" y="${top ? F : 760 - F - L}" width="${PW}" height="${L}" class="tgt" />`;
+      }
+      // checkers on points
+      for (let p = 1; p <= 24; p++) {
+        const v = st.pts[p], n = Math.abs(v), s = Math.sign(v);
+        for (let k = 0; k < n; k++) {
+          const { x, y } = checkerXY(p, k, n);
+          h += ckSvg(s, x, y, k === n - 1 ? `data-top="${p}"` : '');
+        }
+        if (n > 5) {
+          const { x, y } = checkerXY(p, n - 1, n);
+          h += `<text x="${x}" y="${y + 10}" text-anchor="middle" font-size="28" font-weight="bold" fill="#fff" stroke="#2a1e3a" stroke-width="5" paint-order="stroke" font-family="Segoe UI, Arial">${n}</text>`;
+        }
+      }
+      // checkers on the bar
+      for (const s of [RED, YEL]) for (let k = 0; k < st.bar[s]; k++) {
+        const { x, y } = barXY(s, k);
+        h += ckSvg(s, x, y, k === st.bar[s] - 1 ? `data-top="bar${s}"` : '');
+      }
+      // checkers taken off
+      for (const s of [RED, YEL]) for (let k = 0; k < st.off[s]; k++) {
+        const y = s === RED ? 760 - F - 8 - (k + 1) * 21 : F + 8 + k * 21;
+        h += `<rect x="930" y="${y}" width="40" height="17" rx="6" fill="${s === RED ? '#ff4d64' : '#ffd23f'}" stroke="${s === RED ? '#a3162f' : '#b37400'}" stroke-width="2" />`;
+      }
+      // glows: checkers that can move (learning mode) and the chosen one
+      if (phase === 'move' && human()) {
+        const froms = [...new Set(firstMoves.map(m => m.from))];
+        for (const f of froms) {
+          if (selected !== null && f !== selected) continue;
+          if (!learn && selected === null) continue;
+          const { x, y } = topXY(st, f, turn);
+          h += `<circle cx="${x}" cy="${y}" r="${R + 5}" class="ring ${f === selected ? 'sel' : ''}" />`;
+        }
+        for (const m of targets) {
+          const { x, y } = landXY(st, m.to, turn);
+          if (m.to !== 'off') h += `<circle cx="${x}" cy="${y}" r="13" class="ghost" />`;
+        }
+      }
+      // tap areas
+      for (let p = 1; p <= 24; p++) h += `<rect data-hit="${p}" x="${pointX(p) - PW / 2}" y="${isTop(p) ? 0 : 380}" width="${PW}" height="380" fill="transparent" />`;
+      h += `<rect data-hit="bar" x="${BAR0}" y="0" width="${BAR1 - BAR0}" height="760" fill="transparent" />`;
+      h += `<rect data-hit="off" x="920" y="0" width="80" height="760" fill="transparent" />`;
+      svg.innerHTML = h;
+
+      // slide the checker that just moved
+      if (anim && anim.to !== 'off') {
+        const key = anim.to === 'bar' ? `bar${anim.side}` : anim.to;
+        const el = svg.querySelector(`[data-top="${key}"]`);
+        if (el) {
+          const end = el.style.transform;
+          el.style.transition = 'none';
+          el.style.transform = `translate(${anim.x}px, ${anim.y}px)`;
+          void el.getBoundingClientRect();
+          el.style.transition = '';
+          el.style.transform = end;
+        }
+      }
+      if (anim && anim.to === 'off') {
+        svg.insertAdjacentHTML('beforeend', ckSvg(anim.side, anim.x, anim.y, 'id="leaving"'));
+        const el = $('leaving');
+        void el.getBoundingClientRect();
+        el.style.transform = `translate(${OFFX}px, ${anim.side === RED ? 690 : 70}px) scale(0.5)`;
+        el.classList.add('poof');
+        setTimeout(() => el.remove(), 400);
+      }
+      renderInfo();
+    }
+
+    function flashBad(where) {
+      if (where === null || where === undefined) return;
+      let r;
+      if (where === 'bar') r = `<rect x="${BAR0}" y="${F}" width="${BAR1 - BAR0}" height="${760 - 2 * F}" class="bad" />`;
+      else if (where === 'off') r = `<rect x="924" y="${F}" width="52" height="${760 - 2 * F}" class="bad" />`;
+      else r = `<rect x="${pointX(where) - PW / 2}" y="${isTop(where) ? F : 760 - F - L}" width="${PW}" height="${L}" class="bad" />`;
+      svg.insertAdjacentHTML('beforeend', r);
+      const el = svg.lastElementChild;
+      setTimeout(() => el.remove(), 950);
+    }
+
+    function renderInfo() {
+      const lv = LEVELS[level];
+      $('topName').textContent = vsBot() ? `${lv.emoji} ${lv.name}` : '🟡 Yellow';
+      $('bottomName').textContent = vsBot() ? '🙂 You' : '🔴 Red';
+      const info = s => learn ? `🏁${pips(st, s)} · 🏠${st.off[s]}` : `🏠 ${st.off[s]}/15`;
+      $('topInfo').textContent = info(YEL);
+      $('bottomInfo').textContent = info(RED);
+      const playing = phase !== 'idle' && phase !== 'over';
+      $('trayTop').classList.toggle('turn', playing && turn === YEL);
+      $('trayBottom').classList.toggle('turn', playing && turn === RED);
+      $('topName').classList.toggle('thinking', phase === 'bot');
+      $('undoBtn').disabled = !(phase === 'move' && human() && turnStack.length);
+      $('hintBtn').disabled = !(phase === 'move' && human());
+      $('learnBtn').classList.toggle('on', learn);
+      renderDice();
+    }
+
+    // ---------- Dice ----------
+    const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+    function dieHtml(v, cls) {
+      let cells = '';
+      for (let i = 0; i < 9; i++) cells += `<i class="${PIPS[v].includes(i) ? 'on' : ''}"></i>`;
+      return `<div class="die ${cls}">${cells}</div>`;
+    }
+    function renderDice(rolling) {
+      const box = $('dicebox');
+      const waiting = phase === 'roll' && human();
+      box.classList.toggle('ready', waiting);
+      if (!shown.length || (waiting && !rolling)) {
+        box.innerHTML = `<span class="label">${waiting ? (vsBot() ? '🎲 Tap here to roll!' : `🎲 ${turn === RED ? 'Red' : 'Yellow'}: tap to roll!`) : '🎲'}</span>`;
+        return;
+      }
+      const color = turn === YEL ? 'yel' : '';
+      const small = shown.length > 2 ? 'small' : '';
+      let left = dice.slice();
+      // show which dice are already used
+      const html = shown.map(v => {
+        const i = left.indexOf(v);
+        const used = rolling ? false : i < 0;
+        if (i >= 0) left.splice(i, 1);
+        return dieHtml(v, `${color} ${small} ${used ? 'used' : ''} ${rolling ? 'roll' : ''}`);
+      }).join('');
+      const sum = !rolling && learn && shown.length === 2 ? `<span class="sum">${shown[0]} + ${shown[1]} = ${shown[0] + shown[1]}</span>` :
+                  !rolling && shown.length === 4 ? `<span class="sum">Double! ×4</span>` : '';
+      box.innerHTML = html + sum;
+    }
+    function rollAnim(done) {
+      phase = 'rolling';
+      sfx.rattle();
+      let n = 0;
+      const tick = () => {
+        shown = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)];
+        renderDice(true);
+        if (++n < 8) setTimeout(tick, 70);
+        else {
+          const a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6);
+          dice = a === b ? [a, a, a, a] : [a, b];
+          shown = dice.slice();
+          done();
+        }
+      };
+      tick();
+    }
+
+    // ---------- Coach ----------
+    let msgTimer, msgBusyUntil = 0;
+    function coach(text, mood = '') {
+      const b = $('bubble'), f = $('coachFace');
+      b.innerHTML = `<span>${text}</span>`;
+      b.className = 'bubble ' + mood;
+      f.textContent = mood === 'oops' ? '🙈' : mood === 'yay' ? '🥳' : '🐼';
+      f.classList.remove('talk'); void f.offsetWidth; f.classList.add('talk');
+      clearTimeout(msgTimer);
+      msgBusyUntil = mood ? Date.now() + 1800 : 0;
+      if (mood) msgTimer = setTimeout(() => { if (phase === 'move' || phase === 'roll') coach(stepText()); }, 3400);
+    }
+    const diceText = () => { const u = [...new Set(dice)]; return u.length === 1 ? `${u[0]}` : u.join(' or '); };
+    function stepText() {
+      if (phase === 'idle') return "Hi! I'm Coach Panda. Let's play backgammon!";
+      if (phase === 'bot') return `${LEVELS[level].emoji} ${LEVELS[level].name} is playing... 🤔`;
+      const who = vsBot() ? '' : (turn === RED ? '🔴 Red: ' : '🟡 Yellow: ');
+      if (phase === 'roll') return `${who}Tap the dice to roll! 🎲`;
+      if (st.bar[turn]) return `${who}Your checker on the middle bar must come back in first! Tap it. 🚪`;
+      if (selected !== null) return learn ? `${who}Count ${diceText()} steps along the arrow and tap a glowing spot. 🐾` : `${who}Tap a glowing spot. ✨`;
+      return learn ? `${who}Move a glowing checker ${diceText()} steps. 🐾` : `${who}Pick a checker to move ${diceText()} steps.`;
+    }
+
+    // ---------- Friendly explanations ----------
+    function explain(from, to) {
+      const s = turn;
+      if (to === 'bar') return 'Checkers only go to the middle bar when they get bumped! 💥';
+      const start = from === 'bar' ? (s === RED ? 25 : 0) : from;
+      const end = to === 'off' ? (s === RED ? 0 : 25) : to;
+      const dist = s === RED ? start - end : end - start;
+      if (to !== 'off' && !opens(st, s, to)) return `That spot is blocked! 🚧 It has 2 or more ${enemyWord(s)} checkers.`;
+      if (dist <= 0) return `Wrong way! ↩️ Your checkers walk ${learn ? 'along the arrow ' : ''}toward your home 🏠.`;
+      if (to === 'off' && !allHome(st, s)) return 'You can take checkers off only when all 15 are home 🏠 first!';
+      if (to === 'off') return `Use a die that fits! Try a checker that is exactly ${diceText()} steps from the edge.`;
+      if (!dice.includes(dist)) {
+        if (dice.length >= 2 && dice[0] + dice[1] === dist) return `One die at a time! 👣 Move ${dice[0]} steps first, then ${dice[1]}.`;
+        return `You rolled ${[...new Set(dice)].join(' and ')}. That's ${dist} steps. Count exactly ${diceText()}! 🐾`;
+      }
+      return "Try another move! The rule is: if you can use both dice, you must. 🎲🎲";
+    }
+
+    function oops(text, where) {
+      sfx.oops();
+      coach(text, 'oops');
+      flashBad(where);
+    }
+
+    // ---------- Turns ----------
+    function startTurn() {
+      selected = null; turnStack = []; dice = []; shown = [];
+      if (vsBot() && turn === YEL) return botTurn();
+      phase = 'roll';
+      render();
+      if (Date.now() > msgBusyUntil) coach(stepText());
+    }
+
+    function humanRoll() {
+      rollAnim(() => {
+        firstMoves = legalFirst(st, turn, dice);
+        const isDouble = dice.length === 4;
+        if (!firstMoves.length) {
+          phase = 'wait';
+          render();
+          coach(`Oh no, no moves possible with ${diceText()}! 😮 ${vsBot() ? LEVELS[level].name + "'s turn." : 'Next player!'}`, 'oops');
+          setTimeout(endTurn, 1800);
+          return;
+        }
+        phase = 'move';
+        render();
+        if (isDouble) { coach(`Double ${dice[0]}! 🎉 You get to move ${dice[0]} steps FOUR times!`, 'yay'); say('Double!'); }
+        else coach(learn ? `You rolled ${dice[0]} and ${dice[1]}! ${stepText()}` : stepText());
+      });
+    }
+
+    function doMove(m) {
+      turnStack.push({ st, dice: dice.slice(), lastMove });
+      const s = turn;
+      const from = topXY(st, m.from, s);
+      const mv = { ...m };
+      st = applyMove(st, s, mv);
+      dice.splice(dice.indexOf(m.die), 1);
+      lastMove = mv;
+      selected = null;
+      if (st.off[s] === 15) { phase = 'over'; render({ to: 'off', side: s, x: from.x, y: from.y }); sfx.off(); return setTimeout(() => endGame(s), 600); }
+      firstMoves = dice.length ? legalFirst(st, s, dice) : [];
+      if (!firstMoves.length) phase = 'wait';
+      render({ to: m.to, side: s, x: from.x, y: from.y });
+
+      const mine = human();
+      if (mv.hit) {
+        sfx.hit();
+        coach(mine ? `BUMP! 💥 You sent a ${enemyWord(s)} checker to the middle bar!` : `${nameOf(s)} bumped your checker to the middle! It will come back in. 💪`, mine ? 'yay' : 'oops');
+      } else if (m.to === 'off') {
+        sfx.off();
+        if (mine) coach(`Home free! 🏁 ${st.off[s]} of 15 taken off.`, 'yay');
+      } else {
+        sfx.move();
+        if (mine && Date.now() > msgBusyUntil) coach(firstMoves.length ? stepText() : pick(['Nice move! 👍', 'Good thinking! 🧠', 'Great job! ⭐']), firstMoves.length ? '' : 'yay');
+      }
+      if (phase === 'wait' && mine) {
+        if (dice.length) setTimeout(() => coach(`No more moves with ${diceText()}. Turn over! 👋`), 700);
+        setTimeout(endTurn, dice.length ? 1700 : 900);
+      }
+    }
+
+    function endTurn() {
+      if (phase === 'over') return;
+      turn = -turn;
+      startTurn();
+    }
+
+    function botTurn() {
+      phase = 'bot';
+      render();
+      if (Date.now() > msgBusyUntil) coach(stepText());
+      setTimeout(() => rollAnim(() => {
+        phase = 'bot';
+        renderDice();
+        const plan = choose(st, YEL, dice, BOTS[level]);
+        if (!plan) {
+          coach(`${LEVELS[level].name} rolled ${diceText()} but can't move! Your turn. 😄`, 'yay');
+          return setTimeout(endTurn, 1600);
+        }
+        const moves = plan.seq.slice();
+        const step = () => {
+          if (!moves.length || phase === 'over') return setTimeout(endTurn, 700);
+          const m = moves.shift();
+          const from = topXY(st, m.from, YEL);
+          const mv = { ...m };
+          st = applyMove(st, YEL, mv);
+          dice.splice(dice.indexOf(m.die), 1);
+          lastMove = mv;
+          render({ to: m.to, side: YEL, x: from.x, y: from.y });
+          renderDice();
+          if (mv.hit) { sfx.hit(); coach(`${LEVELS[level].name} bumped your checker to the middle! It will come back in. 💪`, 'oops'); }
+          else m.to === 'off' ? sfx.off() : sfx.move();
+          if (st.off[YEL] === 15) { phase = 'over'; return setTimeout(() => endGame(YEL), 600); }
+          setTimeout(step, 650);
+        };
+        setTimeout(step, 500);
+      }), 400);
+    }
+
+    function endGame(winner) {
+      phase = 'over';
+      render();
+      let title, text;
+      if (!vsBot()) { title = `${winner === RED ? '🔴 Red' : '🟡 Yellow'} wins! 🏆`; text = 'What a great game! High five! 🙌'; sfx.win(); confetti(160); say(`${winner === RED ? 'Red' : 'Yellow'} wins!`); }
+      else if (winner === RED) {
+        wins[level] = (wins[level] || 0) + 1; save('bg-wins', wins);
+        title = 'You win! 🏆'; text = `All 15 checkers home! You beat ${LEVELS[level].emoji} ${LEVELS[level].name}! 🌟`;
+        sfx.win(); confetti(180); say('You win!');
+      } else { title = `${LEVELS[level].name} wins this time`; text = 'Good try! The dice can be tricky. Want to play again?'; sfx.lose(); say('Good game!'); }
+      $('overTitle').textContent = title;
+      $('overText').textContent = text;
+      coach(title, winner === RED || !vsBot() ? 'yay' : '');
+      $('overScreen').classList.remove('hidden');
+    }
+
+    // ---------- Input ----------
+    svg.addEventListener('pointerdown', e => {
+      const hit = e.target.closest('[data-hit]');
+      if (!hit) return;
+      const raw = hit.dataset.hit;
+      const where = raw === 'bar' || raw === 'off' ? raw : Number(raw);
+      if (phase === 'idle' || phase === 'over' || phase === 'rolling' || phase === 'wait') return;
+      if (phase === 'bot') { coach(`Wait a moment, ${LEVELS[level].name} is playing... 🤔`); return; }
+      if (phase === 'roll') { oops('Roll the dice first! 🎲 Tap the dice below the board.'); return; }
+      const s = turn;
+      const ownHere = where === 'bar' ? st.bar[s] > 0 : where !== 'off' && own(st.pts[where], s);
+      const movesHere = firstMoves.filter(m => m.from === where);
+
+      if (selected !== null) {
+        if (where === selected) { selected = null; render(); coach(stepText()); return; }
+        const m = firstMoves.filter(x => x.from === selected && x.to === where).sort((a, b) => a.die - b.die)[0];
+        if (m) { doMove(m); return; }
+        if (ownHere && movesHere.length) { select(where); return; }
+        oops(explain(selected, where), where);
+        return;
+      }
+      if (where === 'off') { oops('Tap one of your checkers first, then a glowing spot! 👆'); return; }
+      if (st.bar[s] && where !== 'bar') { oops('Your checker on the middle bar must come back in first! 🚪 Tap it.', 'bar'); return; }
+      if (ownHere) {
+        if (movesHere.length) { select(where); return; }
+        oops(`This checker can't move ${diceText()} steps right now. Try a ${learn ? 'glowing ' : 'different '}one! ✨`, where);
+        return;
+      }
+      const enemy = where === 'bar' ? st.bar[-s] > 0 : where !== 'off' && own(st.pts[where], -s);
+      if (enemy) oops(vsBot() ? `That's ${LEVELS[level].name}'s checker! You play the <b>red</b> ones. 🔴` : `It's ${s === RED ? '🔴 Red' : '🟡 Yellow'}'s turn!`, where);
+      else coach('Tap one of your checkers first! 👆');
+    });
+
+    function select(where) {
+      selected = where;
+      sfx.pick();
+      render();
+      const ts = firstMoves.filter(m => m.from === where);
+      if (learn && ts.length) {
+        const parts = ts.map(m => m.to === 'off' ? `off the board 🏁 with the ${m.die}` : `to spot ${turn === RED ? m.to : 25 - m.to} (${m.die} step${m.die === 1 ? '' : 's'})`);
+        coach(`This one can go ${[...new Set(parts)].join(' or ')}. Tap the glowing spot! ✨`);
+      } else coach(stepText());
+    }
+
+    $('dicebox').addEventListener('click', () => {
+      if (phase === 'roll' && human()) { humanRoll(); return; }
+      if (phase === 'move') coach(`You already rolled! Move your checkers ${diceText()} steps. 🐾`);
+      else if (phase === 'bot') coach(`Wait a moment, ${LEVELS[level].name} is playing... 🤔`);
+    });
+
+    // ---------- Buttons ----------
+    function newGame() {
+      st = startState(); turn = RED; lastMove = null;
+      $('startScreen').classList.add('hidden');
+      $('overScreen').classList.add('hidden');
+      if (learn) { phase = 'idle'; render(); $('guideScreen').classList.remove('hidden'); return; }
+      startTurn();
+      coach(vsBot() ? `You're playing against ${LEVELS[level].emoji} ${LEVELS[level].name}. You go first! Tap the dice! 🎲` : 'Two players! 🔴 Red goes first. Tap the dice! 🎲');
+    }
+    $('guideBtn').addEventListener('click', () => {
+      $('guideScreen').classList.add('hidden');
+      if (phase === 'idle') { startTurn(); coach(vsBot() ? `You go first! Tap the dice to roll! 🎲` : '🔴 Red goes first. Tap the dice! 🎲'); }
+    });
+    function showStart() {
+      phase = 'idle'; st = startState(); turn = RED; dice = []; shown = []; selected = null;
+      render();
+      $('overScreen').classList.add('hidden');
+      $('guideScreen').classList.add('hidden');
+      $('startScreen').classList.remove('hidden');
+      updateWinsText();
+      coach(stepText());
+    }
+    $('playBtn').addEventListener('click', newGame);
+    $('againBtn').addEventListener('click', showStart);
+    $('newBtn').addEventListener('click', showStart);
+
+    $('undoBtn').addEventListener('click', () => {
+      if (!(phase === 'move' || phase === 'wait') || !human() || !turnStack.length) return;
+      const h = turnStack.pop();
+      st = h.st; dice = h.dice; lastMove = h.lastMove;
+      firstMoves = legalFirst(st, turn, dice);
+      selected = null; phase = 'move';
+      render();
+      coach('Take-back! ↩️ Try a different move.', 'yay');
+    });
+
+    $('hintBtn').addEventListener('click', () => {
+      if (phase !== 'move' || !human()) return;
+      const plan = choose(st, turn, dice, BOTS.dragon);
+      if (!plan) return;
+      select(plan.seq[0].from);
+      const m = plan.seq[0];
+      coach(`💡 Try moving this checker ${m.die} step${m.die === 1 ? '' : 's'}${m.to === 'off' ? ' off the board 🏁' : ` to spot ${turn === RED ? m.to : 25 - m.to}`}!`, 'yay');
+    });
+
+    $('learnBtn').addEventListener('click', () => {
+      learn = !learn; save('bg-learn', learn);
+      sfx.pick();
+      render();
+      coach(learn ? '🎓 Learning mode ON! I will show numbers, the path and good moves.' : 'Learning mode OFF. You are a pro! 😎', 'yay');
+      if (learn && phase !== 'idle' && phase !== 'over') $('guideScreen').classList.remove('hidden');
+    });
+
+    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>Sound`; }
+    $('soundBtn').addEventListener('click', () => {
+      soundOn = !soundOn; save('bg-sound', soundOn); updateSoundBtn();
+      if (!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+    });
+
+    const choiceBtns = document.querySelectorAll('.choice');
+    function markLevel() { choiceBtns.forEach(b => b.classList.toggle('active', b.dataset.level === level)); renderInfo(); }
+    choiceBtns.forEach(b => b.addEventListener('click', () => { level = b.dataset.level; save('bg-level', level); markLevel(); sfx.pick(); }));
+    function updateWinsText() {
+      const w = wins;
+      $('winsText').textContent = (w.bunny || w.bear || w.dragon) ? `🏅 Your wins: 🐰 ${w.bunny || 0} · 🐻 ${w.bear || 0} · 🐉 ${w.dragon || 0}` : '🎓 Tip: keep Learning mode on to see numbers and the path!';
+    }
+
+    // ---------- Confetti ----------
+    const cc = $('confetti'), cctx = cc.getContext('2d');
+    let bits = [], confettiRunning = false;
+    const COLORS = ['#ff5f6d', '#ff9a3c', '#ffd23f', '#5fd068', '#3fa9f5', '#7c5cff', '#e45bd8'];
+    function sizeConfetti() { cc.width = innerWidth; cc.height = innerHeight; }
+    addEventListener('resize', sizeConfetti); sizeConfetti();
+    function confetti(n) {
+      for (let i = 0; i < n; i++)
+        bits.push({ x: Math.random() * cc.width, y: -20 - Math.random() * cc.height * 0.3, vx: (Math.random() - .5) * 2,
+          vy: 2 + Math.random() * 3, r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3, s: 6 + Math.random() * 6, c: COLORS[i % COLORS.length] });
+      if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(confettiLoop); }
+    }
+    function confettiLoop() {
+      cctx.clearRect(0, 0, cc.width, cc.height);
+      bits = bits.filter(b => b.y < cc.height + 20);
+      for (const b of bits) {
+        b.x += b.vx; b.y += b.vy; b.r += b.vr;
+        cctx.save(); cctx.translate(b.x, b.y); cctx.rotate(b.r); cctx.fillStyle = b.c; cctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2); cctx.restore();
+      }
+      if (bits.length) requestAnimationFrame(confettiLoop); else { confettiRunning = false; cctx.clearRect(0, 0, cc.width, cc.height); }
+    }
+
+    // ---------- Start ----------
+    updateSoundBtn();
+    markLevel();
+    updateWinsText();
+    render();
+    window.__bg = { // handy for testing
+      get st() { return st; }, get turn() { return turn; }, get phase() { return phase; }, get dice() { return dice; },
+      sequences, choose, evaluate, BOTS, startState, applyMove,
+      setup(state, t, d) { st = state; turn = t; dice = d.slice(); shown = d.slice(); firstMoves = legalFirst(st, turn, dice); selected = null; phase = firstMoves.length ? 'move' : 'wait'; render(); }, legalFirst
+    };
+  </script>
+</body>
+</html>
