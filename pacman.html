@@ -13,7 +13,7 @@
       --btn: #7c5cff;
       --vh: 100vh;
       /* the maze is 19 x 21 tiles, so the board is 21/19 as tall as it is wide */
-      --bw: clamp(240px, min(calc(100vw - 8px), calc((var(--vh) - 250px) * 0.9048)), 680px);
+      --bw: clamp(240px, min(calc(100vw - 8px), calc((var(--vh) - 294px) * 0.9048)), 640px);
     }
     @supports (height: 100dvh) { :root { --vh: 100dvh; } }
 
@@ -180,8 +180,14 @@
       .play-btn { font-size: 1.1rem; padding: 8px 28px; }
     }
 
-    .panel { width: var(--bw); display: flex; flex-direction: column; gap: 6px; margin-top: auto; flex: none; }
-    .coach { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 4px; }
+    .panel { width: min(calc(100vw - 8px), 520px); display: flex; flex-direction: column; gap: 6px; margin-top: auto; flex: none; } /* the pad uses the full screen width */
+    .coach { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 2px; }
+    .coach .mini {
+      flex: none; width: 40px; height: 40px; border: none; border-radius: 50%;
+      font-size: 1.15rem; background: #fff; box-shadow: 0 3px 0 rgba(0,0,0,0.15); cursor: pointer;
+    }
+    .coach .mini.pause { background: #fff3c4; }
+    .coach .mini:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
     .coach .face { font-size: 1.4rem; }
     .coach .face.talk { animation: hop .4s ease; }
     @keyframes hop { 50% { transform: translateY(-6px) rotate(-6deg); } }
@@ -190,20 +196,33 @@
     .bubble.oops { color: #a63d00; }
     .bubble.yay { color: #1c6b33; }
 
-    .controls { display: grid; grid-template-columns: repeat(6, minmax(0, 58px)); grid-template-rows: 48px; gap: 6px; justify-content: center; }
-    .controls button {
-      border: none;
-      border-radius: 14px;
-      font-size: 1.5rem;
-      background: #fff;
-      box-shadow: 0 4px 0 rgba(0,0,0,0.15);
-      cursor: pointer;
-      color: var(--ink);
+    /* plus-shaped pad: big ◀ ▶ on the sides, ▲ ▼ in the middle.
+       The whole pad also works like a joystick: slide your finger to change direction. */
+    .dpad {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      grid-template-areas: "left up right" "left down right";
+      gap: 6px;
+      height: 124px;
       touch-action: none;
+      direction: ltr;
     }
-    .controls button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
-    .controls .pause { font-size: 1.2rem; background: #fff3c4; }
-    .controls .sound { font-size: 1.2rem; background: #d9f3ff; }
+    .dpad div {
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.15);
+      font-size: 2rem;
+      color: #7c5cff;
+      transition: transform .06s, background .06s;
+    }
+    .dpad .left { grid-area: left; border-radius: 22px 12px 12px 22px; }
+    .dpad .right { grid-area: right; border-radius: 12px 22px 22px 12px; }
+    .dpad .up { grid-area: up; border-radius: 22px 22px 10px 10px; }
+    .dpad .down { grid-area: down; border-radius: 10px 10px 22px 22px; }
+    .dpad div.on { background: #7c5cff; color: #fff; transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+    .dpad svg { width: 46%; max-width: 54px; height: auto; }
 
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
   </style>
@@ -272,14 +291,14 @@
       <div class="coach" dir="rtl">
         <div class="face" id="coachFace">😋</div>
         <div class="bubble" id="bubble"><span>אכלו את כל הנקודות וברחו מהרוחות! 👻</span></div>
+        <button class="mini" id="soundBtn" aria-label="צליל">🔊</button>
+        <button class="mini pause" id="pauseBtn" aria-label="הפסקה">⏸️</button>
       </div>
-      <div class="controls">
-        <button class="sound" id="soundBtn" aria-label="צליל">🔊</button>
-        <button data-dir="left" aria-label="שמאלה">⬅️</button>
-        <button data-dir="up" aria-label="למעלה">⬆️</button>
-        <button data-dir="down" aria-label="למטה">⬇️</button>
-        <button data-dir="right" aria-label="ימינה">➡️</button>
-        <button class="pause" id="pauseBtn" aria-label="הפסקה">⏸️</button>
+      <div class="dpad" id="dpad" aria-label="לוח חצים">
+        <div class="left" data-dir="left"><svg viewBox="0 0 24 24"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="up" data-dir="up"><svg viewBox="0 0 24 24"><path d="M4 15 L12 7 L20 15" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="down" data-dir="down"><svg viewBox="0 0 24 24"><path d="M4 9 L12 17 L20 9" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="right" data-dir="right"><svg viewBox="0 0 24 24"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </div>
     </div>
   </div>
@@ -534,7 +553,7 @@
     // ---------- Update ----------
     function update(dt) {
       clock += dt; phaseTime += dt;
-      if (phase === 'ready') { if (phaseTime > 2) { phase = 'play'; coach('יאללה! החליקו על הלוח או לחצו על החצים. ⬅️⬆️⬇️➡️'); } return; }
+      if (phase === 'ready') { if (phaseTime > 2) { phase = 'play'; coach('יאללה! לחצו על החצים הגדולים למטה, או החליקו את האצבע עליהם. 👇'); } return; }
       if (phase === 'dying') { if (phaseTime > 1.4) afterDeath(); return; }
       if (phase === 'clear') { if (phaseTime > 2.2) nextLevel(); return; }
       if (phase !== 'play') return;
@@ -843,11 +862,31 @@
     // ---------- Input ----------
     addEventListener('keydown', e => {
       const keys = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
-      if (keys[e.key]) { e.preventDefault(); setDir(keys[e.key]); }
+      if (keys[e.key]) { e.preventDefault(); setDir(keys[e.key]); const d = dpad.querySelector(`[data-dir="${keys[e.key]}"]`); d.classList.add('on'); setTimeout(() => d.classList.remove('on'), 150); }
       else if (e.key === ' ' || e.key === 'p' || e.key === 'Escape') { e.preventDefault(); if (running) togglePause(); else newGame(); }
       else if (e.key === 'Enter' && !running) newGame();
     });
-    document.querySelectorAll('.controls [data-dir]').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); setDir(b.dataset.dir); }));
+    // the pad: press anywhere on it, and slide without lifting to change direction
+    const dpad = $('dpad');
+    let padDir = null, padId = null;
+    function padAt(e) {
+      const r = dpad.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      const mid = r.width * (1.15 / 3.15) / 2;                    // half the width of the middle column
+      if (Math.abs(x - r.width / 2) <= mid) return y < r.height / 2 ? 'up' : 'down';
+      return x < r.width / 2 ? 'left' : 'right';
+    }
+    function padPress(name) {
+      if (name === padDir) return;
+      padDir = name;
+      dpad.querySelectorAll('[data-dir]').forEach(d => d.classList.toggle('on', d.dataset.dir === name));
+      if (name) { setDir(name); try { navigator.vibrate && navigator.vibrate(8); } catch {} }
+    }
+    dpad.addEventListener('pointerdown', e => { e.preventDefault(); padId = e.pointerId; dpad.setPointerCapture(e.pointerId); padPress(padAt(e)); });
+    dpad.addEventListener('pointermove', e => { if (e.pointerId === padId) padPress(padAt(e)); });
+    const padUp = e => { if (e.pointerId !== padId) return; padId = null; padPress(null); };
+    dpad.addEventListener('pointerup', padUp);
+    dpad.addEventListener('pointercancel', padUp);
 
     // swipe anywhere on the board, or tap on a side of the hero to go that way
     let pStart = null, swiped = false;
