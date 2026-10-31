@@ -348,7 +348,7 @@
       <div dir="rtl" class="overlay" id="startScreen">
         <div class="big"><svg viewBox="0 0 100 100"><use href="#pr" /></svg><svg viewBox="0 0 100 100"><use href="#py" /></svg></div>
         <h2>🔴 בואו נשחק דמקה!</h2>
-        <p>אתם הקבוצה ה<b>אדומה</b>. זזים קדימה באלכסון על המשבצות הכהות, וקופצים מעל הכלים הצהובים כדי לאכול אותם!</p>
+        <p>אתם הקבוצה ה<b>אדומה</b>. זזים קדימה באלכסון וקופצים מעל הכלים הצהובים כדי לאכול אותם. מי שמגיע לצד השני הופך ל<b>מלכה 👑</b> שעפה רחוק!</p>
         <div class="choices">
           <button class="choice" data-level="turtle"><b>🐢</b>צב<small>רק לומד</small></button>
           <button class="choice" data-level="kitty"><b>🐱</b>חתלתול<small>די חכם</small></button>
@@ -410,11 +410,11 @@
       return b;
     }
 
-    function dirsFor(v) {
-      if (Math.abs(v) === 2) return DIAG;
-      return v > 0 ? DIAG.slice(0, 2) : DIAG.slice(2);
-    }
+    // Israeli rules: pieces step forward but may capture in all 4 directions;
+    // a queen (מלכה) flies any distance along a diagonal and captures from afar.
+    const forwardDirs = v => v > 0 ? DIAG.slice(0, 2) : DIAG.slice(2);
     const lastRow = side => side === RED ? 0 : 7;
+    const onBoard = (r, c) => r >= 0 && r <= 7 && c >= 0 && c <= 7;
 
     // every legal move for `side`; jumps are compulsory, multi-jumps are one move
     function genMoves(b, side) {
@@ -423,29 +423,40 @@
       if (jumps.length) return jumps;
       const steps = [];
       for (let i = 0; i < 64; i++) {
-        if (sideOf(b[i]) !== side) continue;
-        for (const [dr, dc] of dirsFor(b[i])) {
-          const r = rowOf(i) + dr, c = colOf(i) + dc;
-          if (r < 0 || r > 7 || c < 0 || c > 7) continue;
-          const t = r * 8 + c;
-          if (b[t] === 0) steps.push({ path: [i, t], caps: [], promote: Math.abs(b[i]) === 1 && r === lastRow(side) });
+        const v = b[i];
+        if (sideOf(v) !== side) continue;
+        const queen = Math.abs(v) === 2;
+        for (const [dr, dc] of queen ? DIAG : forwardDirs(v)) {
+          let r = rowOf(i) + dr, c = colOf(i) + dc;
+          while (onBoard(r, c) && b[r * 8 + c] === 0) {
+            steps.push({ path: [i, r * 8 + c], caps: [], promote: !queen && r === lastRow(side) });
+            if (!queen) break;
+            r += dr; c += dc;
+          }
         }
       }
       return steps;
     }
     function findJumps(b, from, v, path, caps, out) {
+      const queen = Math.abs(v) === 2;
       let found = false;
-      for (const [dr, dc] of dirsFor(v)) {
-        const r = rowOf(from) + dr * 2, c = colOf(from) + dc * 2;
-        if (r < 0 || r > 7 || c < 0 || c > 7) continue;
-        const mid = from + dr * 8 + dc, land = r * 8 + c;
-        if (sideOf(b[mid]) !== -sideOf(v) || b[land] !== 0) continue;
-        found = true;
-        const nb = b.slice();
-        nb[from] = 0; nb[mid] = 0; nb[land] = v;
-        const promote = Math.abs(v) === 1 && r === lastRow(sideOf(v));
-        if (promote) out.push({ path: [...path, land], caps: [...caps, mid], promote: true }); // crowning ends the turn
-        else findJumps(nb, land, v, [...path, land], [...caps, mid], out);
+      for (const [dr, dc] of DIAG) {
+        let r = rowOf(from) + dr, c = colOf(from) + dc;
+        if (queen) while (onBoard(r, c) && b[r * 8 + c] === 0) { r += dr; c += dc; } // fly to the first piece
+        if (!onBoard(r, c) || sideOf(b[r * 8 + c]) !== -sideOf(v)) continue;
+        const mid = r * 8 + c;
+        r += dr; c += dc;
+        while (onBoard(r, c) && b[r * 8 + c] === 0) {            // any empty square past it
+          const land = r * 8 + c;
+          found = true;
+          const nb = b.slice();
+          nb[from] = 0; nb[mid] = 0; nb[land] = v;
+          const promote = !queen && r === lastRow(sideOf(v));
+          if (promote) out.push({ path: [...path, land], caps: [...caps, mid], promote: true }); // crowning ends the turn
+          else findJumps(nb, land, v, [...path, land], [...caps, mid], out);
+          if (!queen) break;
+          r += dr; c += dc;
+        }
       }
       if (!found && caps.length) out.push({ path, caps, promote: false });
     }
@@ -467,7 +478,7 @@
         if (!v) continue;
         const r = rowOf(i), c = colOf(i);
         let val;
-        if (Math.abs(v) === 2) val = 175 + (c >= 2 && c <= 5 && r >= 2 && r <= 5 ? 6 : 0);
+        if (Math.abs(v) === 2) val = 270 + (c >= 2 && c <= 5 && r >= 2 && r <= 5 ? 6 : 0); // flying queens are strong
         else {
           const adv = v > 0 ? 7 - r : r;          // how far it has marched
           val = 100 + adv * 4 + (adv === 0 ? 8 : 0) + (c >= 2 && c <= 5 ? 3 : 0);
@@ -691,22 +702,22 @@
 
     // ---------- Friendly explanations ----------
     function explain(from, to) {
-      const v = view[from], side = sideOf(v);
-      const dr = rowOf(to) - rowOf(from), dc = colOf(to) - colOf(from);
+      const v = view[from], side = sideOf(v), queen = Math.abs(v) === 2;
+      const dr = rowOf(to) - rowOf(from), dc = colOf(to) - colOf(from), dist = Math.abs(dr);
       if (!isDark(to)) return 'הכלים נמצאים רק על המשבצות הכהות! בחרו משבצת כהה. 🙂';
       if (view[to]) return 'המשבצת הזאת תפוסה! צריך משבצת ריקה כדי לנחות.';
       if (Math.abs(dr) !== Math.abs(dc)) return 'בדמקה זזים רק באלכסון ↗️ ↖️, כמו זיג-זג קטן!';
-      const forward = side === RED ? dr < 0 : dr > 0;
-      if (Math.abs(v) === 1 && !forward) return 'כלי רגיל זז רק קדימה! הגיעו לצד השני כדי להפוך למלך 👑 שיכול ללכת גם אחורה.';
-      if (Math.abs(dr) > 2) return 'רחוק מדי! זזים צעד אחד, או קופצים מעל כלי אחד של היריב.';
       if (partial.length > 1) return 'ממשיכים לקפוץ! 🦘 הכלי שלכם יכול לקפוץ שוב. לכו לפי הנקודות האדומות!';
-      const mustJump = legal[0] && legal[0].caps.length;
-      if (Math.abs(dr) === 2) {
-        const mid = view[from + (dr / 2) * 8 + dc / 2];
-        if (!mid) return 'קופצים רק כשיש כלי של היריב לקפוץ מעליו!';
-        if (sideOf(mid) === side) return 'אי אפשר לקפוץ מעל כלי שלכם! קופצים מעל הכלים של הקבוצה השנייה.';
-      }
-      if (mustJump) return 'חייבים לקפוץ! 🦘 כשאפשר לאכול, חייבים. חפשו את הכלי הזוהר!';
+      const forward = side === RED ? dr < 0 : dr > 0;
+      if (!queen && dist === 1 && !forward) return 'כלי רגיל זז רק קדימה! (לאכול מותר גם אחורה 🦘) הגיעו לצד השני כדי להפוך למלכה 👑.';
+      if (!queen && dist > 2) return 'רחוק מדי! כלי רגיל זז צעד אחד, או קופץ מעל כלי אחד של היריב. רק מלכה 👑 עפה רחוק.';
+      // what stands between the two squares?
+      const sr = Math.sign(dr), sc = Math.sign(dc), between = [];
+      for (let k = 1; k < dist; k++) { const x = view[from + k * (sr * 8 + sc)]; if (x) between.push(x); }
+      if (between.some(x => sideOf(x) === side)) return 'אי אפשר לקפוץ מעל כלי שלכם! קופצים מעל הכלים של הקבוצה השנייה.';
+      if (between.length > 1) return 'אי אפשר לקפוץ מעל שני כלים ביחד! 🚧';
+      if (!queen && dist === 2 && !between.length) return 'קופצים רק כשיש כלי של היריב לקפוץ מעליו!';
+      if (legal[0] && legal[0].caps.length) return 'חייבים לקפוץ! 🦘 כשאפשר לאכול, חייבים. חפשו את הכלי הזוהר!';
       return 'אופס, המהלך הזה לא מותר. נסו נקודה!';
     }
 
@@ -734,7 +745,7 @@
       selected = i; partial = [i];
       sfx.pick();
       const jumping = legal[0].caps.length;
-      coach(Math.abs(board[i]) === 2 ? 'מלך 👑 יכול לזוז קדימה וגם אחורה!' :
+      coach(Math.abs(board[i]) === 2 ? 'מלכה 👑 עפה באלכסון כמה משבצות שהיא רוצה, קדימה ואחורה!' :
             jumping ? 'קפצו מעל הכלי של היריב! 🦘 לחצו על הנקודה האדומה.' : 'לחצו על נקודה זוהרת כדי לזוז לשם. ✨');
       renderPieces(); renderMarks();
     }
@@ -782,11 +793,11 @@
 
       const human = !vsBot() || mover === RED;
       if (m.promote) {
-        sfx.king(); say('מלך!');
+        sfx.king(); say('מלכה!');
         const el = els[m.path[m.path.length - 1]];
         if (el) el.classList.add('crowned');
-        coach(human ? 'מלך! 👑 הכלי שלכם הפך למלך ויכול לזוז גם אחורה!' :
-                      `ל${teamName(mover)} יש מלך 👑! זהירות, הוא יכול לזוז אחורה.`, human ? 'yay' : 'oops');
+        coach(human ? 'מלכה! 👑 הכלי שלכם הפך למלכה. היא עפה רחוק באלכסון, קדימה ואחורה!' :
+                      `ל${teamName(mover)} יש מלכה 👑! זהירות, היא עפה רחוק באלכסון.`, human ? 'yay' : 'oops');
       } else if (m.caps.length) {
         sfx.jump();
         const n = m.caps.length;
