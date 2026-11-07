@@ -39,7 +39,7 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      padding: 12px 4px 8px;
+      padding: 8px 4px 8px;
       overflow: hidden;
     }
 
@@ -72,11 +72,10 @@
     nav a.active { background: rgba(255,255,255,0.4); }
 
     .board-wrap {
-      margin-top: auto; /* shares the free space with the panel, so the game sits in the middle */
       position: relative;
-      flex: none;
-      width: var(--bw);
-      height: var(--bw);
+      width: min(calc(100vw - 8px), 760px);
+      flex: 1 1 auto;
+      min-height: 220px;
       border-radius: 18px;
       padding: 5px;
       background: #fff;
@@ -127,7 +126,7 @@
     .stars3 { font-size: clamp(2rem, 9vw, 3rem); letter-spacing: 4px; }
     .stars3 .off { filter: grayscale(1); opacity: 0.3; }
 
-    .panel { width: min(calc(100vw - 8px), 560px); display: flex; flex-direction: column; gap: 6px; margin-top: auto; flex: none; }
+    .panel { width: min(calc(100vw - 8px), 560px); display: flex; flex-direction: column; gap: 6px; flex: none; }
     .coach { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 4px; }
     .coach .face { font-size: 1.4rem; }
     .coach .face.talk { animation: hop .4s ease; }
@@ -141,27 +140,18 @@
     }
     .coach .mini.pause { background: #fff3c4; }
 
-    /* move strip: hold and slide left/right to walk. Tapping anywhere else on the screen jumps. */
-    .move {
-      position: relative; height: 84px; border-radius: 24px; direction: ltr; touch-action: none;
-      background: #fff; box-shadow: 0 5px 0 rgba(0,0,0,0.15); overflow: hidden;
-      display: flex; align-items: center; justify-content: space-between; padding: 0 22px;
+    /* walk zone: hold the left half to walk left, the right half to walk right
+       (slide across to change). Tapping anywhere else on the screen jumps. */
+    .move { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; height: 88px; direction: ltr; touch-action: none; }
+    .move div {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      border-radius: 24px; background: #fff; box-shadow: 0 5px 0 rgba(0,0,0,0.15);
+      color: #7c5cff; font-size: 2.4rem; font-weight: bold;
+      transition: transform .06s, background .06s, box-shadow .06s;
     }
-    .move::before, .move::after {
-      content: ''; position: absolute; top: 0; bottom: 0; width: 50%; transition: background .08s;
-    }
-    .move::before { left: 0; } .move::after { right: 0; }
-    .move.goL::before, .move.goR::after { background: rgba(124, 92, 255, 0.22); }
-    .move .arr { position: relative; z-index: 1; color: #7c5cff; font-size: 2.2rem; font-weight: bold; transition: transform .08s; }
-    .move.goL .arr.l, .move.goR .arr.r { transform: scale(1.35); }
-    .move .mid { position: relative; z-index: 1; font-size: 0.72rem; color: var(--soft); text-align: center; line-height: 1.3; }
-    .move .knob {
-      position: absolute; top: 50%; left: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #fff, #b8a4ff); box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-      opacity: 0; transition: opacity .1s; pointer-events: none; z-index: 2;
-    }
-    .move.held .knob { opacity: 1; }
-    .move.held .mid { opacity: 0; }
+    .move div small { font-size: 0.8rem; color: var(--soft); font-weight: normal; }
+    .move div.on { background: #7c5cff; color: #fff; transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+    .move div.on small { color: #e6dfff; }
 
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
   </style>
@@ -190,7 +180,7 @@
 
       <div dir="rtl" class="overlay" id="startScreen">
         <h2>⚡ קופצני ופיקצ'ו!</h2>
-        <p>עזרו לפיקצ'ו לעבור עולמות קסומים ולהגיע לדגל 🚩! גררו בפס למטה כדי ללכת, ולחצו בכל מקום על המסך כדי לקפוץ.</p>
+        <p>עזרו לפיקצ'ו לעבור עולמות קסומים ולהגיע לדגל 🚩! החזיקו ◀ או ▶ למטה כדי ללכת, ולחצו בכל מקום על המסך כדי לקפוץ.</p>
         <div class="diff" id="diff">
           <button data-d="easy">🐢 קל · 5 ❤️</button>
           <button data-d="normal">🐰 רגיל · 3 ❤️</button>
@@ -238,11 +228,9 @@
         <button class="mini" id="soundBtn" aria-label="צליל">🔊</button>
         <button class="mini pause" id="pauseBtn" aria-label="הפסקה">⏸️</button>
       </div>
-      <div class="move" id="move" aria-label="פס הליכה">
-        <span class="arr l">◀</span>
-        <span class="mid" dir="rtl">גררו כאן ללכת<br>לחצו על המסך לקפוץ ⚡</span>
-        <span class="arr r">▶</span>
-        <span class="knob" id="knob"></span>
+      <div class="move" id="move" aria-label="הליכה">
+        <div data-dir="left">◀<small>אחורה</small></div>
+        <div data-dir="right"><small>קדימה</small>▶</div>
       </div>
     </div>
   </div>
@@ -387,7 +375,7 @@
     ];
 
     const TIPS = [
-      ['גררו את האצבע בפס למטה: ימינה = קדימה, שמאלה = אחורה 👉', 'לחצו בכל מקום על המסך כדי לקפוץ! תנו ראש לקופסה עם סימן השאלה ❓', 'קפצו מעל הבור! 🕳️', 'זה רפש! קפצו עליו מלמעלה כדי להביס אותו 💥'],
+      ['החזיקו ▶ למטה כדי ללכת קדימה, ◀ כדי לחזור אחורה 👉', 'לחצו בכל מקום על המסך כדי לקפוץ! תנו ראש לקופסה עם סימן השאלה ❓', 'קפצו מעל הבור! 🕳️', 'זה רפש! קפצו עליו מלמעלה כדי להביס אותו 💥'],
       ['לחצו פעמיים על המסך = קפיצה כפולה! ⚡⚡'],
       ['זהירות מהקוצים! 🌵 קפצו מעליהם', 'קפיץ! עלו עליו כדי לעוף גבוה 🌀'],
       ['פלטפורמה זזה! חכו לה ועלו עליה 🪵'],
@@ -407,14 +395,22 @@
     const WORLD_NAMES = { meadow: 'יער הפטריות הקסום 🍄', sunset: 'איי השמיים 🌈', night: 'מערת הקריסטלים 💎', candy: 'ממלכת הממתקים 🏰' };
 
     // ---------- Constants ----------
-    const TS = 32, VIEW = 12 * TS;                     // the camera shows 12 x 12 tiles
+    const TS = 32;
+    // the camera always shows the full height of a level plus a little sky; its width follows the screen shape
+    let VH = 13 * TS, VW = 12 * TS, TOP = VH - 12 * TS, boxW = 0, boxH = 0;
     const GRAV = 1800, RUN = 175, JUMP = -620, JUMP2 = -560, MAXFALL = 720, SPRING = -980, STOMP = -430;
     const PW = 22, PH = 28;
     const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
     const TAU = Math.PI * 2;
     const $ = id => document.getElementById(id);
     const canvas = $('game'), ctx = canvas.getContext('2d');
-    canvas.width = VIEW * DPR; canvas.height = VIEW * DPR;
+    function fit() {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      if (!w || !h || (w === boxW && h === boxH)) return;
+      boxW = w; boxH = h;
+      VW = Math.max(9 * TS, Math.min(24 * TS, VH * w / h));
+      canvas.width = Math.round(w * DPR); canvas.height = Math.round(h * DPR);
+    }
 
     // ---------- Storage ----------
     function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
@@ -508,22 +504,17 @@
       if (k === 'jump' && on && !keys.jump && hero && state === 'play') { hero.buffer = 0.13; buzz(10); }
       keys[k] = on;
     }
-    const moveEl = $('move'), knob = $('knob');
+    const moveEl = $('move');
     let moveId = null;
     function setMove(dir) {
       const was = keys.left ? 'left' : keys.right ? 'right' : null;
       keys.left = dir === 'left'; keys.right = dir === 'right';
-      moveEl.classList.toggle('goL', dir === 'left'); moveEl.classList.toggle('goR', dir === 'right');
-      if (dir && dir !== was) buzz(6);
+      moveEl.querySelectorAll('[data-dir]').forEach(d => d.classList.toggle('on', d.dataset.dir === dir));
+      if (dir && dir !== was) buzz(8);
     }
-    function moveAt(e) {
-      const r = moveEl.getBoundingClientRect(), x = Math.max(29, Math.min(r.width - 29, e.clientX - r.left));
-      knob.style.left = x + 'px';
-      const rel = x / r.width - 0.5;
-      setMove(rel < -0.05 ? 'left' : rel > 0.05 ? 'right' : null);
-    }
-    function moveEnd() { moveId = null; setMove(null); moveEl.classList.remove('held'); knob.style.left = '50%'; }
-    moveEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); moveId = e.pointerId; moveEl.setPointerCapture(e.pointerId); moveEl.classList.add('held'); moveAt(e); });
+    const moveAt = e => { const r = moveEl.getBoundingClientRect(); setMove(e.clientX < r.left + r.width / 2 ? 'left' : 'right'); };
+    function moveEnd() { moveId = null; setMove(null); }
+    moveEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); moveId = e.pointerId; moveEl.setPointerCapture(e.pointerId); moveAt(e); });
     moveEl.addEventListener('pointermove', e => { if (e.pointerId === moveId) moveAt(e); });
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => moveEl.addEventListener(t, e => { if (e.pointerId === moveId) moveEnd(); }));
 
@@ -535,7 +526,7 @@
       press('jump', true);
       const r = canvas.getBoundingClientRect();
       if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)
-        ripples.push({ x: (e.clientX - r.left) / r.width * VIEW, y: (e.clientY - r.top) / r.height * VIEW, t: 0 });
+        ripples.push({ x: (e.clientX - r.left) / r.width * VW, y: (e.clientY - r.top) / r.height * VH, t: 0 });
     });
     const jumpUp = e => { if (jumpIds.delete(e.pointerId) && !jumpIds.size) press('jump', false); };
     document.addEventListener('pointerup', jumpUp);
@@ -551,11 +542,11 @@
       if (!KEYMAP[e.key]) { if (e.key === 'p' || e.key === 'Escape') togglePause(); return; }
       e.preventDefault(); if (e.repeat) return;
       const k = KEYMAP[e.key];
-      if (k === 'jump') press('jump', true); else { keys[k] = true; moveEl.classList.toggle(k === 'left' ? 'goL' : 'goR', true); }
+      if (k === 'jump') press('jump', true); else setMove(k);
     });
     addEventListener('keyup', e => {
       const k = KEYMAP[e.key]; if (!k) return;
-      if (k === 'jump') press('jump', false); else { keys[k] = false; moveEl.classList.toggle(k === 'left' ? 'goL' : 'goR', false); }
+      if (k === 'jump') press('jump', false); else if (keys[k]) setMove(null);
     });
 
     // ---------- Physics ----------
@@ -776,7 +767,7 @@
       for (const b of bumps) b.t -= dt;
       bumps = bumps.filter(b => b.t > 0);
       // camera follows smoothly
-      const target = Math.max(0, Math.min(W * TS - VIEW, hero.x + PW / 2 - VIEW * 0.42));
+      const target = Math.max(0, Math.min(W * TS - VW, hero.x + PW / 2 - VW * 0.42));
       camX += (target - camX) * Math.min(1, dt * 8);
     }
 
@@ -785,17 +776,17 @@
     const wrapX = (x, span) => ((x % span) + span) % span;
     function drawBackground() {
       const T = theme, w = L.theme;
-      const g = ctx.createLinearGradient(0, 0, 0, VIEW);
+      const g = ctx.createLinearGradient(0, -TOP, 0, VH - TOP);
       g.addColorStop(0, T.sky[0]); g.addColorStop(1, T.sky[1]);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW, VIEW);
+      ctx.fillStyle = g; ctx.fillRect(0, -TOP, VW, VH);
       if (w === 'night') {
         // aurora ribbons and twinkling sparkles in the crystal cave
         for (let k = 0; k < 3; k++) {
           ctx.fillStyle = ['rgba(99,230,190,0.18)', 'rgba(204,93,232,0.16)', 'rgba(116,192,252,0.16)'][k];
           const yy = x => 70 + k * 34 + Math.sin(x * 0.02 + time * 0.6 + k + camX * 0.002) * 18;
           ctx.beginPath(); ctx.moveTo(0, yy(0));
-          for (let x = 0; x <= VIEW; x += 12) ctx.lineTo(x, yy(x));
-          for (let x = VIEW; x >= 0; x -= 12) ctx.lineTo(x, yy(x) + 26 + Math.sin(x * 0.03 + k) * 8);
+          for (let x = 0; x <= VW; x += 12) ctx.lineTo(x, yy(x));
+          for (let x = VW; x >= 0; x -= 12) ctx.lineTo(x, yy(x) + 26 + Math.sin(x * 0.03 + k) * 8);
           ctx.fill();
         }
         for (let i = 0; i < 45; i++) {
@@ -810,7 +801,7 @@
       }
       if (w === 'sunset') {
         // a big rainbow and floating islands with waterfalls
-        const rx = VIEW * 0.55 - camX * 0.03, ry = 330;
+        const rx = VW * 0.55 - camX * 0.03, ry = 330;
         ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa'].forEach((c, k) => {
           ctx.strokeStyle = c; ctx.globalAlpha = 0.45; ctx.lineWidth = 9;
           ctx.beginPath(); ctx.arc(rx, ry, 210 - k * 9, Math.PI, 0); ctx.stroke();
@@ -819,7 +810,7 @@
       }
       // sun or moon
       ctx.fillStyle = T.sun; ctx.globalAlpha = 0.9;
-      ctx.beginPath(); ctx.arc(VIEW * 0.8 - camX * 0.02, 70, 28, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(VW * 0.8 - camX * 0.02, 70, 28, 0, TAU); ctx.fill();
       ctx.globalAlpha = 1;
       // fluffy clouds (cotton candy in the candy kingdom)
       ctx.fillStyle = T.cloud; ctx.globalAlpha = 0.85;
@@ -829,19 +820,30 @@
         ctx.beginPath(); ctx.arc(x, y, 18, 0, TAU); ctx.arc(x + 20, y - 8, 22, 0, TAU); ctx.arc(x + 44, y, 17, 0, TAU); ctx.rect(x, y, 44, 16); ctx.fill();
       }
       ctx.globalAlpha = 1;
+      mountains(0.08, 225, w);
+      haze(200, 0.35);
+      if (w === 'meadow') rays();
       if (w === 'sunset') { islands(0.18, 170, 0.7); islands(0.35, 230, 1); }
       if (w === 'candy') castles(0.2);
       if (w === 'meadow') mushrooms(0.2, 270, 1.3, 0.7);
       hills(T.far, 0.25, 260, 40, 0.011);
+      haze(250, 0.2);
       if (w === 'meadow') mushrooms(0.45, 300, 0.8, 1);
       hills(T.near, 0.5, 300, 30, 0.017, w === 'candy' ? 'candy' : null);
       if (w === 'meadow') fireflies();
     }
     function hills(color, speed, base, amp, freq, deco) {
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.moveTo(0, VIEW);
-      for (let x = 0; x <= VIEW; x += 8) { const wx = x + camX * speed; ctx.lineTo(x, base - Math.sin(wx * freq) * amp - Math.sin(wx * freq * 2.3) * amp * 0.3); }
-      ctx.lineTo(VIEW, VIEW); ctx.fill();
+      const hg = ctx.createLinearGradient(0, base - amp * 1.3, 0, VH);
+      hg.addColorStop(0, color); hg.addColorStop(1, shade(color, -0.25));
+      ctx.fillStyle = hg;
+      ctx.beginPath(); ctx.moveTo(0, VH);
+      for (let x = 0; x <= VW; x += 8) { const wx = x + camX * speed; ctx.lineTo(x, base - Math.sin(wx * freq) * amp - Math.sin(wx * freq * 2.3) * amp * 0.3); }
+      ctx.lineTo(VW, VH); ctx.fill();
+      // a soft light rim along the hill top
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 3; ctx.beginPath();
+      for (let x = 0; x <= VW; x += 8) { const wx = x + camX * speed, y = base - Math.sin(wx * freq) * amp - Math.sin(wx * freq * 2.3) * amp * 0.3 + 2; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.stroke();
       if (deco !== 'candy') return;
       for (let i = -1; i < 6; i++) {
         const span = 90, wx = Math.floor((camX * speed) / span) * span + i * span, x = wx - camX * speed + 30;
@@ -856,6 +858,70 @@
           ctx.strokeStyle = '#ff4d6d'; ctx.lineWidth = 6; ctx.setLineDash([4, 5]);
           ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 30); ctx.arc(x + 7, y - 30, 7, Math.PI, 0); ctx.stroke();
           ctx.setLineDash([]); ctx.lineCap = 'butt';
+        }
+      }
+    }
+    // lighten (amt > 0) or darken (amt < 0) a #rrggbb colour
+    function shade(hex, amt) {
+      const n = parseInt(hex.slice(1), 16), f = c => Math.max(0, Math.min(255, Math.round(amt > 0 ? c + (255 - c) * amt : c * (1 + amt))));
+      return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`;
+    }
+    function mountains(speed, base, w) {
+      const col = { meadow: '#b9e4ff', sunset: '#f2b8d0', candy: '#ffd9ee' }[w];
+      ctx.fillStyle = col; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.moveTo(0, VH);
+      for (let x = 0; x <= VW + 6; x += 6) {
+        const wx = x + camX * speed;
+        const peak = Math.abs(((wx / 140) % 2 + 2) % 2 - 1);            // zig-zag peaks
+        ctx.lineTo(x, base - (1 - peak) * 95 - Math.sin(wx * 0.05) * 8);
+      }
+      ctx.lineTo(VW + 6, VH); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';                          // snowy tips
+      for (let i = -1; i < VW / 140 + 2; i++) {
+        const wx = Math.floor((camX * speed) / 280) * 280 + i * 280 + 140, x = wx - camX * speed, y = base - 95 - Math.sin(wx * 0.05) * 8;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 22, y + 22); ctx.lineTo(x - 8, y + 18); ctx.lineTo(x, y + 26); ctx.lineTo(x + 9, y + 17); ctx.lineTo(x + 22, y + 22); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function haze(y, a) {
+      const g = ctx.createLinearGradient(0, y - 80, 0, y + 60);
+      g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.6, `rgba(255,255,255,${a})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, y - 80, VW, 140);
+    }
+    function rays() {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (let k = 0; k < 4; k++) {
+        const x = VW * 0.8 - camX * 0.02 - k * 60;
+        ctx.fillStyle = `rgba(255,250,200,${0.05 + 0.03 * Math.sin(time + k)})`;
+        ctx.beginPath(); ctx.moveTo(x, 40); ctx.lineTo(x - 40 - k * 30, VH); ctx.lineTo(x - 10 - k * 30, VH); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
+    // plants close to the camera pass in front of the ground for a feeling of depth
+    function drawForeground() {
+      const span = 170, sp = 1.25, y = 12 * TS;
+      const col = { meadow: '#1f6b3a', sunset: '#5a3d8c', night: '#140f35', candy: '#c2549a' }[L.theme];
+      ctx.fillStyle = col; ctx.globalAlpha = 0.55;
+      for (let i = -1; i < VW / span + 2; i++) {
+        const wx = Math.floor((camX * sp) / span) * span + i * span, x = wx - camX * sp + 50, k = ((wx / span) % 3 + 3) % 3;
+        ctx.beginPath();
+        if (L.theme === 'candy') { ctx.arc(x, y + 4, 20 + k * 4, Math.PI, 0); }
+        else for (let b = -3; b <= 3; b++) { ctx.moveTo(x + b * 7, y + 8); ctx.quadraticCurveTo(x + b * 9, y - 18 - k * 6 + Math.abs(b) * 5, x + b * 12 + 4, y - 26 - k * 6 + Math.abs(b) * 6); ctx.quadraticCurveTo(x + b * 8 + 3, y - 10, x + b * 7 + 6, y + 8); }
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function groundShadow(cx, footY, w) {
+      // find the floor under a character and draw a soft shadow there
+      const tx = Math.floor((cx + camX) / TS);
+      for (let ty = Math.max(0, Math.floor(footY / TS)); ty < map.length; ty++) {
+        const c = tile(tx, ty);
+        if (solid(c) || c === '=') {
+          const d = ty * TS - footY, a = Math.max(0, 0.32 - d / 500);
+          if (a <= 0) return;
+          ctx.fillStyle = `rgba(0,0,0,${a})`;
+          ctx.beginPath(); ctx.ellipse(cx, ty * TS + 1, w * (1 - Math.min(0.5, d / 400)), 4, 0, 0, TAU); ctx.fill();
+          return;
         }
       }
     }
@@ -913,8 +979,8 @@
     }
     function crystals(speed, base, scale, span) {
       const cols = ['#63e6be', '#da77f2', '#74c0fc', '#ffd43b'];
-      ctx.fillStyle = theme.far; ctx.fillRect(0, base, VIEW, VIEW - base);
-      for (let i = -1; i < VIEW / span + 2; i++) {
+      ctx.fillStyle = theme.far; ctx.fillRect(0, base, VW, VH);
+      for (let i = -1; i < VW / span + 2; i++) {
         const wx = Math.floor((camX * speed) / span) * span + i * span, x = wx - camX * speed;
         const k = ((wx / span) % 4 + 4) % 4, c = cols[k];
         for (const [dx, h, wdt] of [[0, 46, 12], [14, 30, 9], [-12, 26, 8]]) {
@@ -938,11 +1004,18 @@
         const bump = bumps.find(b => b.x === tx && b.y === ty);
         const px = tx * TS - camX, py = ty * TS - (bump && !bump.spring ? Math.sin(bump.t / 0.18 * Math.PI) * 6 : 0);
         if (c === '#') {
-          ctx.fillStyle = T.dirt; ctx.fillRect(px, py, TS + 0.5, TS + 0.5);
+          ctx.fillStyle = shade(T.dirt, -0.07 * Math.min(4, (tile(tx, ty - 1) === '#') + (tile(tx, ty - 2) === '#') * 2));
+          ctx.fillRect(px, py, TS + 0.5, TS + 0.5);
+          if (tile(tx - 1, ty) !== '#') { ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(px, py, 4, TS); }
+          if (tile(tx + 1, ty) !== '#') { ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(px + TS - 4, py, 4, TS); }
           ctx.fillStyle = T.dirtDark;
           for (const [dx, dy, r] of [[9, 20, 2.5], [22, 13, 2], [18, 27, 2]]) { ctx.beginPath(); ctx.arc(px + dx, py + dy, r, 0, TAU); ctx.fill(); }
           if (tile(tx, ty - 1) !== '#') {
+            const sg = ctx.createLinearGradient(0, py + 8, 0, py + 22);       // shade just under the grass
+            sg.addColorStop(0, 'rgba(0,0,0,0.22)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = sg; ctx.fillRect(px, py + 8, TS + 0.5, 14);
             ctx.fillStyle = T.grass; ctx.fillRect(px, py, TS + 0.5, 10);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(px, py, TS + 0.5, 2.5);
             ctx.fillStyle = T.grassDark;
             for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.arc(px + 4 + k * 8, py + 10, 4, 0, Math.PI); ctx.fill(); }
             if (L.theme === 'candy') { ctx.fillStyle = ['#ff6fb1', '#8fd3ff', '#ffd23f'][tx % 3]; ctx.fillRect(px + 8 + (tx % 3) * 5, py + 3, 5, 2); }
@@ -989,14 +1062,14 @@
       }
       // signs and checkpoints
       for (const s of signs) {
-        const x = s.x - camX; if (x < -40 || x > VIEW + 40) continue;
+        const x = s.x - camX; if (x < -40 || x > VW + 40) continue;
         ctx.fillStyle = '#8b5a2b'; ctx.fillRect(x + 14, s.y + 14, 4, 18);
         ctx.fillStyle = s.seen ? '#d9b382' : '#f2c98f'; roundRect(x + 2, s.y + 2, 28, 16, 3); ctx.fill();
         ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 2; ctx.stroke();
         ctx.fillStyle = '#c0392b'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('!', x + 16, s.y + 10 + (s.seen ? 0 : Math.sin(time * 5) * 1.5));
       }
       for (const c of checks) {
-        const x = c.x - camX; if (x < -40 || x > VIEW + 40) continue;
+        const x = c.x - camX; if (x < -40 || x > VW + 40) continue;
         ctx.fillStyle = '#ccc'; ctx.fillRect(x + 14, c.y - 6, 3, 38);
         ctx.fillStyle = c.on ? '#5fd068' : '#bbb';
         ctx.beginPath(); ctx.moveTo(x + 17, c.y - 6); ctx.lineTo(x + 32, c.y + 1 + Math.sin(time * 6) * 2); ctx.lineTo(x + 17, c.y + 8); ctx.fill();
@@ -1015,14 +1088,14 @@
       }
       // coins, stars, hearts
       for (const c of coins) {
-        if (c.got) continue; const x = c.x - camX; if (x < -20 || x > VIEW + 20) continue;
+        if (c.got) continue; const x = c.x - camX; if (x < -20 || x > VW + 20) continue;
         const s = Math.abs(Math.cos(time * 4 + c.x * 0.05));
         ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.ellipse(x, c.y, 8 * s + 1, 9, 0, 0, TAU); ctx.fill();
         ctx.strokeStyle = '#e09a00'; ctx.lineWidth = 2; ctx.stroke();
         ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(x - 1, c.y - 5, 2 * s, 10);
       }
       for (const s of stars) {
-        if (s.got) continue; const x = s.x - camX; if (x < -30 || x > VIEW + 30) continue;
+        if (s.got) continue; const x = s.x - camX; if (x < -30 || x > VW + 30) continue;
         const gr = ctx.createRadialGradient(x, s.y, 2, x, s.y, 26);
         gr.addColorStop(0, 'rgba(255,240,120,0.9)'); gr.addColorStop(1, 'rgba(255,240,120,0)');
         ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, s.y, 26, 0, TAU); ctx.fill();
@@ -1045,7 +1118,7 @@
 
     function drawEnemies() {
       for (const e of enemies) {
-        const x = e.x - camX; if (x < -40 || x > VIEW + 40) continue;
+        const x = e.x - camX; if (x < -40 || x > VW + 40) continue;
         if (!e.alive) {
           if (e.squash <= 0) continue;
           ctx.globalAlpha = Math.max(0, e.squash * 2);
@@ -1053,12 +1126,15 @@
           ctx.beginPath(); ctx.ellipse(x + e.w / 2, e.y + e.h - 3, e.w / 2 + 4, 4, 0, 0, TAU); ctx.fill();
           ctx.globalAlpha = 1; continue;
         }
+        groundShadow(x + e.w / 2, e.y + e.h, e.w * 0.55);
         if (e.kind === 'slime') {
           const wob = Math.sin(time * 8 + e.x) * 2;
           const g = ctx.createRadialGradient(x + e.w * 0.35, e.y + 4, 2, x + e.w / 2, e.y + e.h, e.w);
           g.addColorStop(0, '#b6ffb0'); g.addColorStop(1, '#2fa84a');
           ctx.fillStyle = g;
           ctx.beginPath(); ctx.moveTo(x - 1, e.y + e.h); ctx.quadraticCurveTo(x - 2, e.y - wob, x + e.w / 2, e.y - 2 - wob); ctx.quadraticCurveTo(x + e.w + 2, e.y - wob, x + e.w + 1, e.y + e.h); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = '#1b7a33'; ctx.lineWidth = 2; ctx.stroke();
+          ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(x + 7, e.y + 4 - wob, 4, 2.2, -0.5, 0, TAU); ctx.fill();
           const d = Math.sign(e.vx);
           for (const s of [-1, 1]) {
             ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + e.w / 2 + s * 5 + d * 2, e.y + 7, 4, 0, TAU); ctx.fill();
@@ -1071,7 +1147,7 @@
           const flap = Math.sin(time * 40) * 0.5;
           ctx.fillStyle = 'rgba(220,240,255,0.85)';
           ctx.beginPath(); ctx.ellipse(-2, -11, 6, 9, -0.4 + flap, 0, TAU); ctx.ellipse(5, -11, 6, 9, 0.4 - flap, 0, TAU); ctx.fill();
-          ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.ellipse(0, 0, 13, 10, 0, 0, TAU); ctx.fill();
+          ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#a06c00'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(0, 0, 13, 10, 0, 0, TAU); ctx.stroke(); ctx.fill();
           ctx.fillStyle = '#2a1e3a'; ctx.fillRect(-4, -9, 3, 18); ctx.fillRect(3, -9, 3, 18);
           ctx.beginPath(); ctx.moveTo(-13, 0); ctx.lineTo(-18, 2); ctx.lineTo(-13, 3); ctx.fill();
           ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(8, -3, 3.5, 0, TAU); ctx.fill();
@@ -1091,6 +1167,7 @@
       if (air) { sx = 1 - Math.min(0.15, Math.abs(h.vy) / 4000); sy = 1 + Math.min(0.15, Math.abs(h.vy) / 4000); }
       const running = !air && Math.abs(h.vx) > 20;
       const bob = running ? Math.abs(Math.sin(h.run * 6)) * 2 : 0;
+      groundShadow(cx, by, 12);
       ctx.save();
       ctx.translate(cx, by - bob);
       ctx.scale(sx * h.face, sy);
@@ -1111,26 +1188,37 @@
       // ears with black tips
       for (const [ex, rot] of [[-5, -0.35], [6, 0.3]]) {
         ctx.save(); ctx.translate(ex, -26); ctx.rotate(rot + (air ? -0.1 : 0));
-        ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.ellipse(0, -7, 3.6, 10, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#a06c00'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.ellipse(0, -7, 3.6, 10, 0, 0, TAU); ctx.stroke(); ctx.fill();
         ctx.fillStyle = '#2a1e3a'; ctx.beginPath(); ctx.ellipse(0, -13.5, 2.6, 4, 0, 0, TAU); ctx.fill();
         ctx.restore();
       }
       // body and head
       const g = ctx.createRadialGradient(-3, -20, 2, 0, -14, 17);
       g.addColorStop(0, '#fff3a0'); g.addColorStop(1, '#ffc800');
+      ctx.strokeStyle = '#a06c00'; ctx.lineWidth = 2.2;          // outline first, then the fill on top
+      ctx.beginPath(); ctx.ellipse(0, -9, 10, 9, 0, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(1, -19, 12.5, 10.5, 0, 0, TAU); ctx.stroke();
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.ellipse(0, -9, 10, 9, 0, 0, TAU); ctx.fill();
       ctx.beginPath(); ctx.ellipse(1, -19, 12.5, 10.5, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';                 // shine on the head
+      ctx.beginPath(); ctx.ellipse(-4, -25, 4.5, 2.5, -0.5, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(160,100,0,0.18)';                   // shading under the head
+      ctx.beginPath(); ctx.ellipse(1, -11, 9, 3, 0, 0, TAU); ctx.fill();
       // brown back stripes
       ctx.strokeStyle = '#a0662d'; ctx.lineWidth = 2; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(-9, -12); ctx.lineTo(-5, -12); ctx.moveTo(-9, -7); ctx.lineTo(-5, -7); ctx.stroke();
       // eyes
       ctx.fillStyle = '#2a1e3a';
-      ctx.beginPath(); ctx.arc(7, -21, 2.6, 0, TAU); ctx.arc(-1.5, -21, 2.4, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(7, -21, 2.6, 3.1, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-1.5, -21, 2.4, 2.9, 0, 0, TAU); ctx.fill();
       ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(7.8, -22, 1, 0, TAU); ctx.arc(-0.8, -22, 0.9, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(7.9, -22.2, 1.1, 0, TAU); ctx.arc(-0.7, -22.2, 1, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(6.4, -19.8, 0.5, 0, TAU); ctx.fill();
       // red cheeks (they spark when jumping)
-      ctx.fillStyle = '#ff4d4d';
+      const cg = ctx.createRadialGradient(10, -16.5, 0.5, 10, -15.5, 3.2);
+      cg.addColorStop(0, '#ff9a9a'); cg.addColorStop(1, '#e8343a');
+      ctx.fillStyle = cg;
       ctx.beginPath(); ctx.arc(10, -15.5, 3, 0, TAU); ctx.arc(-4.5, -15.5, 2.6, 0, TAU); ctx.fill();
       if (air && Math.floor(time * 20) % 2) {
         ctx.strokeStyle = '#fff59d'; ctx.lineWidth = 1.5;
@@ -1156,6 +1244,12 @@
         if (p.star) starShape(x, p.y, p.r * 1.6, 0, p.c); else { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(x, p.y, p.r, 0, TAU); ctx.fill(); }
       }
       ctx.globalAlpha = 1;
+      ctx.font = 'bold 14px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center';
+      for (const f of floaters) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.strokeText(f.text, f.x - camX, f.y); ctx.fillStyle = '#ff6f00'; ctx.fillText(f.text, f.x - camX, f.y); }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawRipples() {
       for (const r of ripples) {           // a ring where a finger tapped to jump
         r.t += 1 / 60;
         ctx.globalAlpha = Math.max(0, 1 - r.t * 3); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
@@ -1164,36 +1258,43 @@
       }
       ripples = ripples.filter(r => r.t < 0.34);
       ctx.globalAlpha = 1;
-      ctx.font = 'bold 14px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center';
-      for (const f of floaters) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.strokeText(f.text, f.x - camX, f.y); ctx.fillStyle = '#ff6f00'; ctx.fillText(f.text, f.x - camX, f.y); }
-      ctx.globalAlpha = 1;
     }
-
     function drawHud() {
       ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      roundRect(6, 6, VIEW - 12, 30, 12); ctx.fill();
+      roundRect(6, 6, VW - 12, 30, 12); ctx.fill();
       const n = Math.max(lives, 0);
       for (let k = 0; k < Math.min(n, 6); k++) heartShape(22 + k * 20, 21, 8, '#ff4d6d');
       // coins
-      ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(VIEW / 2 - 18, 21, 8, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(VW / 2 - 18, 21, 8, 0, TAU); ctx.fill();
       ctx.strokeStyle = '#e09a00'; ctx.lineWidth = 2; ctx.stroke();
       ctx.fillStyle = '#3b2a50'; ctx.font = 'bold 16px "Comic Sans MS", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText(coinCount, VIEW / 2 - 6, 22);
+      ctx.fillText(coinCount, VW / 2 - 6, 22);
       // stars
-      for (let k = 0; k < 3; k++) starShape(VIEW - 70 + k * 22, 21, 9, 0, k < starCount ? '#ffd23f' : 'rgba(0,0,0,0.15)', k < starCount ? '#e09a00' : null);
+      for (let k = 0; k < 3; k++) starShape(VW - 70 + k * 22, 21, 9, 0, k < starCount ? '#ffd23f' : 'rgba(0,0,0,0.15)', k < starCount ? '#e09a00' : null);
       ctx.fillStyle = '#7c5cff'; ctx.font = 'bold 12px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(levelIdx + 1, VIEW - 98, 22);
+      ctx.fillText(levelIdx + 1, VW - 98, 22);
     }
 
     function render() {
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      fit();
+      const k = (canvas.width / DPR) / VW;            // screen pixels per world pixel
+      ctx.setTransform(DPR * k, 0, 0, DPR * k, 0, 0);
       if (!L) loadPreview();
+      ctx.save();
+      ctx.translate(0, TOP);
       drawBackground();
       drawTiles();
       drawThings();
       drawEnemies();
       if (hero) drawHero();
       drawEffects();
+      drawForeground();
+      ctx.restore();
+      drawRipples();
+      // a soft dark edge around the screen
+      const v = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.45, VW / 2, VH / 2, Math.max(VW, VH) * 0.75);
+      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.18)');
+      ctx.fillStyle = v; ctx.fillRect(0, 0, VW, VH);
       if (state !== 'menu') drawHud();
     }
     function loadPreview() { L = LEVELS[chosen]; theme = THEMES[L.theme]; map = L.rows.map(r => r.split('')); W = map[0].length; enemies = []; platforms = []; coins = []; stars = []; hearts = []; checks = []; signs = []; particles = []; floaters = []; bumps = []; goal = null; hero = null; }
@@ -1272,7 +1373,7 @@
       if (!paused && (state === 'play' || state === 'finish')) {
         acc += dt;
         while (acc >= 1 / 120) { update(1 / 120); acc -= 1 / 120; }
-      } else if (state === 'menu') { time += dt; camX = (Math.sin(time * 0.15) * 0.5 + 0.5) * (W * TS - VIEW) * 0.3; }
+      } else if (state === 'menu') { time += dt; camX = (Math.sin(time * 0.15) * 0.5 + 0.5) * (W * TS - VW) * 0.3; }
       else if (state === 'done' || state === 'over') time += dt;
       render();
       requestAnimationFrame(frame);
