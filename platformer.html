@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>קופצני</title>
+  <title>קופצני ופיקצ'ו</title>
   <style>
     html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
     button { touch-action: manipulation; }
@@ -141,19 +141,27 @@
     }
     .coach .mini.pause { background: #fff3c4; }
 
-    /* game pad: walk buttons on the left, a big jump button on the right */
-    .pad { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 8px; height: 86px; direction: ltr; touch-action: none; }
-    .pad div {
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 20px; background: #fff; box-shadow: 0 5px 0 rgba(0,0,0,0.15);
-      color: #7c5cff; font-size: 2rem; font-weight: bold;
-      transition: transform .06s, background .06s;
+    /* move strip: hold and slide left/right to walk. Tapping anywhere else on the screen jumps. */
+    .move {
+      position: relative; height: 84px; border-radius: 24px; direction: ltr; touch-action: none;
+      background: #fff; box-shadow: 0 5px 0 rgba(0,0,0,0.15); overflow: hidden;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 22px;
     }
-    .pad .jump { background: linear-gradient(180deg, #ffd23f, #ffb000); color: #7a4a00; border-radius: 26px; font-size: 1.1rem; flex-direction: column; }
-    .pad .jump b { font-size: 2rem; line-height: 1; }
-    .pad div.on { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); background: #7c5cff; color: #fff; }
-    .pad .jump.on { background: #ff9100; color: #fff; }
-    .pad svg { width: 44%; max-width: 46px; height: auto; }
+    .move::before, .move::after {
+      content: ''; position: absolute; top: 0; bottom: 0; width: 50%; transition: background .08s;
+    }
+    .move::before { left: 0; } .move::after { right: 0; }
+    .move.goL::before, .move.goR::after { background: rgba(124, 92, 255, 0.22); }
+    .move .arr { position: relative; z-index: 1; color: #7c5cff; font-size: 2.2rem; font-weight: bold; transition: transform .08s; }
+    .move.goL .arr.l, .move.goR .arr.r { transform: scale(1.35); }
+    .move .mid { position: relative; z-index: 1; font-size: 0.72rem; color: var(--soft); text-align: center; line-height: 1.3; }
+    .move .knob {
+      position: absolute; top: 50%; left: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff, #b8a4ff); box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+      opacity: 0; transition: opacity .1s; pointer-events: none; z-index: 2;
+    }
+    .move.held .knob { opacity: 1; }
+    .move.held .mid { opacity: 0; }
 
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
   </style>
@@ -173,7 +181,7 @@
     <a href="backgammon.html">🎲 שש-בש</a>
     <a href="pacman.html">😋 פקמן</a>
     <a href="connect4.html">🟡 4 בשורה</a>
-    <a href="platformer.html" class="active">🦘 קופצני</a>
+    <a href="platformer.html" class="active">⚡ קופצני</a>
   </nav>
 
   <div class="app">
@@ -181,8 +189,8 @@
       <canvas id="game"></canvas>
 
       <div dir="rtl" class="overlay" id="startScreen">
-        <h2>🦘 קופצני!</h2>
-        <p>עזרו לקופצני להגיע לדגל 🚩! אספו מטבעות וכוכבים, קפצו על אויבים והיזהרו מבורות וקוצים.</p>
+        <h2>⚡ קופצני ופיקצ'ו!</h2>
+        <p>עזרו לפיקצ'ו לעבור עולמות קסומים ולהגיע לדגל 🚩! גררו בפס למטה כדי ללכת, ולחצו בכל מקום על המסך כדי לקפוץ.</p>
         <div class="diff" id="diff">
           <button data-d="easy">🐢 קל · 5 ❤️</button>
           <button data-d="normal">🐰 רגיל · 3 ❤️</button>
@@ -225,15 +233,16 @@
 
     <div class="panel">
       <div class="coach" dir="rtl">
-        <div class="face" id="coachFace">🐰</div>
-        <div class="bubble" id="bubble"><span>היי! אני קופצני. עזרו לי להגיע לדגל! 🚩</span></div>
+        <div class="face" id="coachFace">⚡</div>
+        <div class="bubble" id="bubble"><span>פיקה-פיקה! עזרו לי להגיע לדגל! 🚩</span></div>
         <button class="mini" id="soundBtn" aria-label="צליל">🔊</button>
         <button class="mini pause" id="pauseBtn" aria-label="הפסקה">⏸️</button>
       </div>
-      <div class="pad" id="pad">
-        <div data-key="left" aria-label="שמאלה"><svg viewBox="0 0 24 24"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div data-key="right" aria-label="ימינה"><svg viewBox="0 0 24 24"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="jump" data-key="jump" aria-label="קפיצה"><b>⤒</b>קפיצה</div>
+      <div class="move" id="move" aria-label="פס הליכה">
+        <span class="arr l">◀</span>
+        <span class="mid" dir="rtl">גררו כאן ללכת<br>לחצו על המסך לקפוץ ⚡</span>
+        <span class="arr r">▶</span>
+        <span class="knob" id="knob"></span>
       </div>
     </div>
   </div>
@@ -378,24 +387,24 @@
     ];
 
     const TIPS = [
-      ['לחצו ◀ ▶ כדי ללכת, ואספו מטבעות! 🪙', 'לחצו על הכפתור הצהוב כדי לקפוץ! תנו ראש לקופסה עם סימן השאלה ❓', 'קפצו מעל הבור! 🕳️', 'זה רפש! קפצו עליו מלמעלה כדי להביס אותו 💥'],
-      ['לחצו קפיצה פעמיים באוויר = קפיצה כפולה! 🦘🦘'],
+      ['גררו את האצבע בפס למטה: ימינה = קדימה, שמאלה = אחורה 👉', 'לחצו בכל מקום על המסך כדי לקפוץ! תנו ראש לקופסה עם סימן השאלה ❓', 'קפצו מעל הבור! 🕳️', 'זה רפש! קפצו עליו מלמעלה כדי להביס אותו 💥'],
+      ['לחצו פעמיים על המסך = קפיצה כפולה! ⚡⚡'],
       ['זהירות מהקוצים! 🌵 קפצו מעליהם', 'קפיץ! עלו עליו כדי לעוף גבוה 🌀'],
       ['פלטפורמה זזה! חכו לה ועלו עליה 🪵'],
       ['דבורים! 🐝 קפצו עליהן מלמעלה או התחמקו מהן'],
       ['מעלית! עלו עליה והיא תיקח אתכם למעלה ⬆️'],
-      ['עולם הלילה! 🌙 מצאו את 3 הכוכבים הגדולים'],
+      ['מערת הקריסטלים! 💎 מצאו את 3 הכוכבים הגדולים'],
       ['הרבה פלטפורמות זזות. קחו את הזמן! ⏳'],
-      ['ארץ הממתקים! 🍭 זהירות מהקוצים'],
+      ['ממלכת הממתקים! 🏰 זהירות מהקוצים'],
       ['השלב האחרון! 🏆 בהצלחה, אלופים!']
     ];
     const THEMES = {
-      meadow: { sky: ['#7ec8ff', '#d8f3ff'], far: '#a8e69a', near: '#6cc15a', grass: '#5fd068', grassDark: '#3ea84c', dirt: '#b97a4a', dirtDark: '#9a5f35', cloud: '#ffffff', sun: '#ffe066' },
-      sunset: { sky: ['#ff8a65', '#ffd59e'], far: '#c79ad6', near: '#9a6ac0', grass: '#ffb347', grassDark: '#e08a1e', dirt: '#a0634a', dirtDark: '#7f4a36', cloud: '#ffe3d1', sun: '#fff2b0' },
-      night:  { sky: ['#1b1640', '#4a3b8f'], far: '#3a3480', near: '#2a2566', grass: '#4fd1c5', grassDark: '#2f9e94', dirt: '#5b4a8a', dirtDark: '#463872', cloud: '#8f86c9', sun: '#fff8d6' },
-      candy:  { sky: ['#ffb6dc', '#fff0f8'], far: '#ffc4e1', near: '#ff94c6', grass: '#ffffff', grassDark: '#ffd1e8', dirt: '#c88ae0', dirtDark: '#a96bc4', cloud: '#ffffff', sun: '#fff6a0' }
+      meadow: { sky: ['#7fe0ff', '#e6fff6'], far: '#9fe3b0', near: '#62c983', grass: '#59d17a', grassDark: '#36a85a', dirt: '#a5734c', dirtDark: '#86593a', cloud: '#ffffff', sun: '#fff3a3' },
+      sunset: { sky: ['#ff8fa3', '#ffd6a5'], far: '#c7a6ff', near: '#9b7bea', grass: '#8ce99a', grassDark: '#51cf66', dirt: '#b08968', dirtDark: '#8d6e52', cloud: '#fff4f0', sun: '#fff1b8' },
+      night:  { sky: ['#140f35', '#3d2a7a'], far: '#2c2468', near: '#211b55', grass: '#63e6be', grassDark: '#20c997', dirt: '#5f4b9b', dirtDark: '#48387d', cloud: '#7d6fd1', sun: '#fff8d6' },
+      candy:  { sky: ['#ffb3d9', '#fff0f8'], far: '#ffc9e3', near: '#ff9ccf', grass: '#ffffff', grassDark: '#ffd1e8', dirt: '#c48bf0', dirtDark: '#a56cd6', cloud: '#ffffff', sun: '#fff6a0' }
     };
-    const WORLD_NAMES = { meadow: 'האחו', sunset: 'השקיעה', night: 'הלילה', candy: 'הממתקים' };
+    const WORLD_NAMES = { meadow: 'יער הפטריות הקסום 🍄', sunset: 'איי השמיים 🌈', night: 'מערת הקריסטלים 💎', candy: 'ממלכת הממתקים 🏰' };
 
     // ---------- Constants ----------
     const TS = 32, VIEW = 12 * TS;                     // the camera shows 12 x 12 tiles
@@ -481,7 +490,7 @@
       camX = 0;
       state = 'play'; paused = false; finishT = 0;
       ['startScreen', 'doneScreen', 'overScreen', 'pauseScreen'].forEach(id => $(id).classList.add('hidden'));
-      coach(`שלב ${i + 1} · עולם ${WORLD_NAMES[L.theme]}. קדימה לדגל! 🚩`);
+      coach(`שלב ${i + 1} · ${WORLD_NAMES[L.theme]}. קדימה לדגל! 🚩`);
     }
     function spawnHero(p) {
       hero = { x: p.x, y: p.y, vx: 0, vy: 0, onGround: false, jumps: 1, coyote: 0, buffer: 0, face: 1, invuln: 1.2, squash: 0, run: 0, plat: null };
@@ -492,20 +501,61 @@
     const solid = c => c === '#' || c === 'B' || c === '?' || c === 'U' || c === '^';
 
     // ---------- Input ----------
+    // hold and slide on the strip to walk; tap (or hold for a higher jump) anywhere else to jump
     const keys = { left: false, right: false, jump: false };
+    function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch {} }
     function press(k, on) {
-      if (k === 'jump' && on && !keys.jump) hero && (hero.buffer = 0.13);
+      if (k === 'jump' && on && !keys.jump && hero && state === 'play') { hero.buffer = 0.13; buzz(10); }
       keys[k] = on;
-      document.querySelectorAll(`.pad [data-key="${k}"]`).forEach(d => d.classList.toggle('on', on));
     }
+    const moveEl = $('move'), knob = $('knob');
+    let moveId = null;
+    function setMove(dir) {
+      const was = keys.left ? 'left' : keys.right ? 'right' : null;
+      keys.left = dir === 'left'; keys.right = dir === 'right';
+      moveEl.classList.toggle('goL', dir === 'left'); moveEl.classList.toggle('goR', dir === 'right');
+      if (dir && dir !== was) buzz(6);
+    }
+    function moveAt(e) {
+      const r = moveEl.getBoundingClientRect(), x = Math.max(29, Math.min(r.width - 29, e.clientX - r.left));
+      knob.style.left = x + 'px';
+      const rel = x / r.width - 0.5;
+      setMove(rel < -0.05 ? 'left' : rel > 0.05 ? 'right' : null);
+    }
+    function moveEnd() { moveId = null; setMove(null); moveEl.classList.remove('held'); knob.style.left = '50%'; }
+    moveEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); moveId = e.pointerId; moveEl.setPointerCapture(e.pointerId); moveEl.classList.add('held'); moveAt(e); });
+    moveEl.addEventListener('pointermove', e => { if (e.pointerId === moveId) moveAt(e); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => moveEl.addEventListener(t, e => { if (e.pointerId === moveId) moveEnd(); }));
+
+    const jumpIds = new Set();
+    document.addEventListener('pointerdown', e => {
+      if (e.target.closest('#move, button, nav, a, .overlay:not(.hidden)')) return;
+      if (state !== 'play' || paused) return;
+      jumpIds.add(e.pointerId);
+      press('jump', true);
+      const r = canvas.getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)
+        ripples.push({ x: (e.clientX - r.left) / r.width * VIEW, y: (e.clientY - r.top) / r.height * VIEW, t: 0 });
+    });
+    const jumpUp = e => { if (jumpIds.delete(e.pointerId) && !jumpIds.size) press('jump', false); };
+    document.addEventListener('pointerup', jumpUp);
+    document.addEventListener('pointercancel', jumpUp);
+    // safety net: when no finger is left on the screen, nothing can stay pressed
+    function releaseAll() { jumpIds.clear(); press('jump', false); if (moveId !== null) moveEnd(); else setMove(null); }
+    document.addEventListener('touchend', e => { if (!e.touches.length) releaseAll(); });
+    addEventListener('blur', releaseAll);
+    let ripples = [];
+
     const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'jump', w: 'jump', ' ': 'jump', z: 'jump' };
-    addEventListener('keydown', e => { if (KEYMAP[e.key]) { e.preventDefault(); if (!e.repeat) press(KEYMAP[e.key], true); } else if (e.key === 'p' || e.key === 'Escape') togglePause(); });
-    addEventListener('keyup', e => { if (KEYMAP[e.key]) press(KEYMAP[e.key], false); });
-    document.querySelectorAll('.pad [data-key]').forEach(b => {
-      const k = b.dataset.key, ids = new Set();
-      b.addEventListener('pointerdown', e => { e.preventDefault(); ids.add(e.pointerId); b.setPointerCapture(e.pointerId); press(k, true); });
-      const up = e => { ids.delete(e.pointerId); if (!ids.size) press(k, false); };
-      b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+    addEventListener('keydown', e => {
+      if (!KEYMAP[e.key]) { if (e.key === 'p' || e.key === 'Escape') togglePause(); return; }
+      e.preventDefault(); if (e.repeat) return;
+      const k = KEYMAP[e.key];
+      if (k === 'jump') press('jump', true); else { keys[k] = true; moveEl.classList.toggle(k === 'left' ? 'goL' : 'goR', true); }
+    });
+    addEventListener('keyup', e => {
+      const k = KEYMAP[e.key]; if (!k) return;
+      if (k === 'jump') press('jump', false); else { keys[k] = false; moveEl.classList.toggle(k === 'left' ? 'goL' : 'goR', false); }
     });
 
     // ---------- Physics ----------
@@ -545,7 +595,8 @@
           h.y = p.y - PH; h.vy = 0; h.onGround = true; h.plat = p;
         }
       }
-      if (h.onGround) { h.jumps = 1; h.coyote = 0.1; if (!wasGround) { h.squash = 0.3; dust(h.x + PW / 2, h.y + PH, 4); } }
+      if (h.onGround) { h.jumps = 1; h.coyote = 0.1; if (!wasGround) { h.squash = 0.3; dust(h.x + PW / 2, h.y + PH, 4); if (h.vyLand > 300) buzz(5); } }
+      h.vyLand = h.vy;
       h.run += Math.abs(h.vx) * dt * 0.06;
       h.squash *= 0.85;
     }
@@ -730,54 +781,152 @@
     }
 
     // ---------- Drawing ----------
+    // each world has its own dreamy backdrop, in layers that scroll at different speeds
+    const wrapX = (x, span) => ((x % span) + span) % span;
     function drawBackground() {
-      const T = theme;
+      const T = theme, w = L.theme;
       const g = ctx.createLinearGradient(0, 0, 0, VIEW);
       g.addColorStop(0, T.sky[0]); g.addColorStop(1, T.sky[1]);
       ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW, VIEW);
-      // sun or moon
-      ctx.fillStyle = T.sun;
-      ctx.globalAlpha = 0.9;
-      ctx.beginPath(); ctx.arc(VIEW * 0.78 - camX * 0.02, L.theme === 'sunset' ? 150 : 70, L.theme === 'sunset' ? 46 : 30, 0, TAU); ctx.fill();
-      ctx.globalAlpha = 1;
-      if (L.theme === 'night') {
-        for (let i = 0; i < 40; i++) {
-          const x = ((i * 97) % 500 - camX * 0.05 % 500 + 500) % 500 - 50, y = (i * 53) % 220 + 10;
-          ctx.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(time * 2 + i));
-          ctx.fillStyle = '#fff'; ctx.fillRect(x, y, 2, 2);
+      if (w === 'night') {
+        // aurora ribbons and twinkling sparkles in the crystal cave
+        for (let k = 0; k < 3; k++) {
+          ctx.fillStyle = ['rgba(99,230,190,0.18)', 'rgba(204,93,232,0.16)', 'rgba(116,192,252,0.16)'][k];
+          const yy = x => 70 + k * 34 + Math.sin(x * 0.02 + time * 0.6 + k + camX * 0.002) * 18;
+          ctx.beginPath(); ctx.moveTo(0, yy(0));
+          for (let x = 0; x <= VIEW; x += 12) ctx.lineTo(x, yy(x));
+          for (let x = VIEW; x >= 0; x -= 12) ctx.lineTo(x, yy(x) + 26 + Math.sin(x * 0.03 + k) * 8);
+          ctx.fill();
+        }
+        for (let i = 0; i < 45; i++) {
+          const x = wrapX(i * 97 - camX * 0.05, 520) - 60, y = (i * 53) % 260 + 10;
+          ctx.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(time * 2 + i));
+          starShape(x, y, 2.4, 0, '#fff');
         }
         ctx.globalAlpha = 1;
+        crystals(0.2, 300, 0.55, 90);
+        crystals(0.45, 330, 0.9, 60);
+        return;
       }
-      // clouds
-      ctx.fillStyle = T.cloud; ctx.globalAlpha = L.theme === 'night' ? 0.35 : 0.85;
+      if (w === 'sunset') {
+        // a big rainbow and floating islands with waterfalls
+        const rx = VIEW * 0.55 - camX * 0.03, ry = 330;
+        ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa'].forEach((c, k) => {
+          ctx.strokeStyle = c; ctx.globalAlpha = 0.45; ctx.lineWidth = 9;
+          ctx.beginPath(); ctx.arc(rx, ry, 210 - k * 9, Math.PI, 0); ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+      }
+      // sun or moon
+      ctx.fillStyle = T.sun; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.arc(VIEW * 0.8 - camX * 0.02, 70, 28, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 1;
+      // fluffy clouds (cotton candy in the candy kingdom)
+      ctx.fillStyle = T.cloud; ctx.globalAlpha = 0.85;
       for (let i = 0; i < 6; i++) {
-        const span = 700, x = ((i * 160 - camX * 0.15 - time * 8) % span + span) % span - 120, y = 40 + (i * 37) % 90;
+        const x = wrapX(i * 160 - camX * 0.15 - time * 8, 700) - 120, y = 40 + (i * 37) % 90;
+        if (w === 'candy') ctx.fillStyle = i % 2 ? '#ffe3f1' : '#e7f5ff';
         ctx.beginPath(); ctx.arc(x, y, 18, 0, TAU); ctx.arc(x + 20, y - 8, 22, 0, TAU); ctx.arc(x + 44, y, 17, 0, TAU); ctx.rect(x, y, 44, 16); ctx.fill();
       }
       ctx.globalAlpha = 1;
-      // far and near hills
-      hills(T.far, 0.25, 250, 50, 0.011);
-      hills(T.near, 0.5, 290, 40, 0.017, true);
+      if (w === 'sunset') { islands(0.18, 170, 0.7); islands(0.35, 230, 1); }
+      if (w === 'candy') castles(0.2);
+      if (w === 'meadow') mushrooms(0.2, 270, 1.3, 0.7);
+      hills(T.far, 0.25, 260, 40, 0.011);
+      if (w === 'meadow') mushrooms(0.45, 300, 0.8, 1);
+      hills(T.near, 0.5, 300, 30, 0.017, w === 'candy' ? 'candy' : null);
+      if (w === 'meadow') fireflies();
     }
-    function hills(color, speed, base, amp, freq, trees) {
+    function hills(color, speed, base, amp, freq, deco) {
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.moveTo(0, VIEW);
       for (let x = 0; x <= VIEW; x += 8) { const wx = x + camX * speed; ctx.lineTo(x, base - Math.sin(wx * freq) * amp - Math.sin(wx * freq * 2.3) * amp * 0.3); }
       ctx.lineTo(VIEW, VIEW); ctx.fill();
-      if (!trees) return;
+      if (deco !== 'candy') return;
       for (let i = -1; i < 6; i++) {
         const span = 90, wx = Math.floor((camX * speed) / span) * span + i * span, x = wx - camX * speed + 30;
         const y = base - Math.sin(wx * freq) * amp - Math.sin(wx * freq * 2.3) * amp * 0.3;
-        if (L.theme === 'candy') {
+        if (i % 2) {               // lollipop
           ctx.fillStyle = '#fff'; ctx.fillRect(x - 2, y - 30, 4, 30);
-          ctx.fillStyle = i % 2 ? '#ff6fb1' : '#8fd3ff'; ctx.beginPath(); ctx.arc(x, y - 34, 11, 0, TAU); ctx.fill();
+          ctx.fillStyle = i % 4 === 1 ? '#ff6fb1' : '#8fd3ff'; ctx.beginPath(); ctx.arc(x, y - 34, 11, 0, TAU); ctx.fill();
           ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y - 34, 6, 0, TAU * 0.75); ctx.stroke();
-        } else {
-          ctx.fillStyle = 'rgba(80,50,30,0.6)'; ctx.fillRect(x - 2, y - 22, 4, 22);
-          ctx.fillStyle = L.theme === 'night' ? '#1f1a52' : L.theme === 'sunset' ? '#7d4fa8' : '#4fae47';
-          ctx.beginPath(); ctx.arc(x, y - 28, 12, 0, TAU); ctx.arc(x - 8, y - 20, 9, 0, TAU); ctx.arc(x + 8, y - 20, 9, 0, TAU); ctx.fill();
+        } else {                   // candy cane
+          ctx.lineCap = 'round'; ctx.lineWidth = 6; ctx.strokeStyle = '#fff';
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 30); ctx.arc(x + 7, y - 30, 7, Math.PI, 0); ctx.stroke();
+          ctx.strokeStyle = '#ff4d6d'; ctx.lineWidth = 6; ctx.setLineDash([4, 5]);
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 30); ctx.arc(x + 7, y - 30, 7, Math.PI, 0); ctx.stroke();
+          ctx.setLineDash([]); ctx.lineCap = 'butt';
         }
       }
+    }
+    function mushrooms(speed, base, scale, alpha) {
+      const span = 150;
+      for (let i = -1; i < 5; i++) {
+        const wx = Math.floor((camX * speed) / span) * span + i * span, x = wx - camX * speed + 40, s = scale * (0.8 + ((wx / span) % 3 + 3) % 3 * 0.15);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#fff3e0'; roundRect(x - 7 * s, base - 50 * s, 14 * s, 50 * s, 6 * s); ctx.fill();
+        const caps = ['#ff6b6b', '#cc5de8', '#4dabf7'];
+        ctx.fillStyle = caps[((wx / span) % 3 + 3) % 3];
+        ctx.beginPath(); ctx.ellipse(x, base - 50 * s, 34 * s, 24 * s, 0, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        for (const [dx, dy, r] of [[-16, -12, 5], [4, -18, 6], [18, -8, 4]]) { ctx.beginPath(); ctx.arc(x + dx * s, base - 50 * s + dy * s, r * s, 0, TAU); ctx.fill(); }
+        ctx.globalAlpha = alpha * (0.25 + 0.15 * Math.sin(time * 2 + i));   // soft glow
+        ctx.fillStyle = '#fff6a0'; ctx.beginPath(); ctx.arc(x, base - 55 * s, 40 * s, 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function fireflies() {
+      for (let i = 0; i < 12; i++) {
+        const x = wrapX(i * 71 + Math.sin(time * 0.7 + i) * 30 - camX * 0.6, 420) - 20, y = 150 + (i * 41) % 130 + Math.cos(time + i) * 12;
+        ctx.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(time * 3 + i));
+        ctx.fillStyle = '#fffbb0'; ctx.beginPath(); ctx.arc(x, y, 2.5, 0, TAU); ctx.fill();
+        ctx.globalAlpha *= 0.3; ctx.beginPath(); ctx.arc(x, y, 7, 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function islands(speed, y0, scale) {
+      const span = 220;
+      for (let i = -1; i < 4; i++) {
+        const wx = Math.floor((camX * speed) / span) * span + i * span, x = wx - camX * speed + 60, y = y0 + Math.sin(time + i) * 4 + ((wx / span) % 2 ? 25 : 0);
+        ctx.globalAlpha = scale < 1 ? 0.7 : 1;
+        ctx.fillStyle = '#8d6e52';
+        ctx.beginPath(); ctx.moveTo(x - 40 * scale, y); ctx.lineTo(x + 40 * scale, y); ctx.lineTo(x + 10 * scale, y + 34 * scale); ctx.lineTo(x - 6 * scale, y + 40 * scale); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#69db7c'; roundRect(x - 42 * scale, y - 6 * scale, 84 * scale, 10 * scale, 5 * scale); ctx.fill();
+        ctx.fillStyle = 'rgba(165,216,255,0.8)'; ctx.fillRect(x + 22 * scale, y + 2, 5 * scale, 60 * scale);   // waterfall
+        ctx.fillStyle = '#2f9e44'; ctx.beginPath(); ctx.arc(x - 18 * scale, y - 16 * scale, 11 * scale, 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function castles(speed) {
+      const span = 260;
+      for (let i = -1; i < 3; i++) {
+        const wx = Math.floor((camX * speed) / span) * span + i * span, x = wx - camX * speed + 80, base = 250;
+        ctx.fillStyle = '#ffd6ec';
+        ctx.fillRect(x - 40, base - 50, 80, 50);
+        for (const [dx, h, c] of [[-40, 80, '#ff8cc6'], [28, 95, '#b197fc'], [-8, 110, '#74c0fc']]) {
+          ctx.fillStyle = '#fff0f8'; ctx.fillRect(x + dx, base - h, 18, h);
+          ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x + dx - 4, base - h); ctx.lineTo(x + dx + 9, base - h - 26); ctx.lineTo(x + dx + 22, base - h); ctx.fill();
+          ctx.fillStyle = '#ff4d6d'; ctx.beginPath(); ctx.moveTo(x + dx + 9, base - h - 26); ctx.lineTo(x + dx + 9, base - h - 38); ctx.lineTo(x + dx + 19, base - h - 33 + Math.sin(time * 5 + i) * 2); ctx.closePath(); ctx.fill();
+        }
+        ctx.fillStyle = '#c48bf0'; roundRect(x - 9, base - 26, 18, 26, 9); ctx.fill();
+      }
+    }
+    function crystals(speed, base, scale, span) {
+      const cols = ['#63e6be', '#da77f2', '#74c0fc', '#ffd43b'];
+      ctx.fillStyle = theme.far; ctx.fillRect(0, base, VIEW, VIEW - base);
+      for (let i = -1; i < VIEW / span + 2; i++) {
+        const wx = Math.floor((camX * speed) / span) * span + i * span, x = wx - camX * speed;
+        const k = ((wx / span) % 4 + 4) % 4, c = cols[k];
+        for (const [dx, h, wdt] of [[0, 46, 12], [14, 30, 9], [-12, 26, 8]]) {
+          const hh = h * scale, ww = wdt * scale;
+          const gr = ctx.createLinearGradient(x + dx, base - hh, x + dx, base);
+          gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.3, c); gr.addColorStop(1, 'rgba(0,0,0,0.2)');
+          ctx.fillStyle = gr; ctx.globalAlpha = 0.85;
+          ctx.beginPath(); ctx.moveTo(x + dx - ww, base); ctx.lineTo(x + dx - ww * 0.8, base - hh * 0.7); ctx.lineTo(x + dx, base - hh); ctx.lineTo(x + dx + ww * 0.8, base - hh * 0.7); ctx.lineTo(x + dx + ww, base); ctx.fill();
+          ctx.globalAlpha = 0.15 + 0.1 * Math.sin(time * 2 + i); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x + dx, base - hh * 0.6, hh * 0.8, 0, TAU); ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
     }
 
     function drawTiles() {
@@ -797,6 +946,8 @@
             ctx.fillStyle = T.grassDark;
             for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.arc(px + 4 + k * 8, py + 10, 4, 0, Math.PI); ctx.fill(); }
             if (L.theme === 'candy') { ctx.fillStyle = ['#ff6fb1', '#8fd3ff', '#ffd23f'][tx % 3]; ctx.fillRect(px + 8 + (tx % 3) * 5, py + 3, 5, 2); }
+            if (L.theme === 'meadow' && tx % 3 === 0) { ctx.fillStyle = ['#ff8fab', '#ffd43b', '#b197fc'][(tx / 3) % 3 | 0]; for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.arc(px + 16 + Math.cos(k * 1.57) * 3, py + 1 + Math.sin(k * 1.57) * 3, 2.2, 0, TAU); ctx.fill(); } ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(px + 16, py + 1, 1.5, 0, TAU); ctx.fill(); }
+            if (L.theme === 'night' && tx % 4 === 1) { ctx.fillStyle = '#e599f7'; ctx.beginPath(); ctx.moveTo(px + 10, py + 2); ctx.lineTo(px + 13, py - 9); ctx.lineTo(px + 16, py + 2); ctx.fill(); }
           }
         } else if (c === 'B') {
           ctx.fillStyle = '#e8743b'; ctx.fillRect(px, py, TS, TS);
@@ -930,6 +1081,7 @@
       }
     }
 
+    // the hero: a cheerful yellow electric mouse
     function drawHero() {
       const h = hero;
       if (h.invuln > 0 && state === 'play' && Math.floor(time * 12) % 2) return;
@@ -937,34 +1089,61 @@
       const air = !h.onGround;
       let sx = 1 + h.squash * 0.6, sy = 1 - h.squash * 0.6;
       if (air) { sx = 1 - Math.min(0.15, Math.abs(h.vy) / 4000); sy = 1 + Math.min(0.15, Math.abs(h.vy) / 4000); }
-      const bob = !air && Math.abs(h.vx) > 20 ? Math.abs(Math.sin(h.run * 6)) * 2 : 0;
+      const running = !air && Math.abs(h.vx) > 20;
+      const bob = running ? Math.abs(Math.sin(h.run * 6)) * 2 : 0;
       ctx.save();
       ctx.translate(cx, by - bob);
       ctx.scale(sx * h.face, sy);
+      ctx.lineJoin = 'round';
+      // lightning-bolt tail
+      const wag = Math.sin(time * 6) * 0.08;
+      ctx.save(); ctx.rotate(wag);
+      ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#b07800'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      [[-8, -9], [-14, -12], [-11, -16], [-19, -21], [-15, -24], [-24, -33], [-8, -24], [-11, -21], [-5, -15]].forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#8d5a2b'; ctx.beginPath(); ctx.moveTo(-8, -9); ctx.lineTo(-14, -12); ctx.lineTo(-11, -14); ctx.lineTo(-6, -12); ctx.fill();
+      ctx.restore();
       // feet
-      const step = !air && Math.abs(h.vx) > 20 ? Math.sin(h.run * 6) * 4 : 0;
-      ctx.fillStyle = '#d9466a';
-      ctx.beginPath(); ctx.ellipse(-5 + step, -2, 6, 3.5, 0, 0, TAU); ctx.ellipse(6 - step, -2, 6, 3.5, 0, 0, TAU); ctx.fill();
-      // ears
-      ctx.fillStyle = '#ff8fab';
-      ctx.beginPath(); ctx.ellipse(-5, -30, 4, 10, -0.25, 0, TAU); ctx.ellipse(4, -31, 4, 10, 0.2, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#ffd1dc';
-      ctx.beginPath(); ctx.ellipse(-5, -30, 2, 6, -0.25, 0, TAU); ctx.ellipse(4, -31, 2, 6, 0.2, 0, TAU); ctx.fill();
-      // body
-      const g = ctx.createRadialGradient(-4, -20, 2, 0, -13, 16);
-      g.addColorStop(0, '#ffd1dc'); g.addColorStop(1, '#ff6f91');
+      const step = running ? Math.sin(h.run * 6) * 4 : 0;
+      ctx.fillStyle = '#f5b800';
+      ctx.beginPath(); ctx.ellipse(-4 + step, -2, 5, 3, 0, 0, TAU); ctx.ellipse(6 - step, -2, 5, 3, 0, 0, TAU); ctx.fill();
+      // ears with black tips
+      for (const [ex, rot] of [[-5, -0.35], [6, 0.3]]) {
+        ctx.save(); ctx.translate(ex, -26); ctx.rotate(rot + (air ? -0.1 : 0));
+        ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.ellipse(0, -7, 3.6, 10, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#2a1e3a'; ctx.beginPath(); ctx.ellipse(0, -13.5, 2.6, 4, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+      // body and head
+      const g = ctx.createRadialGradient(-3, -20, 2, 0, -14, 17);
+      g.addColorStop(0, '#fff3a0'); g.addColorStop(1, '#ffc800');
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.ellipse(0, -13, 13, 13, 0, 0, TAU); ctx.fill();
-      // belly, eyes, cheek, smile
-      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(1, -8, 7, 6, 0, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(4, -17, 4, 5, 0, 0, TAU); ctx.ellipse(-3, -17, 3.5, 4.5, 0, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#2a1e3a'; ctx.beginPath(); ctx.arc(5.5, -16.5, 2.2, 0, TAU); ctx.arc(-1.8, -16.5, 2, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(6.2, -17.5, 0.8, 0, TAU); ctx.fill();
-      ctx.fillStyle = 'rgba(255,80,120,0.6)'; ctx.beginPath(); ctx.arc(9, -11, 2.5, 0, TAU); ctx.fill();
-      ctx.strokeStyle = '#8a1f3f'; ctx.lineWidth = 1.6; ctx.beginPath();
-      if (air) ctx.arc(4, -10, 2.2, 0, TAU); else ctx.arc(3.5, -11.5, 3, 0.3, Math.PI - 0.3);
+      ctx.beginPath(); ctx.ellipse(0, -9, 10, 9, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(1, -19, 12.5, 10.5, 0, 0, TAU); ctx.fill();
+      // brown back stripes
+      ctx.strokeStyle = '#a0662d'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-9, -12); ctx.lineTo(-5, -12); ctx.moveTo(-9, -7); ctx.lineTo(-5, -7); ctx.stroke();
+      // eyes
+      ctx.fillStyle = '#2a1e3a';
+      ctx.beginPath(); ctx.arc(7, -21, 2.6, 0, TAU); ctx.arc(-1.5, -21, 2.4, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(7.8, -22, 1, 0, TAU); ctx.arc(-0.8, -22, 0.9, 0, TAU); ctx.fill();
+      // red cheeks (they spark when jumping)
+      ctx.fillStyle = '#ff4d4d';
+      ctx.beginPath(); ctx.arc(10, -15.5, 3, 0, TAU); ctx.arc(-4.5, -15.5, 2.6, 0, TAU); ctx.fill();
+      if (air && Math.floor(time * 20) % 2) {
+        ctx.strokeStyle = '#fff59d'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(13, -17); ctx.lineTo(16, -19); ctx.lineTo(15, -16); ctx.lineTo(18, -17); ctx.stroke();
+      }
+      // nose and smile
+      ctx.fillStyle = '#2a1e3a'; ctx.beginPath(); ctx.arc(4, -18, 0.8, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#7a3b00'; ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      if (air) ctx.arc(4, -14.5, 2, 0, TAU); else { ctx.arc(2.6, -16, 1.6, 0.2, Math.PI - 0.2); ctx.moveTo(6.8, -16); ctx.arc(5.2, -16, 1.6, 0.2, Math.PI - 0.2); }
       ctx.stroke();
       ctx.restore();
+      ctx.lineCap = 'butt';
     }
 
     function drawEffects() {
@@ -976,6 +1155,14 @@
         ctx.globalAlpha = a;
         if (p.star) starShape(x, p.y, p.r * 1.6, 0, p.c); else { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(x, p.y, p.r, 0, TAU); ctx.fill(); }
       }
+      ctx.globalAlpha = 1;
+      for (const r of ripples) {           // a ring where a finger tapped to jump
+        r.t += 1 / 60;
+        ctx.globalAlpha = Math.max(0, 1 - r.t * 3); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(r.x, r.y, 10 + r.t * 90, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(r.x, r.y, 6 + r.t * 70, 0, TAU); ctx.stroke();
+      }
+      ripples = ripples.filter(r => r.t < 0.34);
       ctx.globalAlpha = 1;
       ctx.font = 'bold 14px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center';
       for (const f of floaters) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.strokeText(f.text, f.x - camX, f.y); ctx.fillStyle = '#ff6f00'; ctx.fillText(f.text, f.x - camX, f.y); }
@@ -1017,7 +1204,7 @@
       const b = $('bubble'), f = $('coachFace');
       b.innerHTML = `<span>${text}</span>`;
       b.className = 'bubble ' + mood;
-      f.textContent = mood === 'oops' ? '😵' : mood === 'yay' ? '🥳' : '🐰';
+      f.textContent = mood === 'oops' ? '😵' : mood === 'yay' ? '🥳' : '⚡';
       f.classList.remove('talk'); void f.offsetWidth; f.classList.add('talk');
     }
 
@@ -1028,7 +1215,7 @@
       $('startScreen').classList.remove('hidden');
       chosen = Math.min(chosen, progress.unlocked - 1);
       buildLevelButtons(); loadPreview();
-      coach('היי! אני קופצני. בחרו שלב ועזרו לי להגיע לדגל! 🚩');
+      coach('פיקה-פיקה! בחרו שלב ועזרו לי להגיע לדגל! 🚩');
     }
     function buildLevelButtons() {
       $('levels').innerHTML = LEVELS.map((lv, i) => {
@@ -1092,7 +1279,7 @@
     }
     showMenu();
     requestAnimationFrame(frame);
-    window.__jump = { get s() { return { state, x: hero && hero.x, y: hero && hero.y, lives, coins: coinCount, stars: starCount, level: levelIdx, camX }; }, press, loadLevel, LEVELS, get hero() { return hero; }, get goal() { return goal; }, get enemies() { return enemies; }, teleport(tx, ty) { hero.x = tx * TS + 5; hero.y = ty * TS + TS - PH; hero.vy = 0; } };
+    window.__jump = { get s() { return { state, x: hero && hero.x, y: hero && hero.y, lives, coins: coinCount, stars: starCount, level: levelIdx, camX }; }, press, loadLevel, LEVELS, get hero() { return hero; }, get goal() { return goal; }, get enemies() { return enemies; }, step(dt) { update(dt); }, teleport(tx, ty) { hero.x = tx * TS + 5; hero.y = ty * TS + TS - PH; hero.vy = 0; } };
   </script>
   <script>
     // stop accidental zooming when little fingers tap fast (iPhone double-tap zoom and pinch zoom)
