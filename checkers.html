@@ -282,6 +282,13 @@
 
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
   </style>
+  <style>
+    /* one big button back to the games page */
+    nav a.home-link { font-family: 'Segoe UI', Tahoma, Arial, sans-serif !important; font-size: 0.9rem !important; font-weight: 800 !important;
+      padding: 4px 16px !important; border-radius: 999px !important; background: #fff !important; color: #5a3fd1 !important;
+      border: none !important; box-shadow: 0 3px 0 rgba(0,0,0,0.18) !important; text-decoration: none !important; white-space: nowrap; }
+    nav a.home-link:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.18) !important; }
+  </style>
 </head>
 <body>
   <!-- the checker pieces: round buddies with faces; kings wear a crown -->
@@ -329,22 +336,7 @@
   </svg>
 
   <nav dir="rtl">
-    <a href="index.html">🎨 צבעים</a>
-    <a href="math.html">➕ חשבון</a>
-    <a href="words.html">📖 מילים</a>
-    <a href="alef-bet.html">א-ב</a>
-    <a href="pokemon.html">⚡ פוקימון</a>
-    <a href="maze.html">🧩 מבוך</a>
-    <a href="hexmaze.html">⬡ משושים</a>
-    <a href="snake.html">🐍 נחש</a>
-    <a href="chess.html">♟️ שחמט</a>
-    <a href="checkers.html" class="active">🔴 דמקה</a>
-    <a href="backgammon.html">🎲 שש-בש</a>
-    <a href="pacman.html">😋 פקמן</a>
-    <a href="connect4.html">🟡 4 בשורה</a>
-    <a href="platformer.html">⚡ קופצני</a>
-    <a href="dig.html">⛏️ חופרים</a>
-    <a href="draw.html">✏️ מציירים</a>
+    <a class="home-link" href="index.html">🏠 כל המשחקים</a>
   </nav>
 
   <div class="app">
