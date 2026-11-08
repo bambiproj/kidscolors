@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>מבוך הפוקימון</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -241,8 +241,7 @@
     let cells = [];
     let solvedCount = 0;
     let dragging = false;
-    let head = null;
-    let won = false;
+        let won = false;
     let goalCenter = { x: 0, y: 0 };
     let startCenter = { x: 0, y: 0 };
     let goalImg = null;
@@ -376,18 +375,37 @@
       }
     }
 
-    function isPath(x, y) {
-      x = Math.floor(x); y = Math.floor(y);
-      if (x < 0 || y < 0 || x >= CANVAS_SIZE || y >= CANVAS_SIZE || !maskData) return false;
-      const idx = (y * CANVAS_SIZE + x) * 4;
-      return maskData[idx] > 128;
-    }
+    // ── The trail: a chain of cells from the flag, moving along the corridors ──
+    let trail = [];
+    let lastBlocked = 0;
+    const key = (x, y) => y * SIZE + x;
 
-    // Fuzzy check: forgiving for finger imprecision, checks a small cross of points
-    function isPathFuzzy(x, y) {
-      if (isPath(x, y)) return true;
-      const r = 5;
-      return isPath(x + r, y) || isPath(x - r, y) || isPath(x, y + r) || isPath(x, y - r);
+    // cells you can walk to from (x, y) through open walls
+    function neighbours(x, y) {
+      const c = cells[y][x], out = [];
+      if (!c.top) out.push([x, y - 1]);
+      if (!c.bottom) out.push([x, y + 1]);
+      if (!c.left) out.push([x - 1, y]);
+      if (!c.right) out.push([x + 1, y]);
+      return out;
+    }
+    // shortest corridor path between two cells, or null if longer than maxLen
+    function corridorPath(from, to, maxLen) {
+      const prev = new Map([[key(from[0], from[1]), null]]), q = [[from[0], from[1], 0]];
+      while (q.length) {
+        const [x, y, d] = q.shift();
+        if (x === to[0] && y === to[1]) {
+          const path = []; let k = key(x, y);
+          while (k !== null) { path.push([k % SIZE, Math.floor(k / SIZE)]); k = prev.get(k); }
+          return path.reverse().slice(1);
+        }
+        if (d >= maxLen) continue;
+        for (const [nx, ny] of neighbours(x, y)) {
+          const nk = key(nx, ny);
+          if (!prev.has(nk)) { prev.set(nk, key(x, y)); q.push([nx, ny, d + 1]); }
+        }
+      }
+      return null;
     }
 
     function spriteUrl(id) {
@@ -396,46 +414,61 @@
 
     async function fetchRandomPokemon() {
       const id = Math.floor(Math.random() * 151) + 1;
-      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-      const data = await res.json();
-      return { id, name: data.name, heName: heName(id, data.name), sprite: spriteUrl(id) };
+      let name = '';
+      try {
+        // never wait forever for the internet
+        const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 4000);
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`, { signal: ctrl.signal });
+        clearTimeout(t);
+        name = (await res.json()).name;
+      } catch (e) {}
+      return { id, name, heName: heName(id, name), sprite: spriteUrl(id) };
+    }
+
+    function redraw() {
+      drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
+      if (goalImg && goalImg.complete && goalImg.naturalWidth) ctx.drawImage(goalImg, goalCenter.x - 22, goalCenter.y - 22, 44, 44);
+      else { ctx.font = '30px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🎁', goalCenter.x, goalCenter.y); }
+      // the purple trail through the middle of the corridors
+      if (trail.length) {
+        ctx.strokeStyle = '#667eea'; ctx.lineWidth = PATH_W * 0.45; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath();
+        trail.forEach(([x, y], i) => { const r = cellRect(x, y); i ? ctx.lineTo(r.cx, r.cy) : ctx.moveTo(r.cx, r.cy); });
+        if (trail.length === 1) { const r = cellRect(0, 0); ctx.lineTo(r.cx + 0.1, r.cy); }
+        ctx.stroke();
+        const h = cellRect(...trail[trail.length - 1]);
+        ctx.fillStyle = '#ffd43b'; ctx.strokeStyle = '#764ba2'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(h.cx, h.cy, PATH_W * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+      drawStartFlag();
     }
 
     async function newMaze() {
       won = false;
       dragging = false;
-      head = null;
+      trail = [];
       document.getElementById('winPopup').classList.remove('show');
-      document.getElementById('mazeCanvas').style.display = 'none';
-      document.getElementById('loadingMsg').style.display = 'block';
 
       cells = generateMaze(SIZE);
-
-      const startR = cellRect(0, 0);
-      startCenter = { x: startR.cx, y: startR.cy };
+      startCenter = { x: cellRect(0, 0).cx, y: cellRect(0, 0).cy };
       const goalR = cellRect(Math.floor(SIZE / 2), Math.floor(SIZE / 2));
       goalCenter = { x: goalR.cx, y: goalR.cy };
 
-      // Draw mask (black/white only) for collision detection
-      drawMazeOn(maskCtx, '#ffffff', '#000000');
-      maskData = maskCtx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE).data;
+      // show the maze right away, the Pokémon picture joins when it arrives
+      goalImg = null;
+      redraw();
+      document.getElementById('loadingMsg').style.display = 'none';
+      canvas.style.display = 'block';
 
-      // Draw visible maze
-      drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
-
-      // Load random Pokémon for the goal
+      const myCells = cells;
       const poke = await fetchRandomPokemon();
+      if (cells !== myCells) return;          // a newer maze was started meanwhile
       winEnglishName = poke.name;
+      document.getElementById('winName').textContent = poke.heName;
+      document.getElementById('winImg').src = poke.sprite;
       goalImg = new Image();
       goalImg.crossOrigin = 'anonymous';
-      goalImg.onload = () => {
-        ctx.drawImage(goalImg, goalCenter.x - 22, goalCenter.y - 22, 44, 44);
-        drawStartFlag();
-        document.getElementById('winName').textContent = poke.heName;
-        document.getElementById('winImg').src = poke.sprite;
-        document.getElementById('loadingMsg').style.display = 'none';
-        document.getElementById('mazeCanvas').style.display = 'block';
-      };
+      goalImg.onload = () => { if (cells === myCells) redraw(); };
       goalImg.src = poke.sprite;
     }
 
@@ -448,31 +481,41 @@
 
     function resetTrail() {
       if (won) return;
-      drawMazeOn(ctx, '#fdf6e8', '#2d2d44');
-      if (goalImg && goalImg.complete) {
-        ctx.drawImage(goalImg, goalCenter.x - 22, goalCenter.y - 22, 44, 44);
-      }
-      drawStartFlag();
+      trail = [];
       dragging = false;
-      head = null;
+      redraw();
     }
 
-    function getPos(e) {
+    // finger position in canvas pixels (works even if the canvas is shown smaller or bigger)
+    function cellAt(e) {
       const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return { x: clientX - rect.left, y: clientY - rect.top };
+      const x = (e.clientX - rect.left) * CANVAS_SIZE / rect.width;
+      const y = (e.clientY - rect.top) * CANVAS_SIZE / rect.height;
+      return [Math.max(0, Math.min(SIZE - 1, Math.floor(x / CELL))), Math.max(0, Math.min(SIZE - 1, Math.floor(y / CELL)))];
     }
 
-    function drawTrailSegment(a, b) {
-      ctx.strokeStyle = '#667eea';
-      ctx.lineWidth = PATH_W * 0.45;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
+    function blocked() {
+      const now = performance.now();
+      if (now - lastBlocked > 250) { lastBlocked = now; playBlocked(); }
+    }
+
+    // move the trail toward the cell under the finger
+    function follow(c) {
+      const idx = trail.findIndex(([x, y]) => x === c[0] && y === c[1]);
+      if (idx >= 0) {                                      // going back along the trail
+        if (idx < trail.length - 1) { trail = trail.slice(0, idx + 1); redraw(); }
+        return true;
+      }
+      const path = corridorPath(trail[trail.length - 1], c, 3);
+      if (!path) return false;
+      trail.push(...path);
+      redraw();
+      const end = trail[trail.length - 1];
+      if (end[0] === Math.floor(SIZE / 2) && end[1] === Math.floor(SIZE / 2)) {
+        const g = cellRect(end[0], end[1]);
+        checkWin({ x: g.cx, y: g.cy });
+      }
+      return true;
     }
 
     function checkWin(pos) {
@@ -490,61 +533,35 @@
       }
     }
 
-    function onDown(e) {
-      if (won) return;
-      const pos = getPos(e);
-      if (head) {
-        const resumeDist = Math.hypot(pos.x - head.x, pos.y - head.y);
-        if (resumeDist <= CELL * 0.9) {
-          dragging = true;
-          e.preventDefault();
-          return;
-        }
-      }
-      const dist = Math.hypot(pos.x - startCenter.x, pos.y - startCenter.y);
-      if (dist > CELL * 0.75) return;
-      dragging = true;
-      head = pos;
+    let dragId = null;
+    canvas.addEventListener('pointerdown', e => {
+      if (won || !cells.length) return;
       e.preventDefault();
-    }
-
-    function onMove(e) {
-      if (!dragging || won) return;
-      const pos = getPos(e);
-      const dist = Math.hypot(pos.x - head.x, pos.y - head.y);
-      const steps = Math.max(1, Math.ceil(dist / 2));
-      let lastValid = head;
-      let blocked = false;
-      for (let i = 1; i <= steps; i++) {
-        const t = i / steps;
-        const sx = head.x + (pos.x - head.x) * t;
-        const sy = head.y + (pos.y - head.y) * t;
-        if (!isPathFuzzy(sx, sy)) { blocked = true; break; }
-        lastValid = { x: sx, y: sy };
-      }
-      if (lastValid !== head) {
-        drawTrailSegment(head, lastValid);
-        head = lastValid;
-        checkWin(head);
-      }
-      if (blocked) playBlocked();
+      try { getCtx().resume(); } catch (err) {}
+      if (!trail.length) trail = [[0, 0]];
+      // start from the flag, from anywhere on the trail, or just next to its end
+      if (!follow(cellAt(e))) { blocked(); redraw(); return; }
+      dragging = true; dragId = e.pointerId;
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!dragging || won || e.pointerId !== dragId) return;
       e.preventDefault();
-    }
-
-    function onUp(e) {
-      dragging = false;
-    }
-
-    canvas.addEventListener('mousedown', onDown);
-    canvas.addEventListener('mousemove', onMove);
-    canvas.addEventListener('mouseup', onUp);
-    canvas.addEventListener('mouseleave', onUp);
-    canvas.addEventListener('touchstart', onDown, { passive: false });
-    canvas.addEventListener('touchmove', onMove, { passive: false });
-    canvas.addEventListener('touchend', onUp);
-    canvas.addEventListener('touchcancel', onUp);
+      if (!follow(cellAt(e))) blocked();
+    });
+    const stop = e => { if (e.pointerId === dragId) { dragging = false; dragId = null; } };
+    canvas.addEventListener('pointerup', stop);
+    canvas.addEventListener('pointercancel', stop);
 
     newMaze();
+  </script>
+  <script>
+    (function () {
+      let lastTouch = 0;
+      document.addEventListener('touchend', e => { const now = Date.now(); if (now - lastTouch < 350 && e.target.tagName === 'CANVAS') e.preventDefault(); lastTouch = now; }, { passive: false });
+      ['gesturestart', 'gesturechange', 'gestureend', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+      document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    })();
   </script>
 </body>
 </html>
