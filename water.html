@@ -394,7 +394,7 @@
     }
     // a drop leaving the maze lands in the world just outside the disc
     function mazeOut(x, y, t) {
-      const lx = x * CELL + 2 - maze.c, ly = y * CELL + 2 - maze.c, s = Math.sin(maze.theta), c = Math.cos(maze.theta);
+      const lx = x * CELL + 2 - maze.c, ly = y * CELL + 2 - maze.c, s = Math.sin(maze.view), c = Math.cos(maze.view);
       const wx = maze.cx + lx * c - ly * s, wy = maze.cy + lx * s + ly * c;
       const gx = Math.floor(wx / CELL), gy = Math.floor(wy / CELL);
       for (const [dx, dy] of [[0, 0], [0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1], [0, 2], [2, 0], [-2, 0]]) {
@@ -411,7 +411,7 @@
     // ---------- Input ----------
     function toWorld(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; }
     const BTN_L = { x: 44, y: 548 }, BTN_R = { x: 316, y: 548 };
-    let dragId = null, dragA0 = 0, dragV0 = 0;
+    let dragId = null, dragA0 = 0, dragV0 = 0, dragT0 = 0;
     canvas.addEventListener('pointerdown', e => {
       if (state !== 'play') return;
       e.preventDefault();
@@ -420,7 +420,7 @@
         if (Math.hypot(p.x - BTN_L.x, p.y - BTN_L.y) < 40) return rotateBy(-1);
         if (Math.hypot(p.x - BTN_R.x, p.y - BTN_R.y) < 40) return rotateBy(1);
         dragId = e.pointerId; canvas.setPointerCapture(e.pointerId);
-        dragA0 = Math.atan2(p.y - maze.cy, p.x - maze.cx); dragV0 = maze.view; maze.dragging = true;
+        dragA0 = Math.atan2(p.y - maze.cy, p.x - maze.cx); dragV0 = maze.view; dragT0 = maze.target; maze.dragging = true; hintOn = 0;
         return;
       }
       // pins: pick the closest one under the finger
@@ -440,13 +440,17 @@
       while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU;
       // keep unwrapping so a full circle drag keeps turning
       maze.view = dragV0 + d;
+      const st = Math.round(maze.view / STEP); if (st !== maze.lastStep) { maze.lastStep = st; sfx.turn(); }
       if (Math.abs(d) > Math.PI * 0.9) { dragA0 += d; dragV0 = maze.view; }
     });
     const endDrag = e => {
       if (e.pointerId !== dragId || !maze) return;
       dragId = null; maze.dragging = false;
-      const snapped = Math.round(maze.view / STEP) * STEP;
-      if (Math.abs(snapped - maze.theta) > 0.01) { moves++; sfx.turn(); hintOn = 0; }
+      // even a small push turns the maze one step that way
+      const d = maze.view - dragT0;
+      let snapped = Math.round(maze.view / STEP) * STEP;
+      if (Math.abs(snapped - dragT0) < 0.01 && Math.abs(d) > 0.12) snapped = dragT0 + Math.sign(d) * STEP;
+      if (Math.abs(snapped - dragT0) > 0.01) { moves++; sfx.turn(); }
       maze.target = snapped;
     };
     canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
@@ -472,8 +476,9 @@
     function simTick() {
       tick++;
       flow(world, 2, () => {}, (x, y) => steam(x * CELL + 2, y * CELL + 2));
-      if (maze && !maze.dragging && Math.abs(maze.view - maze.target) < 0.001) {
-        maze.theta = maze.target;
+      if (maze) {
+        // the water keeps flowing while the maze turns, following the nearest 45 degree step
+        maze.theta = Math.round(maze.view / STEP) * STEP;
         flow(maze.S, mazeK(), mazeOut, null);
       }
       // count what reached the fish
