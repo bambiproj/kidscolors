@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>חופרים לחברים</title>
+  <style>
+    html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+    button { touch-action: manipulation; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink: #3b2a50; --soft: #8a7a9e; --btn: #ff6f61; --btn-dark: #d94c3f; }
+
+    /* the page never scrolls or bounces, so the board stays put while digging */
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      position: fixed; inset: 0;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #74c0fc 0%, #4dabf7 100%);
+      color: var(--ink);
+      user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    }
+    .app {
+      position: absolute; top: 44px; left: 0; right: 0; bottom: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 8px 4px 8px; overflow: hidden;
+    }
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.25);
+      display: flex; gap: 5px; padding: 6px 10px; z-index: 50;
+      flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100vw;
+    }
+    nav a {
+      color: #fff; text-decoration: none; font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 20px;
+      background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.25); white-space: nowrap;
+    }
+    nav a:hover { background: rgba(255,255,255,0.3); }
+    nav a.active { background: rgba(255,255,255,0.4); }
+
+    .board-wrap {
+      position: relative; flex: 1 1 auto; min-height: 260px;
+      width: min(calc(100vw - 8px), 760px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    canvas#game {
+      display: block; border-radius: 16px; touch-action: none;
+      box-shadow: 0 0 0 5px #fff, 0 10px 0 5px rgba(0,0,0,0.12), 0 18px 30px rgba(0,0,0,0.25);
+    }
+
+    .overlay {
+      position: absolute; inset: 0; margin: auto;
+      border-radius: 16px; background: rgba(255,255,255,0.94);
+      display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+      text-align: center; padding: 12px; gap: 8px; overflow-y: auto; z-index: 5;
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { font-size: clamp(1.15rem, 5.2vw, 1.9rem); }
+    .overlay p { color: var(--soft); font-size: clamp(0.78rem, 3.3vw, 1rem); max-width: 380px; }
+    .overlay .label { font-size: 0.8rem; font-weight: bold; color: var(--soft); }
+    .big { font-size: clamp(2.4rem, 11vw, 4rem); animation: hop 1.2s infinite; }
+    @keyframes hop { 50% { transform: translateY(-6px) rotate(-6deg); } }
+    .levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 360px; }
+    .lvl {
+      border: 3px solid transparent; border-radius: 12px; padding: 5px 0; background: #fff3bf;
+      font: inherit; font-weight: bold; font-size: clamp(1rem, 4.2vw, 1.25rem); cursor: pointer; color: var(--ink);
+    }
+    .lvl small { display: block; font-size: 0.6rem; letter-spacing: -1px; font-weight: normal; }
+    .lvl.locked { opacity: 0.4; cursor: default; }
+    .lvl.active { border-color: var(--btn); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .play-btn {
+      border: none; background: var(--btn); color: #fff; font: inherit; font-size: 1.15rem; font-weight: bold;
+      padding: 8px 28px; border-radius: 999px; cursor: pointer; box-shadow: 0 5px 0 var(--btn-dark);
+    }
+    .play-btn.alt { background: #7c5cff; box-shadow: 0 5px 0 #5a3fd1; }
+    .play-btn:active { transform: translateY(3px); }
+    .stars3 { font-size: clamp(2rem, 9vw, 3rem); letter-spacing: 4px; }
+    .stars3 .off { filter: grayscale(1); opacity: 0.3; }
+
+    .panel { width: min(calc(100vw - 8px), 560px); display: flex; flex-direction: column; gap: 6px; flex: none; }
+    .coach { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 4px; }
+    .coach .face { font-size: 1.4rem; }
+    .coach .face.talk { animation: hop .4s ease; }
+    .bubble { flex: 1; font-size: clamp(0.74rem, 3.1vw, 0.9rem); line-height: 1.2; overflow: hidden; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+    .bubble span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .buttons button {
+      border: none; border-radius: 14px; background: #fff; color: var(--ink); font: inherit; font-size: 0.78rem;
+      height: 52px; padding: 4px 2px; box-shadow: 0 4px 0 rgba(0,0,0,0.13); cursor: pointer; line-height: 1.1;
+    }
+    .buttons button b { display: block; font-size: 1.35rem; }
+    .buttons button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.13); }
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+  </style>
+</head>
+<body>
+  <nav dir="rtl">
+    <a href="index.html">🎨 צבעים</a>
+    <a href="math.html">➕ חשבון</a>
+    <a href="words.html">📖 מילים</a>
+    <a href="alef-bet.html">א-ב</a>
+    <a href="pokemon.html">⚡ פוקימון</a>
+    <a href="maze.html">🧩 מבוך</a>
+    <a href="hexmaze.html">⬡ משושים</a>
+    <a href="snake.html">🐍 נחש</a>
+    <a href="chess.html">♟️ שחמט</a>
+    <a href="checkers.html">🔴 דמקה</a>
+    <a href="backgammon.html">🎲 שש-בש</a>
+    <a href="pacman.html">😋 פקמן</a>
+    <a href="connect4.html">🟡 4 בשורה</a>
+    <a href="platformer.html">⚡ קופצני</a>
+    <a href="dig.html" class="active">⛏️ חופרים</a>
+  </nav>
+
+  <div class="app">
+    <div class="board-wrap" id="wrap">
+      <canvas id="game"></canvas>
+
+      <div dir="rtl" class="overlay" id="startScreen">
+        <div class="big">⛏️</div>
+        <h2>חופרים לחברים!</h2>
+        <p>החברים האדומים רוצים להגיע לחברים הירוקים בכוס 🟢. <b>גררו את האצבע</b> כדי לחפור מנהרה בגבינה, והם יתגלגלו למטה! אספו ⭐ בדרך והיזהרו מהקוצים.</p>
+        <div class="label">בחרו שלב:</div>
+        <div class="levels" id="levels"></div>
+        <button class="play-btn" id="playBtn">▶ שחקו!</button>
+      </div>
+
+      <div dir="rtl" class="overlay hidden" id="doneScreen">
+        <div class="stars3" id="doneStars"></div>
+        <h2 id="doneTitle">כל הכבוד!</h2>
+        <p id="doneText"></p>
+        <div class="row">
+          <button class="play-btn" id="nextBtn">▶ לשלב הבא</button>
+          <button class="play-btn alt" id="retryBtn">🔁 שוב</button>
+        </div>
+      </div>
+
+      <div dir="rtl" class="overlay hidden" id="failScreen">
+        <div class="big">🙈</div>
+        <h2>אוי! חבר התפוצץ על הקוצים</h2>
+        <p>לא נורא! נסו לחפור דרך אחרת. 💪</p>
+        <button class="play-btn" id="againBtn">🔁 נסו שוב</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="coach" dir="rtl">
+        <div class="face" id="coachFace">🐹</div>
+        <div class="bubble" id="bubble"><span>היי! אני חומי החופר. גררו את האצבע כדי לחפור! ⛏️</span></div>
+      </div>
+      <div class="buttons" dir="rtl">
+        <button id="restartBtn"><b>🔄</b>מחדש</button>
+        <button id="hintBtn"><b>💡</b>רמז</button>
+        <button id="menuBtn"><b>🏠</b>שלבים</button>
+        <button id="soundBtn"><b>🔊</b>צליל</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <script>
+    // ---------- World ----------
+    const W = 360, H = 600, CELL = 4, GW = W / CELL, GH = H / CELL;
+    const EMPTY = 0, DIRT = 1, STONE = 2, SPIKE = 3;
+    const R = 13, ROCK_R = 15, DIG_R = 17, GRAV = 900;
+    const TAU = Math.PI * 2;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+
+    // a cup for the green friends: 3 stone walls; returns the shapes and the inside area
+    function cup(x, y, w, h) {
+      return { stone: [{ x: x - 12, y, w: 12, h: h + 10 }, { x: x + w, y, w: 12, h: h + 10 }, { x: x - 12, y: y + h, w: w + 24, h: 10 }],
+               inside: { x, y: y + 6, w, h: h - 6 } };
+    }
+    // levels: dirt everywhere, carved pockets, stone walls/planks, spikes, buddies, rocks and stars
+    const LEVELS = [
+      { need: 1, tip: 'גררו את האצבע מהחבר האדום ישר למטה אל הכוס! 👇',
+        pockets: [[180, 70, 26]], balls: [[180, 70]], cup: [150, 515, 60, 72], stars: [[180, 210], [180, 330], [180, 445]] },
+      { need: 1, tip: 'אי אפשר לחפור באבן הכחולה! חפרו מסביב לה. 🧱',
+        pockets: [[70, 70, 26]], balls: [[70, 70]], cup: [270, 515, 60, 72],
+        stone: [{ x: 0, y: 280, w: 240, h: 30, kind: 'wall' }], stars: [[150, 230], [290, 290], [300, 430]] },
+      { need: 2, tip: 'שני חברים! הקרש העץ חוסם, אז חפרו מהצדדים שלו. 🪵',
+        pockets: [[110, 70, 26], [250, 70, 26]], balls: [[110, 70], [250, 70]], cup: [150, 515, 60, 72],
+        stone: [{ x: 115, y: 430, w: 130, h: 14, kind: 'wood' }], stars: [[180, 250], [90, 470], [270, 470]] },
+      { need: 1, tip: 'זהירות מהקוצים! 🌵 חפרו דרך שלא עוברת עליהם.',
+        pockets: [[180, 70, 26]], balls: [[180, 70]], cup: [45, 515, 60, 72],
+        stone: [{ x: 90, y: 392, w: 270, h: 14, kind: 'wall' }], spikes: [{ x: 90, y: 378, w: 270, h: 14 }],
+        stars: [[180, 250], [60, 330], [75, 450]] },
+      { need: 1, tip: 'סלע! 🪨 גם הוא נופל כשחופרים מתחתיו. היזהרו שלא יחסום את הדרך.',
+        pockets: [[110, 70, 26], [250, 70, 28]], balls: [[110, 70]], rocks: [[250, 70]], cup: [150, 515, 60, 72],
+        spikes: [{ x: 20, y: 586, w: 110, h: 14 }], stars: [[110, 230], [180, 360], [250, 300]] },
+      { need: 3, tip: 'שלושה חברים! כולם רוצים להגיע לכוס. 🟢🟢🟢',
+        pockets: [[70, 60, 24], [180, 140, 24], [290, 60, 24]], balls: [[70, 60], [180, 140], [290, 60]], cup: [140, 505, 80, 82],
+        stone: [{ x: 30, y: 300, w: 100, h: 22, kind: 'wall' }, { x: 230, y: 300, w: 100, h: 22, kind: 'wall' }],
+        stars: [[70, 230], [290, 230], [180, 380]] },
+      { need: 1, tip: 'זיג-זג! חפרו מסביב לכל המדפים. ↘️↙️',
+        pockets: [[60, 60, 26]], balls: [[60, 60]], cup: [265, 515, 60, 72],
+        stone: [{ x: 0, y: 170, w: 250, h: 22, kind: 'wood' }, { x: 110, y: 300, w: 250, h: 22, kind: 'wood' }, { x: 0, y: 430, w: 250, h: 22, kind: 'wood' }],
+        stars: [[300, 160], [60, 290], [300, 420]] },
+      { need: 3, tip: 'השלב האחרון! 🏆 סלעים, קוצים ושלושה חברים. בהצלחה!',
+        pockets: [[60, 60, 24], [180, 60, 24], [300, 60, 24], [120, 175, 22], [240, 175, 22]],
+        balls: [[60, 60], [180, 60], [300, 60]], rocks: [[120, 175], [240, 175]], cup: [140, 505, 80, 82],
+        stone: [{ x: 130, y: 342, w: 100, h: 12, kind: 'wall' }], spikes: [{ x: 130, y: 330, w: 100, h: 12 }, { x: 0, y: 586, w: 100, h: 14 }],
+        stars: [[60, 300], [300, 300], [180, 450]] }
+    ];
+
+    // ---------- Settings ----------
+    function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
+    function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
+    let progress = load('dig-progress', { unlocked: 1, stars: [] });
+    let soundOn = load('dig-sound', true), chosen = Math.min(progress.unlocked, LEVELS.length) - 1;
+    const $ = id => document.getElementById(id);
+
+    // ---------- Sound ----------
+    let audio = null;
+    function tone(freq, dur = 0.1, type = 'sine', when = 0, vol = 0.12, slide = 0) {
+      if (!soundOn) return;
+      try {
+        audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+        if (audio.state === 'suspended') audio.resume();
+        const t = audio.currentTime + when, o = audio.createOscillator(), g = audio.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, t);
+        if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+        g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g).connect(audio.destination); o.start(t); o.stop(t + dur + 0.02);
+      } catch {}
+    }
+    let lastDigSound = 0;
+    const sfx = {
+      dig()   { const n = performance.now(); if (n - lastDigSound < 70) return; lastDigSound = n; tone(140 + Math.random() * 80, .05, 'triangle', 0, .05); },
+      star()  { [784, 988, 1319].forEach((f, i) => tone(f, .1, 'triangle', i * .06, .1)); },
+      home()  { [523, 659, 784].forEach((f, i) => tone(f, .14, 'triangle', i * .08, .12)); },
+      pop()   { tone(500, .3, 'sawtooth', 0, .1, .3); },
+      bonk()  { tone(120, .08, 'sine', 0, .12); },
+      win()   { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .18, 'triangle', i * .12, .13)); }
+    };
+    function say(text) {
+      if (!soundOn || !('speechSynthesis' in window)) return;
+      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'he-IL'; u.pitch = 1.3; u.rate = 1.05; speechSynthesis.speak(u); } catch {}
+    }
+
+    // ---------- Canvases ----------
+    const canvas = $('game'), ctx = canvas.getContext('2d');
+    const dirtCv = document.createElement('canvas'), dctx = dirtCv.getContext('2d');   // diggable cheese, holes are cut out of it
+    const stoneCv = document.createElement('canvas'), sctx = stoneCv.getContext('2d');
+    dirtCv.width = stoneCv.width = W * DPR; dirtCv.height = stoneCv.height = H * DPR;
+    dctx.scale(DPR, DPR); sctx.scale(DPR, DPR);
+    let scale = 1;
+    function fit() {
+      const wrap = $('wrap'), bw = wrap.clientWidth - 12, bh = wrap.clientHeight - 14;
+      scale = Math.min(bw / W, bh / H);
+      const cw = Math.floor(W * scale), ch = Math.floor(H * scale);
+      canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+      canvas.width = Math.round(cw * DPR); canvas.height = Math.round(ch * DPR);
+      document.querySelectorAll('.overlay').forEach(o => { o.style.width = cw + 'px'; o.style.height = ch + 'px'; });
+    }
+    addEventListener('resize', fit);
+
+    // ---------- Level state ----------
+    let grid, L, levelIdx = 0, objs, stars, cupInside, homeCount, state = 'menu', time = 0, popped, particles, cheer = 0, hintPath = null, winT = 0;
+
+    function cellRect(r, v) {
+      for (let gy = Math.max(0, Math.floor(r.y / CELL)); gy < Math.min(GH, Math.ceil((r.y + r.h) / CELL)); gy++)
+        for (let gx = Math.max(0, Math.floor(r.x / CELL)); gx < Math.min(GW, Math.ceil((r.x + r.w) / CELL)); gx++) grid[gy * GW + gx] = v;
+    }
+    function cellCircle(cx, cy, r, from, to) {
+      let changed = false;
+      for (let gy = Math.max(0, Math.floor((cy - r) / CELL)); gy <= Math.min(GH - 1, Math.floor((cy + r) / CELL)); gy++)
+        for (let gx = Math.max(0, Math.floor((cx - r) / CELL)); gx <= Math.min(GW - 1, Math.floor((cx + r) / CELL)); gx++) {
+          const px = gx * CELL + CELL / 2, py = gy * CELL + CELL / 2;
+          if ((px - cx) ** 2 + (py - cy) ** 2 <= r * r && grid[gy * GW + gx] === from) { grid[gy * GW + gx] = to; changed = true; }
+        }
+      return changed;
+    }
+
+    function loadLevel(i) {
+      levelIdx = i; L = LEVELS[i];
+      grid = new Uint8Array(GW * GH).fill(DIRT);
+      const c = cup(...L.cup);
+      cupInside = c.inside;
+      const stones = [...(L.stone || []), ...c.stone.map(s => ({ ...s, kind: 'cup' }))];
+      // the cup and the space just inside it are open
+      cellRect({ x: c.inside.x, y: L.cup[1], w: c.inside.w, h: L.cup[3] }, EMPTY);
+      for (const s of stones) cellRect(s, STONE);
+      for (const s of L.spikes || []) cellRect(s, SPIKE);
+      for (const [x, y, r] of L.pockets) cellCircle(x, y, r, DIRT, EMPTY);
+      paintDirt(); paintStone(stones);
+      objs = [...L.balls.map(([x, y]) => ({ x, y, x0: x, y0: y, vx: 0, vy: 0, r: R, rock: false, home: false, look: 0, blink: Math.random() * 3, dir: Math.sign(L.cup[0] + L.cup[2] / 2 - x) || 1 })),
+              ...(L.rocks || []).map(([x, y]) => ({ x, y, vx: 0, vy: 0, r: ROCK_R, rock: true }))];
+      stars = L.stars.map(([x, y]) => ({ x, y, got: false }));
+      homeCount = 0; popped = 0; particles = []; cheer = 0; hintPath = null; winT = 0;
+      state = 'play';
+      ['startScreen', 'doneScreen', 'failScreen'].forEach(id => $(id).classList.add('hidden'));
+      coach(`שלב ${i + 1}: ${L.tip}`);
+    }
+
+    // cheese texture with holes
+    function paintDirt() {
+      dctx.clearRect(0, 0, W, H);
+      const g = dctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#ffe066'); g.addColorStop(1, '#f6c945');
+      dctx.fillStyle = g; dctx.fillRect(0, 0, W, H);
+      let seed = 7 + levelIdx * 13;
+      const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+      for (let i = 0; i < 46; i++) {
+        const x = rnd() * W, y = rnd() * H, r = 6 + rnd() * 26;
+        dctx.fillStyle = 'rgba(214,160,20,0.35)'; dctx.beginPath(); dctx.arc(x, y, r, 0, TAU); dctx.fill();
+        dctx.fillStyle = 'rgba(255,255,255,0.25)'; dctx.beginPath(); dctx.arc(x - r * 0.25, y - r * 0.25, r * 0.55, 0, TAU); dctx.fill();
+      }
+      // cut out what is not dirt so the blue shows through
+      dctx.save(); dctx.globalCompositeOperation = 'destination-out'; dctx.fillStyle = '#000';
+      for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) if (grid[gy * GW + gx] !== DIRT) dctx.fillRect(gx * CELL, gy * CELL, CELL, CELL);
+      dctx.restore();
+      for (const [x, y, r] of L.pockets) carveLook(x, y, r);
+    }
+    // a soft orange rim around every hole, then the hole itself
+    function carveLook(x, y, r) {
+      dctx.save();
+      dctx.globalCompositeOperation = 'source-atop';
+      dctx.fillStyle = '#e8a317'; dctx.beginPath(); dctx.arc(x, y, r + 5, 0, TAU); dctx.fill();
+      dctx.globalCompositeOperation = 'destination-out';
+      dctx.beginPath(); dctx.arc(x, y, r, 0, TAU); dctx.fill();
+      dctx.restore();
+    }
+    function paintStone(stones) {
+      sctx.clearRect(0, 0, W, H);
+      for (const s of stones) {
+        sctx.save();
+        if (s.kind === 'wood') {
+          const g = sctx.createLinearGradient(0, s.y, 0, s.y + s.h);
+          g.addColorStop(0, '#e8a35c'); g.addColorStop(1, '#b86b2e');
+          sctx.fillStyle = g; roundRect(sctx, s.x, s.y, s.w, s.h, 5); sctx.fill();
+          sctx.strokeStyle = '#8a4b1b'; sctx.lineWidth = 2; sctx.stroke();
+          sctx.strokeStyle = 'rgba(138,75,27,0.4)'; sctx.lineWidth = 1;
+          for (let k = 0; k < s.w; k += 26) { sctx.beginPath(); sctx.moveTo(s.x + k + 6, s.y + s.h * 0.35); sctx.lineTo(s.x + k + 20, s.y + s.h * 0.35); sctx.stroke(); }
+        } else {
+          sctx.fillStyle = s.kind === 'cup' ? '#5c7cfa' : '#4c6ef5';
+          roundRect(sctx, s.x, s.y, s.w, s.h, 4); sctx.fill();
+          sctx.clip();
+          sctx.strokeStyle = 'rgba(255,255,255,0.18)'; sctx.lineWidth = 6;
+          for (let k = -s.h; k < s.w + s.h; k += 16) { sctx.beginPath(); sctx.moveTo(s.x + k, s.y + s.h); sctx.lineTo(s.x + k + s.h, s.y); sctx.stroke(); }
+          sctx.restore(); sctx.save();
+          sctx.strokeStyle = '#364fc7'; sctx.lineWidth = 2; roundRect(sctx, s.x, s.y, s.w, s.h, 4); sctx.stroke();
+        }
+        sctx.restore();
+      }
+      for (const s of L.spikes || []) {
+        for (let x = s.x; x < s.x + s.w - 1; x += 12) {
+          const g = sctx.createLinearGradient(0, s.y, 0, s.y + s.h);
+          g.addColorStop(0, '#f1f3f5'); g.addColorStop(1, '#868e96');
+          sctx.fillStyle = g; sctx.strokeStyle = '#495057'; sctx.lineWidth = 1.2;
+          sctx.beginPath(); sctx.moveTo(x, s.y + s.h); sctx.lineTo(x + 6, s.y); sctx.lineTo(x + 12, s.y + s.h); sctx.closePath(); sctx.fill(); sctx.stroke();
+        }
+      }
+    }
+    function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+
+    // ---------- Digging ----------
+    let digId = null, lastDig = null, dug = 0;
+    function toWorld(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; }
+    function digAt(x, y) {
+      if (cellCircle(x, y, DIG_R, DIRT, EMPTY)) { carveLook(x, y, DIG_R); sfx.dig(); dug++; if (Math.random() < 0.5) crumbs(x, y); }
+    }
+    function digLine(a, b) {
+      const d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(d / 4));
+      for (let k = 1; k <= n; k++) digAt(a.x + (b.x - a.x) * k / n, a.y + (b.y - a.y) * k / n);
+    }
+    canvas.addEventListener('pointerdown', e => {
+      if (state !== 'play') return;
+      e.preventDefault(); digId = e.pointerId; canvas.setPointerCapture(e.pointerId);
+      lastDig = toWorld(e); digAt(lastDig.x, lastDig.y); hintPath = null;
+    });
+    canvas.addEventListener('pointermove', e => { if (e.pointerId !== digId || state !== 'play') return; const p = toWorld(e); digLine(lastDig, p); lastDig = p; });
+    const stopDig = e => { if (e.pointerId === digId) digId = null; };
+    canvas.addEventListener('pointerup', stopDig); canvas.addEventListener('pointercancel', stopDig);
+
+    // ---------- Physics ----------
+    const cellAt = (x, y) => { if (x < 0 || x >= W || y >= H) return STONE; if (y < 0) return EMPTY; return grid[Math.floor(y / CELL) * GW + Math.floor(x / CELL)]; };
+    function contact(o) {          // returns the push-out direction from solid cells touching the ball
+      let nx = 0, ny = 0, deep = 0, spike = false;
+      const r = o.r;
+      for (let gy = Math.floor((o.y - r) / CELL); gy <= Math.floor((o.y + r) / CELL); gy++)
+        for (let gx = Math.floor((o.x - r) / CELL); gx <= Math.floor((o.x + r) / CELL); gx++) {
+          const px = gx * CELL + CELL / 2, py = gy * CELL + CELL / 2;
+          const c = cellAt(px, py);
+          if (c === EMPTY) continue;
+          const dx = o.x - px, dy = o.y - py, d = Math.hypot(dx, dy) || 0.01;
+          if (d >= r + 1) continue;
+          if (c === SPIKE) { spike = true; continue; }
+          const w = r + 1 - d;
+          nx += dx / d * w; ny += dy / d * w; deep = Math.max(deep, w);
+        }
+      return { nx, ny, deep, spike };
+    }
+    function stepObj(o, dt) {
+      o.vy += GRAV * dt;
+      // buddies are eager: once they start moving they keep rolling along flat tunnels
+      if (!o.rock) {
+        if (!o.moved && Math.hypot(o.x - o.x0, o.y - o.y0) > 18) o.moved = true;
+        if (Math.abs(o.vx) > 25) o.dir = Math.sign(o.vx);
+        if (o.moved && o.ground && !o.home && Math.abs(o.vx) < 120) o.vx += (o.dir || 1) * 420 * dt;
+        o.ground = false;
+      }
+      const sp = Math.hypot(o.vx, o.vy), max = 520;
+      if (sp > max) { o.vx *= max / sp; o.vy *= max / sp; }
+      o.x += o.vx * dt; o.y += o.vy * dt;
+      for (let it = 0; it < 6; it++) {
+        const c = contact(o);
+        if (c.spike && !o.rock) return pop(o);
+        if (!c.deep) break;
+        const n = Math.hypot(c.nx, c.ny);
+        if (!n) break;
+        const ux = c.nx / n, uy = c.ny / n;
+        o.x += ux * Math.min(c.deep, 2); o.y += uy * Math.min(c.deep, 2);
+        const vn = o.vx * ux + o.vy * uy;
+        if (!o.rock && Math.abs(ux) > 0.8) o.dir = ux > 0 ? 1 : -1;     // bumped a wall: turn around
+        if (uy < -0.8) o.ground = true;
+        if (vn < 0) {
+          if (vn < -220) sfx.bonk();
+          o.vx -= 1.25 * vn * ux; o.vy -= 1.25 * vn * uy;           // a little bounce
+          o.vx *= 0.995; o.vy *= 0.995;                               // rolling friction
+          o.spin = (o.spin || 0) + (o.vx * uy - o.vy * ux) * 0.0005;
+        }
+      }
+      o.angle = (o.angle || 0) + o.vx * dt / o.r;
+    }
+    function collideObjs() {
+      for (let i = 0; i < objs.length; i++) for (let j = i + 1; j < objs.length; j++) {
+        const a = objs[i], b = objs[j];
+        if (a.dead || b.dead) continue;
+        const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.01, m = a.r + b.r;
+        if (d >= m) continue;
+        const ux = dx / d, uy = dy / d, ov = (m - d) / 2;
+        const wa = a.rock ? 0.3 : 0.5, wb = b.rock ? 0.3 : 0.5;
+        a.x -= ux * ov * (wb / 0.5 > 1 ? 1 : 1) * (a.rock && !b.rock ? 0.6 : 1); a.y -= uy * ov * (a.rock && !b.rock ? 0.6 : 1);
+        b.x += ux * ov * (b.rock && !a.rock ? 0.6 : 1); b.y += uy * ov * (b.rock && !a.rock ? 0.6 : 1);
+        const rv = (b.vx - a.vx) * ux + (b.vy - a.vy) * uy;
+        if (rv < 0) { const imp = -rv * 0.6; a.vx -= imp * ux * (wa * 2); a.vy -= imp * uy * (wa * 2); b.vx += imp * ux * (wb * 2); b.vy += imp * uy * (wb * 2); }
+      }
+    }
+    function pop(o) {
+      o.dead = true; popped++; sfx.pop();
+      for (let k = 0; k < 18; k++) { const a = Math.random() * TAU, s = 60 + Math.random() * 150; particles.push({ x: o.x, y: o.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, c: k % 2 ? '#ff4d6d' : '#fff', life: .6, r: 3 }); }
+      const left = objs.filter(b => !b.rock && !b.dead).length;
+      coach('אוי! הקוצים! 🌵', 'oops');
+      if (left < L.need) { state = 'fail'; setTimeout(() => $('failScreen').classList.remove('hidden'), 900); }
+    }
+    function crumbs(x, y) { for (let k = 0; k < 2; k++) particles.push({ x, y, vx: (Math.random() - .5) * 120, vy: -Math.random() * 80, c: '#e8a317', life: .4, r: 2.5, grav: true }); }
+
+    function update(dt) {
+      time += dt;
+      if (state === 'play' || state === 'win') {
+        for (const o of objs) if (!o.dead) stepObj(o, dt);
+        collideObjs();
+        for (const o of objs) {
+          if (o.dead || o.rock) continue;
+          for (const s of stars) if (!s.got && Math.hypot(s.x - o.x, s.y - o.y) < o.r + 12) {
+            s.got = true; sfx.star();
+            for (let k = 0; k < 14; k++) { const a = Math.random() * TAU; particles.push({ x: s.x, y: s.y, vx: Math.cos(a) * 120, vy: Math.sin(a) * 120, c: '#ffd43b', life: .5, r: 3, star: true }); }
+            coach(`כוכב! ⭐ (${stars.filter(z => z.got).length}/3)`, 'yay');
+          }
+          const c = cupInside;
+          if (!o.home && o.x > c.x && o.x < c.x + c.w && o.y > c.y && o.y < c.y + c.h + 10) {
+            o.home = true; homeCount++; cheer = 1; sfx.home();
+            coach(homeCount >= L.need ? 'הגעתם! 🎉 כל החברים ביחד!' : `חבר אחד הגיע! 🟢 עוד ${L.need - homeCount}`, 'yay');
+            if (homeCount >= L.need && state === 'play') { state = 'win'; winT = 0; }
+          }
+        }
+        if (state === 'win') { winT += dt; if (winT > 1.3) finish(); }
+      }
+      cheer = Math.max(0, cheer - dt * 0.8);
+      for (const p of particles) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.grav) p.vy += 600 * dt; }
+      particles = particles.filter(p => p.life > 0);
+    }
+
+    function finish() {
+      state = 'done';
+      const got = stars.filter(s => s.got).length;
+      progress.stars[levelIdx] = Math.max(progress.stars[levelIdx] || 0, got);
+      progress.unlocked = Math.max(progress.unlocked, Math.min(LEVELS.length, levelIdx + 2));
+      save('dig-progress', progress);
+      sfx.win(); confetti(120); say('כל הכבוד!');
+      $('doneStars').innerHTML = [0, 1, 2].map(k => `<span class="${k < got ? '' : 'off'}">⭐</span>`).join('');
+      const last = levelIdx === LEVELS.length - 1;
+      $('doneTitle').textContent = last ? '🏆 סיימתם את כל השלבים!' : `שלב ${levelIdx + 1} הושלם!`;
+      $('doneText').textContent = got < 3 ? `אספתם ${got} כוכבים. אפשר לנסות שוב ולאסוף את כולם! 🔍` : 'מושלם! כל הכוכבים! 🌟';
+      $('nextBtn').style.display = last ? 'none' : '';
+      $('doneScreen').classList.remove('hidden');
+    }
+
+    // ---------- Drawing ----------
+    function drawCreature(o) {
+      const { x, y, r } = o;
+      if (o.rock) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(o.angle || 0);
+        const g = ctx.createRadialGradient(-r * .3, -r * .3, 2, 0, 0, r);
+        g.addColorStop(0, '#ced4da'); g.addColorStop(1, '#5c5f66');
+        ctx.fillStyle = g; ctx.beginPath();
+        for (let k = 0; k < 9; k++) { const a = k / 9 * TAU, rr = r * (0.88 + ((k * 37) % 7) / 50); ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+        ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#343a40'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.arc(r * .3, r * .2, r * .2, 0, TAU); ctx.arc(-r * .2, r * .4, r * .12, 0, TAU); ctx.fill();
+        ctx.restore(); return;
+      }
+      ctx.save(); ctx.translate(x, y);
+      // soft shadow ring
+      ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.arc(1.5, 2.5, r, 0, TAU); ctx.fill();
+      const g = ctx.createRadialGradient(-r * .35, -r * .35, 2, 0, 0, r);
+      g.addColorStop(0, '#ff8787'); g.addColorStop(1, '#d6202f');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#8f0f1a'; ctx.lineWidth = 2; ctx.stroke();
+      // rolling stripe so you can see it spin
+      ctx.save(); ctx.rotate(o.angle || 0);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.75, 0.3, 1.4); ctx.stroke();
+      ctx.restore();
+      // a big eye looking the way it moves
+      const sp = Math.hypot(o.vx, o.vy), lx = sp > 5 ? o.vx / sp * 2.5 : 0, ly = sp > 5 ? o.vy / sp * 2.5 : 1;
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -2, r * 0.48, 0, TAU); ctx.fill();
+      const blink = (time + o.blink) % 3.5 < 0.12;
+      ctx.fillStyle = '#212529';
+      if (blink) ctx.fillRect(-r * 0.4, -2.5, r * 0.8, 2); else { ctx.beginPath(); ctx.arc(lx, -2 + ly, r * 0.24, 0, TAU); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(lx + 1.5, -3.5 + ly, 1.3, 0, TAU); ctx.fill(); }
+      ctx.fillStyle = '#ffc9c9'; ctx.beginPath(); ctx.ellipse(0, r * 0.6, r * 0.32, r * 0.14, 0, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    function drawFriend(x, y, k) {
+      const bounce = Math.abs(Math.sin(time * 6 + k)) * (cheer > 0 ? 8 * cheer : 1.2);
+      ctx.save(); ctx.translate(x, y - bounce);
+      ctx.fillStyle = '#2b8a3e';
+      for (let s = 0; s < 10; s++) { const a = s / 10 * TAU; ctx.beginPath(); ctx.arc(Math.cos(a) * 12, Math.sin(a) * 12, 4, 0, TAU); ctx.fill(); }
+      const g = ctx.createRadialGradient(-4, -4, 1, 0, 0, 13);
+      g.addColorStop(0, '#8ce99a'); g.addColorStop(1, '#2f9e44');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 12, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(0, -2, 5, 6, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.arc(0, -1, 2.6, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6; ctx.beginPath();
+      if (cheer > 0.2) ctx.arc(0, 5, 3.5, 0.1, Math.PI - 0.1); else { ctx.moveTo(-3, 7); ctx.lineTo(3, 7); }
+      ctx.stroke();
+      ctx.restore();
+    }
+    function starShape(x, y, r, rot, fill) {
+      ctx.beginPath();
+      for (let k = 0; k < 10; k++) { const a = rot + k * Math.PI / 5 - Math.PI / 2, rr = k % 2 ? r * 0.45 : r; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+      ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+    }
+
+    function render() {
+      const k = canvas.width / W;
+      ctx.setTransform(k, 0, 0, k, 0, 0);
+      // sky blue behind everything (shows through the tunnels)
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#a5d8ff'); g.addColorStop(1, '#74c0fc');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      if (!L) return;
+      // friends waiting in the cup
+      const c = cupInside;
+      for (let f = 0; f < 3; f++) drawFriend(c.x + c.w / 2 + (f - 1) * 18, c.y + c.h - 12 - (f === 1 ? 14 : 0), f);
+      // cheese with a little depth shadow
+      ctx.save(); ctx.globalAlpha = 0.25; ctx.drawImage(dirtCv, 2, 4, W, H); ctx.restore();
+      ctx.drawImage(dirtCv, 0, 0, W, H);
+      ctx.drawImage(stoneCv, 0, 0, W, H);
+      // hint path
+      if (hintPath) {
+        ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 6; ctx.setLineDash([2, 14]); ctx.lineCap = 'round';
+        ctx.lineDashOffset = -time * 40;
+        ctx.beginPath(); hintPath.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); ctx.restore();
+        const [hx, hy] = hintPath[Math.floor(time * 2) % hintPath.length];
+        ctx.font = '26px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('👆', hx + 6, hy + 22);
+      }
+      // stars
+      for (const s of stars) if (!s.got) {
+        const gl = ctx.createRadialGradient(s.x, s.y, 2, s.x, s.y, 22);
+        gl.addColorStop(0, 'rgba(255,240,120,0.9)'); gl.addColorStop(1, 'rgba(255,240,120,0)');
+        ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(s.x, s.y, 22, 0, TAU); ctx.fill();
+        starShape(s.x, s.y + Math.sin(time * 3 + s.x) * 2, 11, time, '#ffd43b');
+      }
+      for (const o of objs) if (!o.dead) drawCreature(o);
+      for (const p of particles) {
+        ctx.globalAlpha = Math.max(0, p.life * 2);
+        if (p.star) starShape(p.x, p.y, 4, 0, p.c); else { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill(); }
+      }
+      ctx.globalAlpha = 1;
+      // HUD
+      ctx.fillStyle = 'rgba(255,255,255,0.8)'; roundRect(ctx, 6, 6, W - 12, 28, 12); ctx.fill();
+      ctx.fillStyle = '#3b2a50'; ctx.font = 'bold 15px "Comic Sans MS", sans-serif'; ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left'; ctx.fillText(`🟢 ${homeCount}/${L.need}`, 16, 21);
+      ctx.textAlign = 'center'; ctx.fillStyle = '#7c5cff'; ctx.fillText(`שלב ${levelIdx + 1}`, W / 2, 21);
+      for (let s = 0; s < 3; s++) starShape(W - 66 + s * 22, 20, 9, 0, stars[s] && stars[s].got ? '#ffd43b' : 'rgba(0,0,0,0.15)');
+    }
+
+    // ---------- Hint: show a dotted path for the first buddy that is not home ----------
+    function makeHint() {
+      const b = objs.find(o => !o.rock && !o.dead && !o.home);
+      if (!b) return;
+      // breadth-first search over cells that are not stone/spike, from the buddy to the cup
+      const sx = Math.floor(b.x / 8), sy = Math.floor(b.y / 8), GW8 = W / 8, GH8 = H / 8;
+      const blocked = (x, y) => { for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const c = cellAt(x * 8 + 4 + dx * 4, y * 8 + 4 + dy * 4); if (c === STONE || c === SPIKE) return true; } return false; };
+      const tx = Math.floor((cupInside.x + cupInside.w / 2) / 8), ty = Math.floor((cupInside.y + 6) / 8);
+      const prev = new Map([[sx + ',' + sy, null]]), q = [[sx, sy]];
+      while (q.length) {
+        const [x, y] = q.shift();
+        if (x === tx && y === ty) break;
+        for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
+          const nx = x + dx, ny = y + dy, key = nx + ',' + ny;
+          if (nx < 0 || ny < 0 || nx >= GW8 || ny >= GH8 || prev.has(key) || blocked(nx, ny)) continue;
+          if (dy < 0 && ny < sy - 1) continue;   // buddies can't roll uphill much
+          prev.set(key, x + ',' + y); q.push([nx, ny]);
+        }
+      }
+      let k = tx + ',' + ty; const path = [];
+      if (!prev.has(k)) { coach('נסו לחפור למטה ולצדדים, לכיוון הכוס! 👇'); return; }
+      while (k) { const [x, y] = k.split(',').map(Number); path.push([x * 8 + 4, y * 8 + 4]); k = prev.get(k); }
+      hintPath = path.reverse().filter((_, i, a) => i % 3 === 0 || i === a.length - 1);
+      coach('💡 חפרו לאורך הקו הלבן! 👆', 'yay');
+    }
+
+    // ---------- Coach ----------
+    function coach(text, mood = '') {
+      const b = $('bubble'), f = $('coachFace');
+      b.innerHTML = `<span>${text}</span>`;
+      f.textContent = mood === 'oops' ? '😵' : mood === 'yay' ? '🥳' : '🐹';
+      f.classList.remove('talk'); void f.offsetWidth; f.classList.add('talk');
+    }
+
+    // ---------- Menus ----------
+    function showMenu() {
+      state = 'menu';
+      ['doneScreen', 'failScreen'].forEach(id => $(id).classList.add('hidden'));
+      $('startScreen').classList.remove('hidden');
+      chosen = Math.min(chosen, progress.unlocked - 1);
+      buildLevels();
+      coach('היי! אני חומי החופר. בחרו שלב! ⛏️');
+    }
+    function buildLevels() {
+      $('levels').innerHTML = LEVELS.map((_, i) => {
+        const locked = i >= progress.unlocked, s = progress.stars[i] || 0;
+        return `<button class="lvl ${locked ? 'locked' : ''} ${i === chosen ? 'active' : ''}" data-i="${i}">${locked ? '🔒' : i + 1}<small>${locked ? '' : '⭐'.repeat(s) + '·'.repeat(3 - s)}</small></button>`;
+      }).join('');
+      document.querySelectorAll('.lvl').forEach(b => b.addEventListener('click', () => {
+        const i = +b.dataset.i;
+        if (i >= progress.unlocked) { coach('השלב הזה עוד נעול 🔒 סיימו את השלב הקודם!'); return; }
+        chosen = i; buildLevels(); tone(600, .06, 'triangle');
+      }));
+    }
+    $('playBtn').addEventListener('click', () => loadLevel(chosen));
+    $('nextBtn').addEventListener('click', () => { chosen = Math.min(LEVELS.length - 1, levelIdx + 1); loadLevel(chosen); });
+    $('retryBtn').addEventListener('click', () => loadLevel(levelIdx));
+    $('againBtn').addEventListener('click', () => loadLevel(levelIdx));
+    $('restartBtn').addEventListener('click', () => { if (L && state !== 'menu') loadLevel(levelIdx); });
+    $('menuBtn').addEventListener('click', showMenu);
+    $('hintBtn').addEventListener('click', () => { if (state === 'play') makeHint(); });
+    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>צליל`; }
+    $('soundBtn').addEventListener('click', () => { soundOn = !soundOn; save('dig-sound', soundOn); updateSoundBtn(); });
+
+    // ---------- Confetti ----------
+    const cc = $('confetti'), cctx = cc.getContext('2d');
+    let bits = [], confettiRunning = false;
+    const COLORS = ['#ff5f6d', '#ff9a3c', '#ffd23f', '#5fd068', '#3fa9f5', '#7c5cff', '#e45bd8'];
+    function sizeConfetti() { cc.width = innerWidth; cc.height = innerHeight; }
+    addEventListener('resize', sizeConfetti); sizeConfetti();
+    function confetti(n) {
+      for (let i = 0; i < n; i++) bits.push({ x: Math.random() * cc.width, y: -20 - Math.random() * cc.height * 0.3, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3, s: 6 + Math.random() * 6, c: COLORS[i % COLORS.length] });
+      if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(confettiLoop); }
+    }
+    function confettiLoop() {
+      cctx.clearRect(0, 0, cc.width, cc.height);
+      bits = bits.filter(b => b.y < cc.height + 20);
+      for (const b of bits) { b.x += b.vx; b.y += b.vy; b.r += b.vr; cctx.save(); cctx.translate(b.x, b.y); cctx.rotate(b.r); cctx.fillStyle = b.c; cctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2); cctx.restore(); }
+      if (bits.length) requestAnimationFrame(confettiLoop); else { confettiRunning = false; cctx.clearRect(0, 0, cc.width, cc.height); }
+    }
+
+    // ---------- Main loop ----------
+    let last = performance.now(), acc = 0;
+    function frame(now) {
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      acc += dt;
+      while (acc >= 1 / 120) { update(1 / 120); acc -= 1 / 120; }
+      render();
+      requestAnimationFrame(frame);
+    }
+    fit(); updateSoundBtn();
+    loadLevel(chosen); state = 'menu'; showMenu();
+    requestAnimationFrame(frame);
+    window.__dig = { get s() { return { state, homeCount, popped, stars: stars.filter(s => s.got).length, objs: objs.map(o => ({ x: Math.round(o.x), y: Math.round(o.y), rock: o.rock, dead: !!o.dead, home: !!o.home })) }; }, digLine, digAt, loadLevel, LEVELS, get cup() { return cupInside; } };
+  </script>
+  <script>
+    // stop accidental zooming when little fingers tap fast (iPhone double-tap zoom and pinch zoom)
+    (function () {
+      let lastTouch = 0;
+      document.addEventListener('touchend', e => { const now = Date.now(); if (now - lastTouch < 350) e.preventDefault(); lastTouch = now; }, { passive: false });
+      ['gesturestart', 'gesturechange', 'gestureend', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+      document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    })();
+  </script>
+</body>
+</html>
