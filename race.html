@@ -73,7 +73,7 @@
     .carpick { display: flex; align-items: center; gap: 8px; direction: ltr; }
     .arrow { border: none; background: #e9ecef; width: 44px; height: 44px; border-radius: 50%; font-size: 1.3rem; cursor: pointer; }
     .arrow:active { transform: scale(0.92); }
-    #carPrev { width: 104px; height: 170px; border-radius: 14px; background: #495057; }
+    #carPrev { width: 116px; height: 190px; }
     .car-name { font-size: 1.15rem; font-weight: bold; }
     .car-special { font-size: 0.85rem; color: var(--soft); min-height: 1.1em; }
     .dots { display: flex; gap: 5px; justify-content: center; direction: ltr; }
@@ -94,7 +94,25 @@
       padding: 6px 8px; min-width: 70px; cursor: pointer; box-shadow: 0 3px 0 #1e6e2e; font-size: 0.85rem;
     }
     .up button:disabled { background: #ced4da; box-shadow: 0 3px 0 #adb5bd; cursor: default; }
-    .best { font-size: 0.8rem; color: var(--soft); }
+    .best { font-size: 0.85rem; color: #ffd43b; font-weight: bold; }
+    .best:empty { display: none; }
+    /* the garage: a dark showroom, little text */
+    .garage { background: radial-gradient(circle at 50% 40%, #3d4454 0%, #1a1d24 75%); color: #fff; gap: 10px; }
+    .g-top { display: flex; align-items: center; gap: 10px; }
+    .garage h2 { font-size: clamp(1.1rem, 5vw, 1.5rem); }
+    .garage .bank { background: rgba(255,212,59,0.18); color: #ffd43b; }
+    .garage .tabs button { background: rgba(255,255,255,0.1); color: #fff; border-color: transparent; }
+    .garage .tabs button.on { background: #fff; color: var(--ink); border-color: #fff; }
+    .garage .pane { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .garage .pane.hidden { display: none; }
+    .garage .arrow { background: rgba(255,255,255,0.14); color: #fff; }
+    .garage #carPrev { background: transparent; }
+    .garage .car-special { color: #fff; background: rgba(255,255,255,0.12); border-radius: 999px; padding: 3px 12px; font-size: 0.85rem; }
+    .garage .car-special:empty { display: none; }
+    .garage .dots span { background: rgba(255,255,255,0.25); }
+    .garage .up { background: rgba(255,255,255,0.1); color: #fff; padding: 8px 10px; }
+    .garage .up .txt b { font-size: 1rem; }
+    body:not(.racing) .panel { visibility: hidden; }
     .stat { font-size: clamp(0.95rem, 4vw, 1.2rem); }
 
     .panel { width: min(calc(100vw - 8px), 560px); display: grid; grid-template-columns: 1fr 1.1fr 1fr; gap: 8px; flex: none; direction: ltr; }
@@ -119,9 +137,8 @@
       <canvas id="game"></canvas>
 
       <!-- garage: choose a car, buy upgrades -->
-      <div dir="rtl" class="overlay" id="garage">
-        <h2>🏎️ מרוץ מכוניות</h2>
-        <div class="bank">🪙 <span id="bank">0</span></div>
+      <div dir="rtl" class="overlay garage" id="garage">
+        <div class="g-top"><h2>🏎️ מרוץ מכוניות</h2><div class="bank">🪙 <span id="bank">0</span></div></div>
         <div class="tabs">
           <button id="tabCars" class="on">🚗 מכוניות</button>
           <button id="tabUps">🔧 שדרוגים</button>
@@ -132,9 +149,9 @@
             <canvas id="carPrev" width="208" height="340"></canvas>
             <button class="arrow" id="nextCar">▶</button>
           </div>
-          <div class="dots" id="dots"></div>
           <div class="car-name" id="carName"></div>
           <div class="car-special" id="carSpecial"></div>
+          <div class="dots" id="dots"></div>
         </div>
         <div class="pane hidden" id="upsPane"><div class="ups" id="ups"></div></div>
         <div class="row">
@@ -187,12 +204,12 @@
 
     // the cars you can drive
     const CARS = [
-      { id: 'sport', name: 'ספורט אדומה', kind: 'sport', color: '#e03131', price: 0, special: 'מהירה ויפה! המכונית הראשונה שלכם 🔥' },
-      { id: 'taxi', name: 'מונית צהובה', kind: 'taxi', color: '#fcc419', price: 80, special: '❤️ לב נוסף בכל מרוץ' },
-      { id: 'jeep', name: "ג'יפ שטח ירוק", kind: 'jeep', color: '#2f9e44', price: 160, special: '⛽ חוסך דלק: הדלק נגמר לאט יותר' },
-      { id: 'police', name: 'ניידת משטרה', kind: 'police', color: '#f8f9fa', price: 260, special: '🔫 עוד 2 יריות לייזר, ואורות מהבהבים 🚨' },
-      { id: 'race', name: 'מכונית מירוץ', kind: 'race', color: '#1971c2', price: 400, special: '🪙 כל מטבע שווה פי 2!' },
-      { id: 'future', name: 'מכונית העתיד', kind: 'future', color: '#7048e8', price: 600, special: '🧲 מגנט מטבעות תמיד דלוק, ואורות ניאון!' }
+      { id: 'sport', name: 'ספורט אדומה', kind: 'sport', color: '#e03131', price: 0, special: '' },
+      { id: 'taxi', name: 'מונית צהובה', kind: 'taxi', color: '#fcc419', price: 80, special: '❤️ לב נוסף' },
+      { id: 'jeep', name: "ג'יפ שטח ירוק", kind: 'jeep', color: '#2f9e44', price: 160, special: '⛽ חוסך דלק' },
+      { id: 'police', name: 'ניידת משטרה', kind: 'police', color: '#f8f9fa', price: 260, special: '🔫 +2 לייזר 🚨' },
+      { id: 'race', name: 'מכונית מירוץ', kind: 'race', color: '#1971c2', price: 400, special: '🪙 מטבע כפול' },
+      { id: 'future', name: 'מכונית העתיד', kind: 'future', color: '#7048e8', price: 600, special: '🧲 מגנט קבוע' }
     ];
     const UPGRADES = [
       { id: 'fuel', icon: '⛽', name: 'מיכל דלק גדול', desc: 'הדלק מחזיק יותר זמן' },
@@ -506,7 +523,7 @@
       const car = carDef(prog.car);
       G = {
         car, t: 0, dist: 0, scroll: 0, speed: 300, slow: 1,
-        lane: 1, x: laneX(1), tilt: 0,
+        lane: 1, x: laneX(1), tx: laneX(1), hold: 0, tilt: 0, hintT: 3.5,
         hearts: 3 + (car.id === 'taxi' ? 1 : 0), shield: upLv('shield'), inv: 0,
         fuel: 1, fuelRate: (1 / 38) * (1 - 0.15 * upLv('fuel')) * (car.id === 'jeep' ? 0.65 : 1),
         lasers: 2 + upLv('laser') + (car.id === 'police' ? 2 : 0), beam: 0, beamTo: 0,
@@ -516,7 +533,7 @@
       };
       // fill the roadside right away
       for (let y = -80; y < H + 80; y += 46) addScenery(y);
-      state = 'play';
+      state = 'play'; document.body.classList.add('racing');
       ['garage', 'overScreen', 'pauseScreen'].forEach(id => $(id).classList.add('hidden'));
       updateLaserBtn(); engineOn(); sfx.horn(); say('יאללה, סעו!');
     }
@@ -562,10 +579,18 @@
     }
 
     // ---------- Controls ----------
-    function steer(d) {
+    // the car can drive anywhere across the road; steering moves a target the car glides to
+    function xLimits() { const w = carSize(G.car.kind)[0]; return [ROAD_X + w / 2 + 6, ROAD_X + ROAD_W - w / 2 - 6]; }
+    function steerBy(dx) {
       if (state !== 'play') return;
-      const l = Math.max(0, Math.min(LANES - 1, G.lane + d));
-      if (l !== G.lane) { G.lane = l; sfx.lane(); }
+      const [lo, hi] = xLimits();
+      G.tx = Math.max(lo, Math.min(hi, G.tx + dx));
+    }
+    function steer(d) { steerBy(d * LANE_W); }           // one lane, for tests and quick keys
+    // which lanes the player's car is covering right now
+    function playerLanes() {
+      const w = carSize(G.car.kind)[0];
+      return [0, 1, 2].filter(l => Math.abs(laneX(l) - G.x) < (LANE_W + w) / 2 - 4);
     }
     function fireLaser() {
       if (state !== 'play' || G.beam > 0) return;
@@ -590,19 +615,24 @@
       $('laserTxt').textContent = G ? `לייזר ×${n}` : 'לייזר';
       $('laserBtn').classList.toggle('empty', !!G && n <= 0);
     }
-    const press = (id, fn) => {
+    // arrow buttons and keys steer for as long as they are held
+    const press = (id, down, up) => {
       const b = $(id);
-      b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('down'); fn(); });
-      ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => b.addEventListener(t, () => b.classList.remove('down')));
+      b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('down'); try { b.setPointerCapture(e.pointerId); } catch {} down(); });
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => b.addEventListener(t, () => { b.classList.remove('down'); up && up(); }));
     };
-    press('leftBtn', () => steer(-1)); press('rightBtn', () => steer(1)); press('laserBtn', fireLaser);
+    press('leftBtn', () => G && (G.hold = -1), () => G && G.hold < 0 && (G.hold = 0));
+    press('rightBtn', () => G && (G.hold = 1), () => G && G.hold > 0 && (G.hold = 0));
+    press('laserBtn', fireLaser);
     addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft' || e.key === 'a') steer(-1);
-      else if (e.key === 'ArrowRight' || e.key === 'd') steer(1);
+      if (e.key === 'ArrowLeft' || e.key === 'a') { if (G) G.hold = -1; }
+      else if (e.key === 'ArrowRight' || e.key === 'd') { if (G) G.hold = 1; }
       else if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); fireLaser(); }
       else if (e.key === 'Escape' || e.key === 'p') togglePause();
     });
-    // swipe or tap on the road: left half / right half of the car, the pause button, or honk on the car
+    addEventListener('keyup', e => { if (G && ['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key)) G.hold = 0; });
+    // drag anywhere on the road: the car follows the finger sideways, extra sensitive (like a steering wheel)
+    const SENS = 1.7;
     function toWorld(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; }
     let touch0 = null;
     canvas.addEventListener('pointerdown', e => {
@@ -610,23 +640,25 @@
       if (state !== 'play') return;
       const p = toWorld(e);
       if (p.x > W - 44 && p.y < 44) { togglePause(); return; }
-      touch0 = { ...p, id: e.pointerId, done: false };
+      touch0 = { x0: p.x, y0: p.y, last: p.x, id: e.pointerId, moved: 0 };
       try { canvas.setPointerCapture(e.pointerId); } catch {}
     });
     canvas.addEventListener('pointermove', e => {
-      if (!touch0 || e.pointerId !== touch0.id || touch0.done) return;
-      const p = toWorld(e);
-      if (Math.abs(p.x - touch0.x) > 28) { steer(Math.sign(p.x - touch0.x)); touch0.done = true; }
-    });
-    canvas.addEventListener('pointerup', e => {
       if (!touch0 || e.pointerId !== touch0.id) return;
-      if (!touch0.done && state === 'play') {
-        const p = toWorld(e);
-        if (Math.abs(p.x - G.x) < 22 && Math.abs(p.y - PLAYER_Y) < 45) sfx.horn();
-        else steer(p.x < G.x ? -1 : 1);
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      for (const ev of evs.length ? evs : [e]) {
+        const p = toWorld(ev), dx = p.x - touch0.last;
+        touch0.last = p.x; touch0.moved += Math.abs(dx);
+        steerBy(dx * SENS);
       }
-      touch0 = null;
     });
+    const endTouch = e => {
+      if (!touch0 || e.pointerId !== touch0.id) return;
+      // a quick tap on your own car honks
+      if (touch0.moved < 6 && state === 'play' && Math.abs(touch0.x0 - G.x) < 24 && Math.abs(touch0.y0 - PLAYER_Y) < 46) sfx.horn();
+      touch0 = null;
+    };
+    canvas.addEventListener('pointerup', endTouch); canvas.addEventListener('pointercancel', endTouch);
 
     function togglePause() {
       if (state === 'play') { state = 'pause'; $('pauseScreen').classList.remove('hidden'); engineOff(); }
@@ -650,7 +682,7 @@
     }
     function gameOver(why) {
       if (G.over) return;
-      G.over = true; state = 'over'; engineOff();
+      G.over = true; state = 'over'; engineOff(); document.body.classList.remove('racing');
       const meters = Math.floor(G.dist / 8), record = meters > prog.best;
       if (record) prog.best = meters;
       saveProg();
@@ -658,7 +690,7 @@
         $('overIcon').textContent = why === 'fuel' ? '⛽' : record ? '🏆' : '💥';
         $('overTitle').textContent = record ? 'שיא חדש!' : why === 'fuel' ? 'נגמר הדלק!' : 'אוי! התנגשות';
         $('overStats').innerHTML = `🛣️ נסעתם <b>${meters}</b> מטר<br>🪙 אספתם <b>${G.coins}</b> מטבעות`;
-        $('overText').textContent = why === 'fuel' ? 'אספו ⛽ דלק בדרך כדי לנסוע רחוק יותר! במוסך אפשר לקנות מיכל גדול.' : `השיא שלכם: ${prog.best} מטר. במוסך אפשר לקנות מכוניות ושדרוגים! 🔧`;
+        $('overText').textContent = why === 'fuel' ? 'בפעם הבאה אספו ⛽ בדרך' : `🏆 שיא: ${prog.best} מטר`;
         $('overScreen').classList.remove('hidden');
         if (record) { sfx.record(); confetti(120); say('שיא חדש!'); } else sfx.lose();
       }, 900);
@@ -682,10 +714,13 @@
       } else g.speed *= Math.pow(0.2, dt);
       const v = g.speed;
       g.dist += v * dt; g.scroll += v * dt;
-      // steering: glide to the lane and lean into the turn
-      const tx = laneX(g.lane), dx = tx - g.x;
-      g.x += Math.sign(dx) * Math.min(Math.abs(dx), dt * 420);
-      g.tilt += ((dx > 0.5 ? 0.16 : dx < -0.5 ? -0.16 : 0) - g.tilt) * Math.min(1, dt * 12);
+      // steering: held arrows push the target, the car glides to it fast and leans into the turn
+      if (g.hold && state === 'play') steerBy(g.hold * 300 * dt);
+      const dx = g.tx - g.x, step = Math.sign(dx) * Math.min(Math.abs(dx), dt * 900);
+      g.x += step;
+      g.tilt += (Math.max(-0.2, Math.min(0.2, step / Math.max(dt, 1e-3) / 1800)) - g.tilt) * Math.min(1, dt * 14);
+      g.lane = Math.max(0, Math.min(2, Math.floor((g.x - ROAD_X) / LANE_W)));
+      g.hintT = Math.max(0, g.hintT - dt);
 
       // spawns
       if (state === 'play') {
@@ -695,6 +730,7 @@
         g.nextPower -= dt; if (g.nextPower <= 0) { if (spawnItem(pick(['laser', 'laser', 'magnet', 'shield', g.hearts < 3 ? 'heart' : 'laser']))) g.nextPower = rnd(10, 16); else g.nextPower = 0.5; }
       }
       // traffic: drives slower than us, so it comes down the screen; sometimes changes lane with a blinker
+      const pl = playerLanes();
       for (const c of g.traffic) {
         c.t += dt;
         if (c.wreck) { c.wreck -= dt; c.x += c.kick * dt; c.kick *= Math.pow(0.1, dt); c.rot = (c.rot || 0) + c.spin * dt; c.y += (v - c.speed * 0.3) * dt; continue; }
@@ -702,11 +738,11 @@
         c.y += (v - c.speed) * dt;
         if (c.to === null && c.y > 20 && c.y < 300 && Math.random() < dt * 0.12) {
           const to = c.lane + pick([-1, 1]);
-          if (to >= 0 && to < LANES && to !== g.lane && !laneBusy(to, c.y - c.h - 70, c.y + c.h + 70) && !g.traffic.some(o => o !== c && !o.dead && Math.abs(o.y - c.y) < 260)) { c.to = to; c.blink = to > c.lane ? 1 : -1; c.bt = 0; }
+          if (to >= 0 && to < LANES && !pl.includes(to) && !laneBusy(to, c.y - c.h - 70, c.y + c.h + 70) && !g.traffic.some(o => o !== c && !o.dead && Math.abs(o.y - c.y) < 260)) { c.to = to; c.blink = to > c.lane ? 1 : -1; c.bt = 0; }
         }
         if (c.to !== null) {
           c.bt += dt;
-          if (c.to === g.lane && c.bt <= 0.9 && c.y > PLAYER_Y - 300) { c.to = null; c.blink = 0; }
+          if (pl.includes(c.to) && c.bt <= 0.9 && c.y > PLAYER_Y - 300) { c.to = null; c.blink = 0; }
           else if (c.bt > 0.9) {
             const d = laneX(c.to) - c.x; c.x += Math.sign(d) * Math.min(Math.abs(d), dt * 70); c.rot = Math.sign(d) * 0.08;
             if (Math.abs(d) < 0.5) { c.lane = c.to; c.to = null; c.blink = 0; c.rot = 0; }
@@ -930,6 +966,13 @@
       if (g.flash > 0) { ctx.fillStyle = `rgba(255,240,200,${g.flash * 1.6})`; ctx.fillRect(0, 0, W, H); }
       ctx.restore();
       drawHUD(g);
+      if (g.hintT > 0 && state === 'play') {
+        const a = Math.min(1, g.hintT), fx = W / 2 + Math.sin(time * 4) * 50;
+        ctx.globalAlpha = a; ctx.fillStyle = 'rgba(20,24,30,0.7)'; rr(ctx, 70, 300, 220, 64, 16); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 15px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('גררו את האצבע כדי לנהוג', W / 2, 318); ctx.font = '22px sans-serif'; ctx.fillText('👆', fx, 346);
+        ctx.globalAlpha = 1;
+      }
     }
     function drawHUD(g) {
       // top bar: hearts, coins, meters, pause
@@ -974,18 +1017,20 @@
     function drawPreview() {
       const c = pctx, car = CARS[viewCar], [w, h] = carSize(car.kind);
       c.setTransform(1, 0, 0, 1, 0, 0);
-      c.fillStyle = '#495057'; c.fillRect(0, 0, 208, 340);
-      c.fillStyle = 'rgba(255,255,255,0.12)'; for (let y = (time * 60) % 60 - 60; y < 340; y += 60) c.fillRect(102, y, 4, 30);
+      c.clearRect(0, 0, 208, 340);
+      const sp = c.createRadialGradient(104, 190, 10, 104, 190, 120);
+      sp.addColorStop(0, 'rgba(255,255,255,0.22)'); sp.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = sp; c.beginPath(); c.ellipse(104, 190, 100, 130, 0, 0, TAU); c.fill();
       c.setTransform(2.6, 0, 0, 2.6, 104, 170);
       c.rotate(Math.sin(time * 1.5) * 0.06);
       c.fillStyle = 'rgba(0,0,0,0.35)'; rr(c, -w / 2 + 3, -h / 2 + 4, w, h, 10); c.fill();
       drawCar(c, car.kind, car.color, w, h, { t: time });
-      if (!prog.owned.includes(car.id)) { c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(0, 0, 208, 340); c.font = '60px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🔒', 104, 170); }
+      if (!prog.owned.includes(car.id)) { c.setTransform(1, 0, 0, 1, 0, 0); c.font = '44px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🔒', 104, 170); }
     }
     function buildGarage() {
       $('bank').textContent = prog.bank;
       const car = CARS[viewCar], owned = prog.owned.includes(car.id);
-      $('carName').textContent = car.name + (prog.car === car.id ? ' ✔️' : '');
+      $('carName').textContent = car.name;
       $('carSpecial').textContent = car.special;
       $('dots').innerHTML = CARS.map((c, i) => `<span class="${i === viewCar ? 'on' : ''} ${prog.owned.includes(c.id) ? 'own' : ''}"></span>`).join('');
       const btn = $('playBtn');
@@ -993,11 +1038,11 @@
       else { btn.textContent = `🛒 קנו ב-${car.price} 🪙`; btn.className = 'play-btn ' + (prog.bank >= car.price ? 'green' : 'gray'); }
       $('ups').innerHTML = UPGRADES.map(u => {
         const lv = upLv(u.id), max = lv >= UP_COST.length, cost = UP_COST[lv];
-        return `<div class="up"><div class="ic">${u.icon}</div><div class="txt"><b>${u.name}</b><br>${u.desc}<div class="lv">${'🟩'.repeat(lv)}${'⬜'.repeat(UP_COST.length - lv)}</div></div>
+        return `<div class="up"><div class="ic">${u.icon}</div><div class="txt"><b>${u.name}</b><div class="lv">${'🟩'.repeat(lv)}${'⬛'.repeat(UP_COST.length - lv)}</div></div>
           <button data-up="${u.id}" ${max || prog.bank < cost ? 'disabled' : ''}>${max ? 'מקסימום' : `${cost} 🪙`}</button></div>`;
       }).join('');
       document.querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', () => buyUp(b.dataset.up)));
-      $('bestTxt').textContent = prog.best ? `🏆 השיא שלכם: ${prog.best} מטר` : 'עקפו מכוניות, אספו מטבעות ⛽ דלק, וירו לייזר 🔫 על מכוניות בדרך!';
+      $('bestTxt').textContent = prog.best ? `🏆 שיא: ${prog.best} מטר` : '';
     }
     function buyUp(id) {
       const lv = upLv(id), cost = UP_COST[lv];
@@ -1005,7 +1050,7 @@
       prog.bank -= cost; prog.ups[id] = lv + 1; saveProg(); sfx.power(); buildGarage();
     }
     function showGarage() {
-      state = 'garage'; G = null; engineOff();
+      state = 'garage'; G = null; engineOff(); document.body.classList.remove('racing');
       ['overScreen', 'pauseScreen'].forEach(id => $(id).classList.add('hidden'));
       $('garage').classList.remove('hidden');
       viewCar = Math.max(0, CARS.findIndex(c => c.id === prog.car));
@@ -1024,7 +1069,7 @@
       prog.car = car.id; saveProg(); newRace();
     });
     $('tabCars').addEventListener('click', () => { $('tabCars').classList.add('on'); $('tabUps').classList.remove('on'); $('carsPane').classList.remove('hidden'); $('upsPane').classList.add('hidden'); });
-    $('tabUps').addEventListener('click', () => { $('tabUps').classList.add('on'); $('tabCars').classList.remove('on'); $('upsPane').classList.remove('hidden'); $('carsPane').classList.add('hidden'); buildGarage(); });
+    $('tabUps').addEventListener('click', () => { $('tabUps').classList.add('on'); $('tabCars').classList.remove('on'); $('upsPane').classList.remove('hidden'); $('carsPane').classList.add('hidden'); viewCar = Math.max(0, CARS.findIndex(c => c.id === prog.car)); buildGarage(); });
     $('againBtn').addEventListener('click', newRace);
     $('garageBtn').addEventListener('click', showGarage);
     $('resumeBtn').addEventListener('click', togglePause);
