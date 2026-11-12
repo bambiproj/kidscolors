@@ -188,7 +188,32 @@
         water: [[116, 58, 128, 84]], lava: [[116, 300, 128, 36]], bowl: [110, 470, 140, 110], hint: [0, 1] },
       { type: 'maze', need: 140, tip: 'המבוך הגדול! 🏆 שלוש טבעות וקירות. סובבו לאט לאט.',
         maze: { cx: 180, cy: 228, rings: [{ r: 52, gaps: [90] }, { r: 94, gaps: [270] }, { r: 136, gaps: [90] }],
-                spokes: [{ a: 0, r1: 52, r2: 94 }, { a: 180, r1: 94, r2: 136 }], water: 40 }, hint: [-4, -8] }
+                spokes: [{ a: 0, r1: 52, r2: 94 }, { a: 180, r1: 94, r2: 136 }], water: 40 }, hint: [-4, -8] },
+      { type: 'pins', need: 330, tip: 'חשבו על הסדר! 🤔 לאן יזרמו המים אם תמשכו קודם את סיכת המים?',
+        walls: [[[90, 50], [90, 170], [135, 205]], [[210, 50], [210, 170], [165, 205]], [[240, 60], [240, 170], [270, 200]], [[330, 60], [330, 170], [300, 200]],
+                [[40, 360], [230, 440]]],
+        pins: [{ a: [70, 160], b: [226, 160] }, { a: [336, 165], b: [238, 165] }, { a: [236, 240], b: [24, 330] }],
+        water: [[96, 58, 108, 96]], lava: [[246, 70, 78, 90]], bowl: [200, 470, 130, 110], hint: [2, 0] },
+      { type: 'pins', tip: 'שני דגים צמאים! 🐠🐠 חלקו את המים כך ששניהם יקבלו מספיק.',
+        walls: [[[110, 50], [110, 190], [170, 225]], [[250, 50], [250, 190], [190, 225]], [[150, 360], [262, 420]]],
+        pins: [{ a: [90, 175], b: [270, 175] }, { a: [262, 240], b: [100, 320] }],
+        water: [[116, 58, 128, 110]], bowls: [[20, 450, 120, 120, 240], [220, 450, 120, 120, 240]], hint: [0, 1],
+        waitFor: { pin: 1, bowl: 0, text: '💡 חכו שהדג השמאלי יקבל מספיק מים... ואז משכו את הסיכה המשופעת! ⏳' } },
+      { type: 'pins', need: 330, tip: 'השער הסגול נעול 🔒 רק הכפתור האדום יכול לפתוח אותו!',
+        walls: [[[40, 50], [40, 170], [85, 205]], [[160, 50], [160, 170], [115, 205]], [[250, 60], [250, 160], [280, 190]], [[340, 60], [340, 160], [310, 190]],
+                [[268, 250], [268, 320], [322, 320], [322, 250]], [[40, 260], [175, 345]]],
+        pins: [{ a: [24, 160], b: [176, 160] }, { a: [232, 150], b: [352, 150] }, { a: [264, 450], b: [96, 405], gate: true }],
+        switches: [{ r: [272, 254, 48, 62], need: 80, opens: [2] }],
+        water: [[46, 58, 108, 96], [256, 104, 78, 40]], bowl: [110, 470, 140, 110], hint: [1, 0], waitSwitch: true },
+      { type: 'maze', need: 120, tip: 'לבה במבוך! 🔥 לאיזה כיוון כדאי לסובב? חשבו לפני שמסובבים!',
+        maze: { cx: 180, cy: 228, rings: [{ r: 56, gaps: [270] }, { r: 128, gaps: [0] }], spokes: [], water: 44, lava: [{ a1: 65, a2: 115, r1: 62, r2: 95 }] },
+        hint: [-4, -6], par: 8, waitText: '💡 חכו שהמים יהפכו את כל הלבה לאבן 🪨 ואז המשיכו לסובב ↺' },
+      { type: 'pins', need: 200, tip: 'האתגר הגדול! 🏆 כפתור, שער נעול ולבה. מה עושים קודם?',
+        walls: [[[15, 40], [15, 110], [40, 135]], [[90, 40], [90, 110], [65, 135]], [[25, 170], [25, 230], [80, 230], [80, 170]],
+                [[130, 40], [130, 150], [175, 185]], [[270, 40], [270, 150], [225, 185]], [[130, 230], [130, 350], [175, 385]], [[270, 230], [270, 350], [225, 385]]],
+        pins: [{ a: [100, 100], b: [4, 100] }, { a: [290, 335], b: [110, 335] }, { a: [278, 140], b: [122, 140], gate: true }],
+        switches: [{ r: [31, 190, 43, 34], need: 90, opens: [2] }],
+        water: [[136, 48, 128, 84], [21, 52, 63, 40]], lava: [[136, 295, 128, 34]], bowl: [125, 470, 150, 110], hint: [0, 1], waitSwitch: true }
     ];
 
     // ---------- Settings ----------
@@ -276,6 +301,8 @@
           for (let q = 0; q < 8; q += 2) {
             const j = target(x + D8[q][0], y + D8[q][1]);
             if (j >= 0 && g[j] === WATER) { g[i] = STONE; g[j] = EMPTY; react && react(x, y); break; }
+            // lava buried under fresh stone slowly cools too
+            if (j >= 0 && g[j] === STONE && Math.random() < 0.004) { g[i] = STONE; break; }
           }
           if (g[i] !== LAVA || Math.random() > 0.35) continue;
         }
@@ -329,17 +356,20 @@
     }
 
     // ---------- Level state ----------
-    let L, levelIdx = 0, state = 'menu', time = 0, pins, pinOf, walls, goal, inBowl = 0, totalWater = 0, startWater = 0;
+    let L, levelIdx = 0, state = 'menu', time = 0, pins, pinOf, walls, goals = [], switches = [], inBowl = 0, totalWater = 0, startWater = 0;
     let particles = [], moves = 0, winT = 0, failT = 0, cheer = 0, hintOn = 0, lavaInBowl = false, lastBowl = 0;
-    let maze = null;     // { cx, cy, n, half, S, theta, view, target, rOut, mask, achieved }
+    let maze = null, lavaOut = 0;     // { cx, cy, n, half, S, theta, view, target, rOut, mask, achieved }
 
     function loadLevel(i) {
       levelIdx = i; L = LEVELS[i];
       world.g.fill(EMPTY); world.stamp.fill(-1);
       pinOf = new Int16Array(GW * GH).fill(-1);
-      const b = bowl(...(L.bowl || MAZE_WORLD.bowl));
-      goal = b.inside;
-      walls = [...(L.walls || MAZE_WORLD.walls), ...b.walls];
+      // one fish, or several fish that each need their own water
+      const bl = L.bowls || [[...(L.bowl || MAZE_WORLD.bowl), L.need]];
+      goals = bl.map(([x, y, w, h, need]) => { const b = bowl(x, y, w, h); return { ...b.inside, walls: b.walls, need, n: 0, last: 0, lava: false, burnt: false }; });
+      walls = [...(L.walls || MAZE_WORLD.walls), ...goals.flatMap(g => g.walls)];
+      // buttons: when enough water sits on one, its gates open by themselves
+      switches = (L.switches || []).map(sw => ({ ...sw, n: 0, on: false }));
       pins = (L.pins || []).map((p, id) => ({ ...p, id, out: 0, pulled: false }));
       // pins first, walls on top, so pulling a pin never opens a hole in a wall
       for (const p of pins) rasterSeg(p.a, p.b, 6.5, j => { world.g[j] = PIN; pinOf[j] = p.id; });
@@ -349,7 +379,7 @@
       for (const r of L.water || []) fillRect(r, WATER);
       for (const r of L.lava || []) fillRect(r, LAVA);
       startWater = countWater();
-      particles = []; moves = 0; winT = 0; failT = 0; cheer = 0; hintOn = 0; inBowl = 0; lastBowl = 0; lavaInBowl = false;
+      particles = []; lavaOut = 0; moves = 0; winT = 0; failT = 0; cheer = 0; hintOn = 0; inBowl = 0; lastBowl = 0; lavaInBowl = false;
       paintBackground();
       state = 'play';
       ['startScreen', 'doneScreen', 'failScreen'].forEach(id => $(id).classList.add('hidden'));
@@ -379,6 +409,7 @@
           if (segDist(x, y, ux * sp.r1, uy * sp.r1, ux * sp.r2, uy * sp.r2) <= T / 2 + 0.5) t = WALL;
         }
         if (t === EMPTY && r < M.water) t = WATER;
+        for (const lv of M.lava || []) if (t === EMPTY && r > lv.r1 && r < lv.r2 && ang > lv.a1 && ang < lv.a2) t = LAVA;
         S.g[j * n + i] = t;
       }
       maze = { cx: M.cx, cy: M.cy, n, c, S, theta: 0, view: 0, target: 0, rOut, dragging: false, achieved: 0 };
@@ -400,7 +431,7 @@
       for (const [dx, dy] of [[0, 0], [0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1], [0, 2], [2, 0], [-2, 0]]) {
         const X = gx + dx, Y = gy + dy;
         if (X < 0 || Y < 0 || X >= GW || Y >= GH) continue;
-        if (world.g[Y * GW + X] === EMPTY) { world.g[Y * GW + X] = t; return; }
+        if (world.g[Y * GW + X] === EMPTY) { world.g[Y * GW + X] = t; if (t === LAVA) lavaOut++; return; }
       }
     }
     function rotateBy(steps) {
@@ -431,6 +462,7 @@
         const d = Math.min(segDist(p.x, p.y, pin.a[0], pin.a[1], pin.b[0], pin.b[1]), Math.hypot(p.x - hx, p.y - hy) - 6);
         if (d < bd) { bd = d; best = pin; }
       }
+      if (best && best.gate) { coach('🔒 השער הזה נעול! הוא ייפתח כשהמים ימלאו את הכפתור 🔴', 'oops'); tone(160, .12, 'square', 0, .06); return; }
       if (best) pullPin(best);
     });
     canvas.addEventListener('pointermove', e => {
@@ -456,9 +488,9 @@
     canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
 
     function pinDir(p) { const dx = p.a[0] - p.b[0], dy = p.a[1] - p.b[1], l = Math.hypot(dx, dy); return [dx / l, dy / l]; }
-    function pullPin(p) {
+    function pullPin(p, auto) {
       if (p.pulled || state !== 'play') return;
-      p.pulled = true; moves++; hintOn = 0; sfx.pull();
+      p.pulled = true; if (!auto) { moves++; hintOn = 0; } sfx.pull();
       for (let j = 0; j < GW * GH; j++) if (pinOf[j] === p.id) { pinOf[j] = -1; if (world.g[j] === PIN) world.g[j] = EMPTY; }
     }
 
@@ -468,6 +500,10 @@
       for (let i = 0; i < g.length; i++) if (g[i] === WATER) n++;
       if (maze) { const m = maze.S.g; for (let i = 0; i < m.length; i++) if (m[i] === WATER) n++; }
       return n;
+    }
+    function mazeSteam(x, y) {
+      const lx = x * CELL + 2 - maze.c, ly = y * CELL + 2 - maze.c, s = Math.sin(maze.view), c = Math.cos(maze.view);
+      steam(maze.cx + lx * c - ly * s, maze.cy + lx * s + ly * c);
     }
     function steam(x, y) {
       sfx.hiss();
@@ -479,14 +515,31 @@
       if (maze) {
         // the water keeps flowing while the maze turns, following the nearest 45 degree step
         maze.theta = Math.round(maze.view / STEP) * STEP;
-        flow(maze.S, mazeK(), mazeOut, null);
+        flow(maze.S, mazeK(), mazeOut, mazeSteam);
       }
-      // count what reached the fish
-      let n = 0, lava = false;
-      const x0 = Math.floor(goal.x / CELL), x1 = Math.floor((goal.x + goal.w) / CELL), y0 = Math.floor(goal.y / CELL), y1 = Math.floor((goal.y + goal.h) / CELL);
-      for (let gy = y0; gy < y1; gy++) for (let gx = x0; gx < x1; gx++) { const c = world.g[gy * GW + gx]; if (c === WATER) n++; else if (c === LAVA) lava = true; }
-      if (n > lastBowl + 2) sfx.bloop();
-      lastBowl = n; inBowl = n; lavaInBowl = lava;
+      // count what reached each fish
+      const countIn = (r, cb) => {
+        let n = 0;
+        const x0 = Math.floor(r.x / CELL), x1 = Math.floor((r.x + r.w) / CELL), y0 = Math.floor(r.y / CELL), y1 = Math.floor((r.y + r.h) / CELL);
+        for (let gy = y0; gy < y1; gy++) for (let gx = x0; gx < x1; gx++) { const c = world.g[gy * GW + gx]; if (c === WATER) n++; else if (c === LAVA && cb) cb(); }
+        return n;
+      };
+      lavaInBowl = false; inBowl = 0;
+      for (const g of goals) {
+        g.lava = false;
+        g.n = countIn(g, () => { g.lava = true; g.burnt = true; lavaInBowl = true; });
+        if (g.n > g.last + 2) sfx.bloop();
+        g.last = g.n; inBowl += g.n;
+      }
+      for (const sw of switches) {
+        if (sw.on) continue;
+        sw.n = countIn({ x: sw.r[0], y: sw.r[1], w: sw.r[2], h: sw.r[3] });
+        if (sw.n >= sw.need) {
+          sw.on = true; tone(880, .12, 'triangle'); tone(1320, .18, 'triangle', .1);
+          for (const id of sw.opens) pullPin(pins[id], true);
+          if (state === 'play') coach('🔴 הכפתור נלחץ! השער נפתח 🔓', 'yay');
+        }
+      }
       if (tick % 10 === 0) totalWater = countWater();
     }
     function update(dt) {
@@ -501,16 +554,19 @@
         for (const p of pins) if (p.pulled && p.out < 1) p.out = Math.min(1, p.out + dt * 2.5);
       }
       if (state === 'play') {
-        if (lavaInBowl) {
+        if (lavaInBowl || lavaOut >= 6) {
+          if (!lavaInBowl) goals.forEach(g => g.burnt = true);
           state = 'fail'; sfx.lose(); coach('אוי! הלבה הגיעה לדג! 🔥', 'oops');
-          showFail('אוי! הלבה הגיעה לדג 🔥', 'הלבה חמה מדי! נסו לשחרר רק מים, או לקרר את הלבה עם מים קודם. 💧');
-        } else if (inBowl >= L.need) {
-          state = 'win'; winT = 0; cheer = 1; coach('יש! הדג קיבל מים! 🐠💙', 'yay');
-        } else if (tick > 30 && totalWater < L.need) {
+          if (maze) showFail('אוי! הלבה ברחה מהמבוך 🔥', 'נסו לסובב לכיוון השני, ולתת למים לקרר את הלבה לפני שהפתח מגיע למטה. 💧');
+          else showFail('אוי! הלבה הגיעה לדג 🔥', 'הלבה חמה מדי! נסו לשחרר רק מים, או לקרר את הלבה עם מים קודם. 💧');
+        } else if (goals.every(g => g.n >= g.need) && !(maze && L.maze.lava && maze.S.g.includes(LAVA))) {
+          state = 'win'; winT = 0; cheer = 1; coach(goals.length > 1 ? 'יש! כל הדגים קיבלו מים! 🐠🐠💙' : 'יש! הדג קיבל מים! 🐠💙', 'yay');
+        } else if (tick > 30 && totalWater - inBowl < goals.reduce((d, g) => d + Math.max(0, g.need - g.n), 0)) {
           failT += dt;
           if (failT > 1.2) {
             state = 'fail'; sfx.lose(); coach('אוי! אין מספיק מים לדג 😢', 'oops');
-            showFail('אוי! המים ברחו 😢', 'לא נשארו מספיק מים לדג. נסו דרך אחרת! 💪');
+            if (goals.length > 1) showFail('אוי! דג אחד נשאר בלי מים 😢', 'צריך לחלק את המים כך שכל דג יקבל מספיק. נסו לחשוב מתי למשוך כל סיכה! 💪');
+            else showFail('אוי! המים ברחו 😢', 'לא נשארו מספיק מים לדג. נסו דרך אחרת! 💪');
           }
         } else failT = 0;
       }
@@ -523,7 +579,7 @@
       $('failTitle').textContent = title; $('failText').textContent = text;
       setTimeout(() => { if (state === 'fail') $('failScreen').classList.remove('hidden'); }, 1300);
     }
-    function par() { return L.type === 'maze' ? Math.abs(L.hint[L.hint.length - 1]) + 2 : L.hint.length; }
+    function par() { return L.par || (L.type === 'maze' ? Math.abs(L.hint[L.hint.length - 1]) + 2 : L.hint.length); }
     function finish() {
       state = 'done';
       const p = par(), got = moves <= p ? 3 : moves <= p + 4 ? 2 : 1;
@@ -568,6 +624,7 @@
       ctx.rotate(Math.atan2(u[1], u[0]));
       // glow when it is the hint
       if (hintOn > 0 && nextHintPin() === p) { ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 18 + Math.sin(time * 8) * 8; }
+      if (p.gate) { drawGate(len); ctx.restore(); return; }
       roundRect(ctx, 0, -5, len, 10, 5); ctx.fillStyle = '#fab005'; ctx.fill();
       ctx.shadowBlur = 0;
       ctx.save(); roundRect(ctx, 0, -5, len, 10, 5); ctx.clip();
@@ -580,6 +637,38 @@
       ctx.beginPath(); ctx.arc(len + 12, 0, 11, 0, TAU); ctx.lineWidth = 7; ctx.strokeStyle = '#a05a00'; ctx.stroke();
       ctx.lineWidth = 4.5; ctx.strokeStyle = '#ffd43b'; ctx.stroke();
       ctx.restore();
+    }
+    // a locked purple gate with a padlock in the middle
+    function drawGate(len) {
+      roundRect(ctx, 0, -6, len, 12, 4); ctx.fillStyle = '#9775fa'; ctx.fill();
+      ctx.save(); roundRect(ctx, 0, -6, len, 12, 4); ctx.clip();
+      ctx.fillStyle = '#7048e8'; for (let k = 6; k < len; k += 14) ctx.fillRect(k, -6, 4, 12);
+      ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(0, -5, len, 3);
+      ctx.restore();
+      ctx.strokeStyle = '#5f3dc4'; ctx.lineWidth = 1.5; roundRect(ctx, 0, -6, len, 12, 4); ctx.stroke();
+    }
+    // the button cup: a red button that turns green once the water presses it
+    function drawSwitch(sw) {
+      const [x, y, w, h] = sw.r, f = Math.min(1, sw.n / sw.need);
+      const bx = x + w / 2, by = y + h - 4;
+      ctx.fillStyle = sw.on ? '#40c057' : '#fa5252';
+      ctx.strokeStyle = sw.on ? '#2b8a3e' : '#c92a2a'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(bx, by - (sw.on ? 0 : 3), w * 0.32, 6, 0, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // fill meter beside the cup
+      if (!sw.on) {
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'; roundRect(ctx, x + w + 10, y, 8, h, 4); ctx.fill();
+        ctx.fillStyle = '#228be6'; roundRect(ctx, x + w + 10, y + h * (1 - f), 8, h * f, 4); if (f > 0.02) ctx.fill();
+      }
+      // a dotted line to the gates it opens
+      for (const id of sw.opens) {
+        const g = pins[id]; if (g.out >= 1) continue;
+        const gx = (g.a[0] + g.b[0]) / 2, gy = (g.a[1] + g.b[1]) / 2;
+        ctx.save(); ctx.globalAlpha = 0.6 * (1 - g.out); ctx.strokeStyle = '#7048e8'; ctx.lineWidth = 3; ctx.setLineDash([3, 7]); ctx.lineDashOffset = -time * 20;
+        ctx.beginPath(); ctx.moveTo(bx, y - 4); ctx.lineTo(gx, gy); ctx.stroke(); ctx.restore();
+        ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.globalAlpha = 1 - g.out;
+        ctx.fillText('🔒', gx, gy); ctx.globalAlpha = 1;
+      }
+      ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(sw.on ? '🔓' : '🔴', bx, y - 12);
     }
     function nextHintPin() { if (!L.hint || L.type !== 'pins') return null; for (const id of L.hint) if (!pins[id].pulled) return pins[id]; return null; }
 
@@ -670,13 +759,14 @@
       if (!maze || !L.hint || maze.achieved >= L.hint.length) return 0;
       return Math.sign(L.hint[maze.achieved] * STEP - maze.theta);
     }
-    function drawFish() {
+    function drawFish(g, gi) {
       // the fish swims in the water surface of the bowl, or flops on the dry bottom
-      const g = goal, bottom = g.y + g.h - 10;
-      const level = Math.min(1, inBowl / (L.need * 1.15));
-      const waterTop = g.y + g.h - (inBowl * CELL * CELL) / g.w;
-      const wet = inBowl > 25, happy = state === 'win' || state === 'done' || level > 0.8;
-      const burnt = lavaInBowl || (state === 'fail' && L.lava);
+      const bottom = g.y + g.h - 10;
+      const level = Math.min(1, g.n / (g.need * 1.15));
+      const waterTop = g.y + g.h - (g.n * CELL * CELL) / g.w;
+      const wet = g.n > 25, happy = state === 'win' || state === 'done' || g.n >= g.need;
+      const burnt = g.burnt;
+      const time0 = time; time += gi * 1.7;
       let x = g.x + g.w / 2, y = bottom, rot = 0, flip = 1;
       if (wet) {
         y = Math.max(waterTop + 16, Math.min(bottom - 4, g.y + g.h - (g.y + g.h - waterTop) / 2));
@@ -717,6 +807,13 @@
       else if (!wet) { ctx.fillText('💧?', x + 4, y - 30 + Math.sin(time * 3) * 2); ctx.fillText('😢', x - 30, y - 6); }
       // bubbles from a wet fish
       if (wet && Math.random() < 0.04 && particles.length < 160) particles.push({ x: x + flip * 20, y: y - 6, vx: 0, vy: -24, life: 1.2, r: 2.5, bubble: true });
+      // with several fish, each bowl shows how full it is
+      if (goals.length > 1) {
+        const f = Math.min(1, g.n / g.need), mx = g.x + 6, my = g.y + 8, mw = g.w - 12;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)'; roundRect(ctx, mx, my, mw, 9, 4.5); ctx.fill();
+        if (f > 0.03) { ctx.fillStyle = f >= 1 ? '#40c057' : '#228be6'; roundRect(ctx, mx, my, Math.max(9, mw * f), 9, 4.5); ctx.fill(); }
+      }
+      time = time0;
     }
 
     function render() {
@@ -725,7 +822,8 @@
       if (!L) { ctx.fillStyle = '#a5d8ff'; ctx.fillRect(0, 0, W, H); return; }
       ctx.drawImage(bgCv, 0, 0, W, H);
       drawCells(world, 0, 0);
-      drawFish();
+      goals.forEach(drawFish);
+      for (const sw of switches) drawSwitch(sw);
       for (const p of pins) if (p.out < 1) drawPin(p);
       if (maze) { drawMaze(); drawRotateBtn(BTN_L, -1); drawRotateBtn(BTN_R, 1); }
       // hint finger
@@ -745,7 +843,7 @@
       ctx.fillStyle = 'rgba(255,255,255,0.85)'; roundRect(ctx, 6, 6, W - 12, 28, 12); ctx.fill();
       ctx.fillStyle = '#12355b'; ctx.font = 'bold 15px "Comic Sans MS", sans-serif'; ctx.textBaseline = 'middle';
       ctx.textAlign = 'center'; ctx.fillStyle = '#7c5cff'; ctx.fillText(`שלב ${levelIdx + 1}`, W - 44, 21);
-      const f = Math.min(1, inBowl / L.need);
+      const f = Math.min(1, ...goals.map(g => g.n / g.need));
       ctx.fillStyle = '#d0ebff'; roundRect(ctx, 40, 13, 220, 16, 8); ctx.fill();
       if (f > 0) { ctx.fillStyle = f >= 1 ? '#40c057' : '#228be6'; roundRect(ctx, 40, 13, Math.max(16, 220 * f), 16, 8); ctx.fill(); }
       ctx.textAlign = 'left'; ctx.fillText('💧', 14, 21);
@@ -758,8 +856,11 @@
         const hp = nextHintPin();
         if (!hp) return;
         if (L.lava && L.hint.indexOf(hp.id) > 0 && countLava() > 0) { coach('💡 חכו שהלבה תהפוך לאבן אפורה... 🪨'); return; }
+        if (L.waitFor && L.waitFor.pin === hp.id && goals[L.waitFor.bowl].n < goals[L.waitFor.bowl].need * 1.2) { coach(L.waitFor.text); return; }
+        if (L.waitSwitch && L.hint.indexOf(hp.id) > 0 && switches.some(sw => !sw.on)) { coach('💡 חכו שהכפתור יתמלא והשער ייפתח... 🔴'); return; }
         hintOn = 1; coach(L.hint.indexOf(hp.id) === 0 && pins.length > 1 ? '💡 נסו קודם את הסיכה הזוהרת! 👆' : '💡 עכשיו את הסיכה הזוהרת! 👆', 'yay');
       } else {
+        if (L.waitText && maze.achieved >= 1 && maze.S.g.includes(LAVA)) { coach(L.waitText); return; }
         if (!hintDir()) { coach('💡 חכו שהמים יזרמו... 💧'); return; }
         hintOn = 1; coach(hintDir() > 0 ? '💡 סובבו עם כיוון השעון ↻' : '💡 סובבו נגד כיוון השעון ↺', 'yay');
       }
@@ -837,7 +938,7 @@
     showMenu();
     requestAnimationFrame(frame);
     window.__water = {
-      get s() { return { state, inBowl, need: L && L.need, totalWater, startWater, moves, theta: maze && Math.round(maze.theta / STEP), lava: L ? countLava() : 0 }; },
+      get s() { return { state, inBowl, goals: goals.map(g => g.n), sw: switches.map(w => w.on), need: L && L.need, totalWater, startWater, moves, theta: maze && Math.round(maze.theta / STEP), lava: L ? countLava() : 0 }; },
       loadLevel, pull: id => pullPin(pins[id]), rotate: rotateBy, run(sec) { for (let t = 0; t < sec; t += TICK) advance(TICK); }, LEVELS
     };
   </script>
