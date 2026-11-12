@@ -1382,7 +1382,7 @@
       let lastTouch = 0;
       document.addEventListener('touchend', e => {
         const now = Date.now();
-        if (now - lastTouch < 350) e.preventDefault();
+        if (now - lastTouch < 350 && !e.target.closest('button, a')) e.preventDefault();
         lastTouch = now;
       }, { passive: false });
       ['gesturestart', 'gesturechange', 'gestureend', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
