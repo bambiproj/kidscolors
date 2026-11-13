@@ -493,10 +493,13 @@
         if (o.dead || o.home) continue;
         o.tp = Math.max(0, (o.tp || 0) - dt);
         // portals: step in one end, pop out of the other
+        // a friend that just came out of a portal is not pulled back in until it has really moved away from it
+        if (o.out && Math.hypot(o.x - o.out.x, o.y - o.out.y) > 28) o.out = null;
         if (!o.tp) for (const p of portals) {
           for (const [ix, iy, ox, oy] of [[p.ax, p.ay, p.bx, p.by], [p.bx, p.by, p.ax, p.ay]]) {
+            if (o.out && o.out.x === ix && o.out.y === iy) continue;
             if (Math.hypot(o.x - ix, o.y - iy) < 12) {
-              o.x = ox; o.y = oy; o.tp = 0.7; o.lostT = 0; tone(300, .25, 'sine', 0, .1, 3);
+              o.x = ox; o.y = oy; o.tp = 0.7; o.lostT = 0; o.out = { x: ox, y: oy }; tone(300, .25, 'sine', 0, .1, 3);
               for (let k = 0; k < 12; k++) { const a = Math.random() * TAU; particles.push({ x: ox, y: oy, vx: Math.cos(a) * 110, vy: Math.sin(a) * 110, c: p.hue, life: .5, r: 3 }); }
               break;
             }
