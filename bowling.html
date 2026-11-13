@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>באולינג</title>
+  <style>
+    html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+    button { touch-action: manipulation; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink: #1b2a3a; }
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      position: fixed; inset: 0;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(160deg, #2a1650 0%, #0d0820 100%);
+      color: var(--ink);
+      user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    }
+    .app {
+      position: absolute; top: 44px; left: 0; right: 0; bottom: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 8px 4px 8px; overflow: hidden;
+    }
+    nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.25); display: flex; gap: 5px; padding: 6px 10px; z-index: 50; }
+    nav a.home-link { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 0.9rem; font-weight: 800; padding: 4px 16px; border-radius: 999px;
+      background: #fff; color: #5a3fd1; box-shadow: 0 3px 0 rgba(0,0,0,0.18); text-decoration: none; white-space: nowrap; }
+    .board-wrap { position: relative; flex: 1 1 auto; min-height: 260px; width: min(calc(100vw - 8px), 760px); display: flex; align-items: center; justify-content: center; }
+    canvas#game { display: block; border-radius: 16px; touch-action: none; box-shadow: 0 0 0 4px #e599f7, 0 10px 0 4px rgba(0,0,0,0.3), 0 18px 30px rgba(0,0,0,0.5); }
+    .overlay {
+      position: absolute; inset: 0; margin: auto; border-radius: 16px;
+      background: radial-gradient(circle at 50% 30%, #4c2a85 0%, #160b30 80%); color: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+      text-align: center; padding: 10px; gap: 9px; overflow-y: auto; z-index: 5;
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { font-size: clamp(1.2rem, 5.4vw, 1.8rem); text-shadow: 0 0 12px rgba(229,153,247,0.8); }
+    .overlay p { color: rgba(255,255,255,0.85); font-size: clamp(0.8rem, 3.4vw, 1rem); max-width: 340px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+    .play-btn { border: none; background: #ffd43b; color: #5c3c00; font: inherit; font-size: 1.1rem; font-weight: bold; padding: 8px 24px; border-radius: 999px; cursor: pointer; box-shadow: 0 5px 0 #c99a00; }
+    .play-btn.alt { background: #fff; color: var(--ink); box-shadow: 0 5px 0 #adb5bd; }
+    .play-btn:active { transform: translateY(3px); }
+    .bank { font-weight: bold; background: rgba(255,212,59,0.2); color: #ffe066; border-radius: 999px; padding: 3px 14px; }
+    .tabs { display: flex; gap: 6px; }
+    .tabs button { border: none; background: rgba(255,255,255,0.15); color: #fff; border-radius: 999px; padding: 5px 12px; font: inherit; font-weight: bold; cursor: pointer; }
+    .tabs button.on { background: #fff; color: var(--ink); }
+    .pane { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+    .pane.hidden { display: none; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; width: 100%; max-width: 340px; }
+    .card { border: 3px solid transparent; border-radius: 14px; background: rgba(255,255,255,0.13); color: #fff; font: inherit; padding: 6px 2px; cursor: pointer; line-height: 1.15; }
+    .card b { display: block; font-size: 1.35rem; }
+    .card span { font-size: 0.72rem; display: block; }
+    .card small { font-size: 0.65rem; letter-spacing: -1px; }
+    .card.on { border-color: #ffd43b; background: rgba(255,255,255,0.25); }
+    .card.locked { opacity: 0.45; }
+    .card canvas { display: block; margin: 0 auto 2px; }
+    .grid.four { grid-template-columns: repeat(3, 1fr); }
+    .best { font-size: 0.85rem; color: #ffe066; font-weight: bold; }
+    .best:empty { display: none; }
+    .stars3 { font-size: clamp(2rem, 9vw, 2.8rem); letter-spacing: 4px; }
+    .stars3 .off { filter: grayscale(1); opacity: 0.3; }
+    .panel { width: min(calc(100vw - 8px), 560px); display: flex; flex-direction: column; gap: 6px; flex: none; }
+    .coach { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 4px; }
+    .coach .face { font-size: 1.4rem; }
+    .bubble { flex: 1; font-size: clamp(0.76rem, 3.2vw, 0.92rem); line-height: 1.2; overflow: hidden; color: #fff; }
+    .bubble span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .buttons button { border: none; border-radius: 14px; background: #fff; color: var(--ink); font: inherit; font-size: 0.78rem; height: 50px; box-shadow: 0 4px 0 rgba(0,0,0,0.35); cursor: pointer; line-height: 1.1; }
+    .buttons button b { display: block; font-size: 1.3rem; }
+    .buttons button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+  </style>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="משחקים" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#7c5cff" />
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <nav dir="rtl"><a class="home-link" href="index.html">🏠 כל המשחקים</a></nav>
+  <div class="app">
+    <div class="board-wrap" id="wrap">
+      <canvas id="game"></canvas>
+
+      <div dir="rtl" class="overlay" id="menu">
+        <h2>🎳 באולינג</h2>
+        <div class="bank">🪙 <span id="coins">0</span></div>
+        <div class="tabs"><button id="tabPlay" class="on">🎳 משחק</button><button id="tabTeam">🧑 שחקנים</button><button id="tabBalls">🎱 כדורים</button></div>
+        <div class="pane" id="playPane">
+          <button class="play-btn" id="gameBtn">▶ משחק מלא · 10 סיבובים</button>
+          <div style="font-weight:bold;font-size:0.9rem">🎯 אתגרים</div>
+          <div class="grid" id="challenges"></div>
+          <div class="best" id="best"></div>
+        </div>
+        <div class="pane hidden" id="teamPane"><div class="grid" id="team"></div></div>
+        <div class="pane hidden" id="ballsPane"><div class="grid four" id="balls"></div></div>
+      </div>
+
+      <div dir="rtl" class="overlay hidden" id="result">
+        <div class="stars3" id="resStars"></div>
+        <h2 id="resTitle"></h2>
+        <p id="resText"></p>
+        <div class="row">
+          <button class="play-btn" id="againBtn">🔁 שוב</button>
+          <button class="play-btn alt" id="menuBtn2">🎳 לתפריט</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="coach" dir="rtl"><div class="face" id="face">🎳</div><div class="bubble" id="bubble"><span>גררו הצידה כדי לזוז, והחליקו למעלה כדי לזרוק!</span></div></div>
+      <div class="buttons" dir="rtl">
+        <button id="menuBtn"><b>🎳</b>תפריט</button>
+        <button id="restartBtn"><b>🔄</b>מחדש</button>
+        <button id="soundBtn"><b>🔊</b>צליל</button>
+      </div>
+    </div>
+  </div>
+  <canvas id="confetti"></canvas>
+
+  <script>
+    // ---------- World (meters): x across the lane, y up, z down the lane ----------
+    const W = 360, H = 600, TAU = Math.PI * 2;
+    const LANE = 0.525, GUT = 0.765, HEAD = 18.29, PITZ = 19.25, BR = 0.109, PR = 0.06, PIN_H = 0.38;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    const $ = id => document.getElementById(id);
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+    function shadeC(col, a) { const n = parseInt(col.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255; const t = a < 0 ? 0 : 255, p = Math.abs(a); return `rgb(${Math.round((t - r) * p + r)},${Math.round((t - g) * p + g)},${Math.round((t - b) * p + b)})`; }
+
+    // pin spots: 1 at the front, then 2-3, 4-6, 7-10
+    const SPOTS = []; { let n = 1; for (let r = 0; r < 4; r++) for (let i = 0; i <= r; i++) SPOTS[n++] = { x: (i - r / 2) * 0.3048, z: HEAD + r * 0.2639 }; }
+    const CHALLENGES = [
+      { name: 'פין בפינה', icon: '📍', pins: [10] },
+      { name: 'שלושה', icon: '🔺', pins: [1, 2, 3] },
+      { name: 'הקן', icon: '🪺', pins: [2, 4, 5, 8] },
+      { name: 'הקצה', icon: '📐', pins: [3, 6, 9, 10] },
+      { name: 'הכפולה', icon: '✌️', pins: [1, 5] },
+      { name: 'השורה', icon: '🧱', pins: [4, 7, 8] }
+    ];
+    const BOWLERS = [
+      { id: 'noa', name: 'נועה', price: 0, c1: '#e64980', c2: '#7048e8', pants: '#212529', shoes: ['#e64980', '#f8f9fa'], skin: '#f1c9a5', hair: '#6b3e1e', style: 'pony' },
+      { id: 'itay', name: 'איתי', price: 0, c1: '#1c7ed6', c2: '#fcc419', pants: '#343a40', shoes: ['#1c7ed6', '#f8f9fa'], skin: '#e0ac69', hair: '#2b1b0e', style: 'short' },
+      { id: 'maya', name: 'מאיה', price: 60, c1: '#12b886', c2: '#ff922b', pants: '#1b2a3a', shoes: ['#ff922b', '#f8f9fa'], skin: '#a0673f', hair: '#1b1b1b', style: 'curly' },
+      { id: 'ron', name: 'רון', price: 120, c1: '#e03131', c2: '#212529', pants: '#212529', shoes: ['#e03131', '#212529'], skin: '#ffdbac', hair: '#e8590c', style: 'spiky' },
+      { id: 'lia', name: 'ליה', price: 200, c1: '#94d82d', c2: '#f8f9fa', pants: '#495057', shoes: ['#2b8a3e', '#f8f9fa'], skin: '#d9a07a', hair: '#e9c46a', style: 'bun' },
+      { id: 'saba', name: 'סבא משה', price: 300, c1: '#7950f2', c2: '#ffd43b', pants: '#5c4033', shoes: ['#7a4a00', '#e9ecef'], skin: '#f1c9a5', hair: '#ced4da', style: 'bald' }
+    ];
+    const BALLS = [
+      { id: 'blue', name: 'כחול', price: 0, a: '#1971c2', b: '#74c0fc' },
+      { id: 'red', name: 'אדום', price: 50, a: '#c92a2a', b: '#ffa8a8' },
+      { id: 'galaxy', name: 'גלקסיה', price: 120, a: '#3b1f7a', b: '#9775fa', trail: 'star' },
+      { id: 'fire', name: 'אש', price: 180, a: '#d9480f', b: '#ffd43b', trail: 'fire' },
+      { id: 'rainbow', name: 'קשת', price: 260, a: '#f03e3e', b: '#4dabf7', trail: 'rainbow' },
+      { id: 'gold', name: 'זהב', price: 350, a: '#b07d00', b: '#fff3bf' },
+      { id: 'eight', name: 'כדור 8', price: 450, a: '#111', b: '#495057' }
+    ];
+
+    // ---------- Saved progress ----------
+    function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
+    function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
+    let prog = load('bowling-progress', null) || {};
+    prog = { coins: prog.coins || 0, best: prog.best || 0, stars: prog.stars || [], team: prog.team || ['noa', 'itay'], bowler: prog.bowler || 'noa', balls: prog.balls || ['blue'], ball: prog.ball || 'blue' };
+    const saveProg = () => save('bowling-progress', prog);
+    let soundOn = load('bowling-sound', true);
+    const bowler = () => BOWLERS.find(b => b.id === prog.bowler) || BOWLERS[0];
+    const ballSkin = () => BALLS.find(b => b.id === prog.ball) || BALLS[0];
+
+    // ---------- Sound ----------
+    let audio = null, rollSnd = null;
+    function ac() { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); return audio; }
+    function tone(freq, dur = 0.1, type = 'sine', when = 0, vol = 0.12, slide = 0) {
+      if (!soundOn) return;
+      try { const a = ac(), t = a.currentTime + when, o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02); } catch {}
+    }
+    function noise(dur, vol, freq, type = 'lowpass') {
+      if (!soundOn) return;
+      try { const a = ac(), n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 2;
+        const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); f.type = type; f.frequency.value = freq; g.gain.value = vol; s.buffer = buf; s.connect(f).connect(g).connect(a.destination); s.start(); } catch {}
+    }
+    // the low rumble of the ball rolling down the lane
+    function rollStart() {
+      if (!soundOn || rollSnd) return;
+      try { const a = ac(), n = a.sampleRate * 2, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+        const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = buf; s.loop = true; f.type = 'lowpass'; f.frequency.value = 160; g.gain.value = 0.0;
+        s.connect(f).connect(g).connect(a.destination); s.start(); g.gain.setTargetAtTime(0.35, a.currentTime, 0.2); rollSnd = { s, g }; } catch {}
+    }
+    function rollStop() { if (!rollSnd) return; try { rollSnd.g.gain.setTargetAtTime(0, audio.currentTime, 0.1); const s = rollSnd.s; setTimeout(() => { try { s.stop(); } catch {} }, 400); } catch {} rollSnd = null; }
+    let lastClack = 0;
+    const sfx = {
+      clack(v) { const n = performance.now(); if (n - lastClack < 25) return; lastClack = n; tone(900 + Math.random() * 900, .05, 'square', 0, Math.min(.09, .02 + v * .02)); noise(.08, Math.min(.35, .05 + v * .05), 3000, 'bandpass'); },
+      crash() { noise(.6, .5, 2500, 'bandpass'); },
+      strike() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .18, 'triangle', i * .09, .12)); noise(1.5, .25, 900, 'bandpass'); },
+      spare() { [659, 784, 988].forEach((f, i) => tone(f, .15, 'triangle', i * .09, .11)); },
+      gutter() { tone(120, .5, 'sine', 0, .15, .6); },
+      coin() { tone(1318, .06, 'square', 0, .05); tone(1760, .1, 'square', .05, .05); },
+      swing() { noise(.25, .15, 600, 'bandpass'); }
+    };
+    function say(text) { if (!soundOn || !('speechSynthesis' in window)) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'he-IL'; u.pitch = 1.25; u.rate = 1.1; speechSynthesis.speak(u); } catch {} }
+
+    // ---------- Camera ----------
+    const F = 700, HOR = 150;
+    let cam = { x: 0, z: -5.5, h: 2.4 };
+    function P(x, y, z) { const d = Math.max(0.2, z - cam.z), s = F / d; return { x: W / 2 + (x - cam.x) * s, y: HOR - (y - cam.h) * s, s, d }; }
+
+    const canvas = $('game'), ctx = canvas.getContext('2d');
+    function fit() {
+      const wrap = $('wrap'), bw = wrap.clientWidth - 10, bh = wrap.clientHeight - 12;
+      const scale = Math.min(bw / W, bh / H), cw = Math.floor(W * scale), ch = Math.floor(H * scale);
+      canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+      canvas.width = Math.round(cw * DPR); canvas.height = Math.round(ch * DPR);
+      document.querySelectorAll('.overlay').forEach(o => { o.style.width = cw + 'px'; o.style.height = ch + 'px'; });
+    }
+    addEventListener('resize', fit);
+
+    // ---------- Game state ----------
+    let mode = null, chal = 0, tries = 0, state = 'menu', time = 0;
+    let pins = [], ball = null, aimX = 0, rolls = [], frame = 0, rollInFrame = 0, settleT = 0, parts = [], popText = null, swipe = null, firstThrow = true, throwInfo = null, sweepT = 0, flash = 0;
+    let man = { phase: 'idle', t: 0 };
+
+    function setPins(list) { pins = list.map(n => ({ n, x: SPOTS[n].x, z: SPOTS[n].z, vx: 0, vz: 0, y: 0, vy: 0, down: false, tilt: 0, dir: 0, gone: false, spin: 0 })); }
+    function standingNums() { return pins.filter(p => !p.down && !p.gone).map(p => p.n); }
+
+    function startGame() {
+      mode = 'game'; rolls = []; frame = 0; rollInFrame = 0; setPins([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      ['menu', 'result'].forEach(id => $(id).classList.add('hidden'));
+      coach(`${bowler().name} משחקת! 🎳 גררו הצידה כדי לזוז, החליקו למעלה כדי לזרוק.`.replace('משחקת', bowler().style === 'short' || bowler().style === 'spiky' || bowler().style === 'bald' ? 'משחק' : 'משחקת'));
+      newThrow();
+    }
+    function startChallenge(i) {
+      mode = 'chal'; chal = i; tries = 0; setPins(CHALLENGES[i].pins);
+      ['menu', 'result'].forEach(id => $(id).classList.add('hidden'));
+      coach(`🎯 אתגר: ${CHALLENGES[i].name}! הפילו את כל הפינים בזריקה אחת. יש 3 ניסיונות.`);
+      newThrow();
+    }
+    function newThrow() {
+      ball = { x: aimX, y: BR, z: -0.3, vx: 0, vz: 0, ax: 0, rot: 0, rolling: false, gutter: false, done: false, trail: [] };
+      cam = { x: aimX + 0.32, z: -5.5, h: 2.4 };
+      man = { phase: 'idle', t: 0 }; settleT = 0; popText = null; throwInfo = null; swipe = null;
+      state = 'aim';
+    }
+
+    // ---------- Input: drag sideways to move, swipe up to throw (a curved swipe hooks the ball) ----------
+    function toWorld(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H, t: performance.now() }; }
+    canvas.addEventListener('pointerdown', e => {
+      e.preventDefault(); if (state !== 'aim') return;
+      const p = toWorld(e); if (p.y < 260) return;
+      swipe = { pts: [p], id: e.pointerId, x0: aimX };
+      try { canvas.setPointerCapture(e.pointerId); } catch {}
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!swipe || e.pointerId !== swipe.id || state !== 'aim') return;
+      const p = toWorld(e); swipe.pts.push(p); if (swipe.pts.length > 80) swipe.pts.splice(1, 1);
+      const a = swipe.pts[0], dx = p.x - a.x, dy = p.y - a.y;
+      // mostly sideways and not going up yet: slide the bowler along the line
+      if (Math.abs(dy) < 30 || Math.abs(dx) > Math.abs(dy) * 1.6) { aimX = clamp(swipe.x0 + dx / P(0, 0, 0).s * 1.4, -0.42, 0.42); ball.x = aimX; cam.x = aimX + 0.32; swipe.moved = true; }
+    });
+    const endSwipe = e => {
+      if (!swipe || e.pointerId !== swipe.id) return;
+      const pts = swipe.pts; pts.push(toWorld(e)); swipe = null;
+      if (state !== 'aim') return;
+      // the throw is the last upward part of the gesture
+      let k = pts.length - 1; while (k > 0 && pts[k - 1].y >= pts[k].y - 0.5) k--;
+      let s0 = k; while (s0 > 0 && pts[s0 - 1].y > pts[s0].y) s0--;
+      const a = pts[s0], b = pts[pts.length - 1], vx = b.x - a.x, vy = b.y - a.y, len = Math.hypot(vx, vy);
+      if (len < 45 || vy > -35) { if (!pts.some(q => Math.abs(q.x - pts[0].x) > 10)) coach('החליקו את האצבע למעלה כדי לזרוק את הכדור! 👆'); return; }
+      const dt = Math.max(60, b.t - a.t), speed = len / dt * 1000;
+      let bend = 0; for (const q of pts.slice(s0)) { const d = ((q.x - a.x) * vy - (q.y - a.y) * vx) / len; if (Math.abs(d) > Math.abs(bend)) bend = d; }
+      // aim: stretch the swipe direction up to the pins
+      // a straight-up swipe rolls straight down the lane; tilting the swipe turns the throw
+      const bp = P(ball.x, 0, 0), st = P(ball.x, 0, HEAD), sx = st.x + (vx / -vy) * (bp.y - st.y) * 0.25;
+      const tx = cam.x + (sx - W / 2) / st.s;
+      throwBall(clamp(tx, -1, 1), clamp(5.5 + speed / 170, 6, 10.5), clamp(-bend / len, -0.4, 0.4));
+    };
+    canvas.addEventListener('pointerup', endSwipe); canvas.addEventListener('pointercancel', endSwipe);
+
+    function throwBall(tx, vz, curve) {
+      if (state !== 'aim') return;
+      state = 'swing'; man = { phase: 'swing', t: 0 }; throwInfo = { tx, vz, curve }; firstThrow = false; sfx.swing();
+    }
+    function release() {
+      const { tx, vz, curve } = throwInfo;
+      const T = (HEAD - 0) / vz;
+      ball.z = 0.05; ball.y = BR; ball.vz = vz; ball.ax = curve * 1.8;
+      ball.vx = (tx - ball.x) / T - 0.5 * ball.ax * T; ball.spin = curve; ball.rolling = true;
+      state = 'roll'; rollStart(); tone(90, .15, 'sine', 0, .25, .6);
+    }
+    // test hook: throw straight away
+    function throwNow(tx, vz = 8, curve = 0) { if (state !== 'aim') return; throwInfo = { tx, vz, curve }; firstThrow = false; release(); }
+
+    // ---------- Physics ----------
+    function step(dt) {
+      const sub = 10, h = dt / sub;
+      for (let k = 0; k < sub; k++) {
+        const b = ball;
+        if (b.rolling) {
+          if (!b.gutter) { b.vx += b.ax * h; }
+          b.x += b.vx * h; b.z += b.vz * h; b.rot += b.vz * h / BR;
+          if (!b.gutter && Math.abs(b.x) > LANE - 0.02 && b.z < HEAD - 0.4) { b.gutter = true; b.vx = 0; b.ax = 0; sfx.gutter(); coach('אוי, לתעלה! 😅 נסו לכוון יותר לאמצע.', 'oops'); }
+          if (b.gutter) { const gx = Math.sign(b.x) * (LANE + 0.12); b.x += (gx - b.x) * Math.min(1, h * 12); b.y = BR - 0.06; }
+          if (b.z > PITZ + 0.3) { b.rolling = false; b.done = true; rollStop(); }
+        }
+        // ball against pins
+        if (b.rolling && !b.gutter) for (const p of pins) {
+          if (p.gone) continue;
+          const pr = p.down ? 0.08 : PR, dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz), m = BR + pr;
+          if (d >= m || d < 1e-6) continue;
+          const nx = dx / d, nz = dz / d, rv = (b.vx - p.vx) * nx + (b.vz - p.vz) * nz;
+          p.x += nx * (m - d); p.z += nz * (m - d);
+          if (rv > 0) {
+            const mb = 7, mp = 1.6, j = (1 + 0.65) * rv / (1 / mb + 1 / mp);
+            p.vx += nx * j / mp + rnd(-0.15, 0.15); p.vz += nz * j / mp; b.vx -= nx * j / mb; b.vz -= nz * j / mb;
+            hitPin(p, rv); sfx.clack(rv);
+          }
+        }
+        // pins against pins
+        for (let i = 0; i < pins.length; i++) for (let j = i + 1; j < pins.length; j++) {
+          const p = pins[i], q = pins[j]; if (p.gone || q.gone) continue;
+          const rp = p.down ? 0.08 : PR, rq = q.down ? 0.08 : PR, dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz), m = rp + rq;
+          if (d >= m || d < 1e-6) continue;
+          const nx = dx / d, nz = dz / d, rv = (p.vx - q.vx) * nx + (p.vz - q.vz) * nz;
+          p.x -= nx * (m - d) / 2; p.z -= nz * (m - d) / 2; q.x += nx * (m - d) / 2; q.z += nz * (m - d) / 2;
+          if (rv > 0) { const jj = (1 + 0.55) * rv / 2; p.vx -= nx * jj; p.vz -= nz * jj; q.vx += nx * jj; q.vz += nz * jj; hitPin(p, rv); hitPin(q, rv); if (rv > 0.3) sfx.clack(rv); }
+        }
+        for (const p of pins) {
+          if (p.gone) continue;
+          p.x += p.vx * h; p.z += p.vz * h;
+          // friction: standing pins grip the deck, fallen pins slide and spin
+          const sp = Math.hypot(p.vx, p.vz), dec = (p.down ? 1.6 : 6) * h;
+          if (sp > 0) { const f = Math.max(0, sp - dec) / sp; p.vx *= f; p.vz *= f; }
+          p.vy -= 9.8 * h; p.y = Math.max(0, p.y + p.vy * h); if (p.y === 0) p.vy = 0;
+          if (p.down) { p.tilt = Math.min(Math.PI / 2, p.tilt + h * 9); p.spin += sp * h * 6; }
+          if (p.z > PITZ || Math.abs(p.x) > GUT) p.gone = true;
+        }
+      }
+    }
+    function hitPin(p, v) {
+      if (p.down || v < 0.35) return;
+      p.down = true; p.dir = Math.atan2(p.vz, p.vx); p.vy = Math.min(2.2, v * 0.45);
+      for (let k = 0; k < 4; k++) parts.push({ x: p.x, y: 0.2, z: p.z, vx: rnd(-1, 1), vy: rnd(0.5, 2), vz: rnd(-0.5, 1), life: 0.5, c: '#fff' });
+    }
+
+    // ---------- Turn logic ----------
+    function update(dt) {
+      time += dt;
+      man.t += dt;
+      flash = Math.max(0, flash - dt);
+      if (state === 'swing' && man.t >= 0.75) release();
+      if (state === 'roll' || state === 'settle') {
+        step(dt);
+        // the camera rides along behind the ball, then stops in front of the pins
+        const tz = Math.min(ball.z - 4.2, 12.6), th = 2.4 - clamp((cam.z + 5.5) / 18, 0, 1) * 1.1;
+        cam.z += (tz - cam.z) * Math.min(1, dt * 3); cam.h += (th - cam.h) * Math.min(1, dt * 3); cam.x += (ball.x * 0.5 - cam.x) * Math.min(1, dt * 2);
+        if (ball.trail) { ball.trail.push({ x: ball.x, z: ball.z }); if (ball.trail.length > 16) ball.trail.shift(); }
+        if (state === 'roll' && (ball.done || ball.z > HEAD + 1.6)) { state = 'settle'; settleT = 0; }
+        if (state === 'settle') {
+          settleT += dt;
+          const moving = pins.some(p => !p.gone && (Math.hypot(p.vx, p.vz) > 0.05 || p.y > 0.01));
+          if ((settleT > 1.2 && !moving) || settleT > 3.5) endThrow();
+        }
+      }
+      if (state === 'result') { sweepT += dt; if (sweepT > 2.0) nextAfterResult(); }
+      for (const p of parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.vy -= 6 * dt; }
+      parts = parts.filter(p => p.life > 0);
+      if (popText) popText.t += dt;
+    }
+    function endThrow() {
+      rollStop();
+      const before = throwInfo.standing, down = before.filter(n => !standingNums().includes(n)).length;
+      state = 'result'; sweepT = 0;
+      if (mode === 'chal') {
+        tries++;
+        const ok = standingNums().length === 0;
+        if (ok) { pop('נוקה! 🎯', '#69db7c'); sfx.spare(); confetti(80); }
+        else pop(down ? `${down} פינים` : 'פספוס', '#ffa8a8');
+        throwInfo.result = ok;
+        return;
+      }
+      rolls.push(down);
+      const first = rollInFrame === 0, all = standingNums().length === 0;
+      if (all && first) { pop('סטרייק!', '#ffd43b', '✖️'); sfx.strike(); sfx.crash(); flash = 0.4; confetti(60); say('סטרייק!'); const sc = streak(); if (sc >= 3) pop('טרקי! 🦃', '#ffd43b', `${sc} סטרייקים ברצף`); }
+      else if (all) { pop('ספייר!', '#69db7c', '/'); sfx.spare(); say('ספייר!'); }
+      else if (ball.gutter && down === 0) pop('תעלה', '#ffa8a8', '😅');
+      else pop(`${down}`, '#fff', down === 1 ? 'פין אחד' : 'פינים');
+      if (all || down > 6) coach(all && first ? 'סטרייק! כל 10 הפינים! 🎳🔥' : all ? 'ספייר! ניקיתם את כל השאר! 👏' : 'יפה! עוד קצת ונוקה הכל 💪', 'yay');
+    }
+    function streak() { let n = 0; for (let i = rolls.length - 1; i >= 0 && rolls[i] === 10; i--) n++; return n; }
+    function nextAfterResult() {
+      if (mode === 'chal') {
+        if (throwInfo.result) return finishChallenge(true);
+        if (tries >= 3) return finishChallenge(false);
+        setPins(CHALLENGES[chal].pins); newThrow(); return;
+      }
+      // move to the next roll / frame (the 10th frame can have up to 3 rolls)
+      const st = standingNums();
+      if (frame < 9) {
+        if (rollInFrame === 0 && st.length > 0) { rollInFrame = 1; pins = pins.filter(p => !p.down && !p.gone); }
+        else { frame++; rollInFrame = 0; setPins([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]); }
+      } else {
+        const f = rolls.slice(frameStart(9));
+        if (rollInFrame === 0) { rollInFrame = 1; if (st.length === 0) setPins([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]); else pins = pins.filter(p => !p.down && !p.gone); }
+        else if (rollInFrame === 1) {
+          if (f[0] === 10 || f[0] + f[1] === 10) { rollInFrame = 2; if (st.length === 0) setPins([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]); else pins = pins.filter(p => !p.down && !p.gone); }
+          else return finishGame();
+        } else return finishGame();
+      }
+      newThrow();
+    }
+    function frameStart(f) { let i = 0; for (let k = 0; k < f; k++) i += rolls[i] === 10 ? 1 : 2; return i; }
+    // standard ten-pin scoring
+    function scoreFrames() {
+      const out = []; let i = 0, total = 0;
+      for (let f = 0; f < 10; f++) {
+        if (i >= rolls.length) { out.push({ marks: [], total: null }); continue; }
+        if (f < 9) {
+          if (rolls[i] === 10) { const ok = rolls[i + 2] !== undefined; total += ok ? 10 + rolls[i + 1] + rolls[i + 2] : 0; out.push({ marks: ['X'], total: ok ? total : null }); i += 1; }
+          else if (rolls[i + 1] === undefined) { out.push({ marks: [mk(rolls[i])], total: null }); i += 1; }
+          else { const a = rolls[i], b = rolls[i + 1], spare = a + b === 10, ok = !spare || rolls[i + 2] !== undefined; total += ok ? a + b + (spare ? rolls[i + 2] : 0) : 0; out.push({ marks: [mk(a), spare ? '/' : mk(b)], total: ok ? total : null }); i += 2; }
+        } else {
+          const r = rolls.slice(i), marks = [];
+          r.forEach((v, k) => { if (v === 10 && (k === 0 || r[k - 1] === 10 || (k === 2 && r[0] + r[1] === 10))) marks.push('X'); else if (k > 0 && r[k - 1] !== 10 && r[k - 1] + v === 10 && !(k === 2 && r[0] + r[1] === 10)) marks.push('/'); else marks.push(mk(v)); });
+          const need = r[0] === 10 || r[0] + r[1] === 10 ? 3 : 2, done = r.length >= need;
+          total += done ? r.slice(0, need).reduce((s, v) => s + v, 0) : 0;
+          out.push({ marks, total: done ? total : null });
+        }
+      }
+      return out;
+    }
+    const mk = v => v === 0 ? '-' : String(v);
+    function finishGame() {
+      state = 'over';
+      const sf = scoreFrames(), score = sf[9].total || 0, strikes = sf.filter(f => f.marks.includes('X')).length;
+      const coins = Math.round(score / 4) + strikes * 3;
+      prog.coins += coins; const record = score > prog.best; if (record) prog.best = score; saveProg();
+      const stars = score >= 150 ? 3 : score >= 100 ? 2 : score >= 60 ? 1 : 0;
+      $('resStars').innerHTML = [0, 1, 2].map(k => `<span class="${k < stars ? '' : 'off'}">⭐</span>`).join('');
+      $('resTitle').textContent = record ? '🏆 שיא חדש!' : '🎳 סוף המשחק!';
+      $('resText').innerHTML = `ניקוד: <b>${score}</b> · סטרייקים: ${strikes}<br>🪙 +${coins} מטבעות`;
+      $('result').classList.remove('hidden');
+      confetti(record ? 140 : 50); say(record ? 'שיא חדש!' : 'כל הכבוד!');
+    }
+    function finishChallenge(ok) {
+      state = 'over';
+      const stars = ok ? 4 - tries : 0, coins = ok ? stars * 10 : 0;
+      if (ok) { prog.stars[chal] = Math.max(prog.stars[chal] || 0, stars); prog.coins += coins; saveProg(); }
+      $('resStars').innerHTML = [0, 1, 2].map(k => `<span class="${k < stars ? '' : 'off'}">⭐</span>`).join('');
+      $('resTitle').textContent = ok ? `🎯 ${CHALLENGES[chal].name} - הצלחתם!` : 'כמעט! 💪';
+      $('resText').innerHTML = ok ? `בניסיון ${tries} מתוך 3 · 🪙 +${coins}` : 'נסו לכוון כך שהכדור יפגע בכל הפינים, או שפין אחד יפיל את השני.';
+      $('result').classList.remove('hidden');
+      if (ok) { confetti(80); say('כל הכבוד!'); }
+    }
+    function pop(text, color, sub = '') { popText = { text, color, sub, t: 0 }; }
+
+    // ---------- Drawing: the alley ----------
+    function poly(pts, fill) { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
+    const zNear = () => Math.max(cam.z + 0.35, -4);
+    function drawAlley() {
+      // dark hall with neon
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0b0620'); bg.addColorStop(0.35, '#1d0f3d'); bg.addColorStop(1, '#0b0620');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      // ceiling neon strips running down the hall
+      for (const [x, col] of [[-1.6, '#e599f7'], [1.6, '#66d9e8'], [-4.2, '#ffd43b'], [4.2, '#ff8787']]) {
+        const a = P(x, 3.2, zNear() + 0.5), b = P(x, 3.2, 26);
+        ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 16; ctx.strokeStyle = col; ctx.lineWidth = Math.max(2, 0.06 * a.s); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.restore();
+      }
+      // back wall and the masking unit with a glowing sign above the pins
+      const wl = P(-6, 0, 20.2), wr = P(6, 2.6, 20.2);
+      ctx.fillStyle = '#140a2c'; ctx.fillRect(wl.x, wr.y, wr.x - wl.x, wl.y - wr.y);
+      for (let lane = -2; lane <= 2; lane++) {
+        const cx = lane * 1.9, m0 = P(cx - 0.9, 0.95, 19.6), m1 = P(cx + 0.9, 1.75, 19.6);
+        const mg = ctx.createLinearGradient(0, m1.y, 0, m0.y); mg.addColorStop(0, '#2b1a55'); mg.addColorStop(1, '#170d33');
+        ctx.fillStyle = mg; ctx.fillRect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y);
+        ctx.save(); ctx.shadowColor = lane === 0 ? '#ff6bd6' : '#66d9e8'; ctx.shadowBlur = 12; ctx.fillStyle = lane === 0 ? '#ff9ff3' : '#99e9f2';
+        ctx.font = `bold ${Math.max(6, 0.26 * m0.s)}px "Comic Sans MS", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(lane === 0 ? '★ STRIKE ★' : String(7 + lane), (m0.x + m1.x) / 2, (m0.y + m1.y) / 2); ctx.restore();
+        // pit (dark hole behind the pins)
+        poly([P(cx - 0.6, 0, PITZ - 0.1), P(cx + 0.6, 0, PITZ - 0.1), P(cx + 0.6, 0.95, 19.6), P(cx - 0.6, 0.95, 19.6)], '#05030c');
+      }
+      // neighbour lanes, then ours on top
+      for (const lane of [-2, 2, -1, 1]) drawLane(lane * 1.9, true);
+      drawLane(0, false);
+    }
+    function drawLane(cx, other) {
+      const z0 = zNear(), z1 = PITZ - 0.1;
+      // dividers between lanes (with the ball return hood)
+      poly([P(cx + GUT, 0, z0), P(cx + 0.95, 0, z0), P(cx + 0.95, 0, z1), P(cx + GUT, 0, z1)], '#2c2147');
+      poly([P(cx - 0.95, 0, z0), P(cx - GUT, 0, z0), P(cx - GUT, 0, z1), P(cx - 0.95, 0, z1)], '#2c2147');
+      // gutters
+      for (const sd of [-1, 1]) {
+        const a = P(cx + sd * LANE, 0, z0), b = P(cx + sd * GUT, -0.05, z0), c = P(cx + sd * GUT, -0.05, z1), d = P(cx + sd * LANE, 0, z1);
+        const gg = ctx.createLinearGradient(a.x, 0, b.x, 0); gg.addColorStop(0, '#0d0d14'); gg.addColorStop(0.5, '#3a3a4a'); gg.addColorStop(1, '#16161f');
+        poly([a, b, c, d], gg);
+      }
+      // the wooden lane: approach (lighter), lane boards, pin deck
+      const ap = Math.min(0, z1);
+      if (z0 < 0) poly([P(cx - 0.95, 0, z0), P(cx + 0.95, 0, z0), P(cx + 0.95, 0, 0), P(cx - 0.95, 0, 0)], '#d9a066');
+      const zl = Math.max(z0, 0);
+      const wood = ctx.createLinearGradient(0, P(0, 0, z1).y, 0, P(0, 0, zl).y);
+      wood.addColorStop(0, other ? '#9c6b3c' : '#c98c4e'); wood.addColorStop(1, other ? '#b07a45' : '#e8b07a');
+      poly([P(cx - LANE, 0, zl), P(cx + LANE, 0, zl), P(cx + LANE, 0, z1), P(cx - LANE, 0, z1)], wood);
+      // boards
+      ctx.lineWidth = 0.6;
+      for (let k = -19; k <= 19; k += 2) {
+        const x = cx + k * LANE / 19.5, a = P(x, 0, zl), b = P(x, 0, z1);
+        ctx.strokeStyle = k % 6 === 1 ? 'rgba(90,50,20,0.28)' : 'rgba(90,50,20,0.14)'; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+      // a shiny strip of light down the lane, and the pin deck
+      const sh = [P(cx - 0.18, 0, zl), P(cx + 0.18, 0, zl), P(cx + 0.06, 0, z1), P(cx - 0.06, 0, z1)];
+      const sg = ctx.createLinearGradient(sh[0].x, 0, sh[1].x, 0); sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(0.5, 'rgba(255,255,255,0.16)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+      poly(sh, sg);
+      poly([P(cx - LANE, 0, HEAD - 0.4), P(cx + LANE, 0, HEAD - 0.4), P(cx + LANE, 0, z1), P(cx - LANE, 0, z1)], other ? 'rgba(255,230,190,0.15)' : 'rgba(255,240,210,0.3)');
+      if (other) { drawPinsAt(cx, true); return; }
+      // foul line, dots and arrows
+      if (z0 < 0.02) { const a = P(-GUT, 0.001, 0), b = P(GUT, 0.001, 0); ctx.strokeStyle = '#1b1b1b'; ctx.lineWidth = Math.max(1.5, 0.02 * a.s); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      for (let k = -3; k <= 3; k++) {
+        const x = k * 0.13, zA = 4.6 + Math.abs(k) * 0.3;
+        if (zA - 0.25 > z0) { const t = P(x, 0, zA), l = P(x - 0.025, 0, zA - 0.25), r = P(x + 0.025, 0, zA - 0.25); poly([t, r, l], 'rgba(60,25,10,0.7)'); }
+        if (2.1 > z0) { const d = P(x, 0, 2.1); ctx.fillStyle = 'rgba(60,25,10,0.6)'; ctx.beginPath(); ctx.ellipse(d.x, d.y, Math.max(0.8, 0.015 * d.s), Math.max(0.4, 0.006 * d.s), 0, 0, TAU); ctx.fill(); }
+      }
+    }
+    // the bowling pin profile (radius at each height), white with two red stripes
+    const PROFILE = [[0, 0.026], [0.03, 0.04], [0.09, 0.059], [0.14, 0.06], [0.2, 0.045], [0.25, 0.024], [0.28, 0.022], [0.31, 0.03], [0.35, 0.03], [0.38, 0.0]];
+    function pinPath(c, s) {
+      c.beginPath();
+      PROFILE.forEach(([h, r], i) => { const x = r * s, y = -h * s; i ? c.lineTo(x, y) : c.moveTo(x, y); });
+      for (let i = PROFILE.length - 1; i >= 0; i--) { const [h, r] = PROFILE[i]; c.lineTo(-r * s, -h * s); }
+      c.closePath();
+    }
+    function drawPin(p, cx = 0, other = false) {
+      const q = P(cx + p.x, p.y, p.z), s = q.s;
+      if (q.d < 0.4) return;
+      // shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(q.x, P(cx + p.x, 0, p.z).y, 0.07 * s, 0.025 * s, 0, 0, TAU); ctx.fill();
+      ctx.save(); ctx.translate(q.x, q.y);
+      if (p.down) {
+        // falling over: lean toward its direction; falling away from us looks shorter
+        const lean = Math.cos(p.dir) * p.tilt, away = Math.sin(p.dir) * Math.sin(p.tilt);
+        ctx.rotate(lean + p.spin * 0.1); ctx.scale(1, 1 - Math.abs(away) * 0.75 * Math.sin(p.tilt));
+      }
+      pinPath(ctx, s);
+      const g = ctx.createLinearGradient(-0.06 * s, 0, 0.06 * s, 0); g.addColorStop(0, '#c9ccd3'); g.addColorStop(0.35, '#ffffff'); g.addColorStop(1, '#a9adb5');
+      ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = Math.max(0.4, 0.004 * s); ctx.stroke();
+      ctx.save(); pinPath(ctx, s); ctx.clip();
+      ctx.fillStyle = '#e03131'; ctx.fillRect(-0.06 * s, -0.27 * s, 0.12 * s, 0.014 * s); ctx.fillRect(-0.06 * s, -0.245 * s, 0.12 * s, 0.014 * s);
+      ctx.restore();
+      ctx.restore();
+    }
+    function drawPinsAt(cx, other) {
+      const set = other ? SPOTS.slice(1).map(s => ({ x: s.x, z: s.z, y: 0, down: false })) : pins.filter(p => !p.gone);
+      // faint reflections in the polished deck
+      if (!other) { ctx.save(); ctx.globalAlpha = 0.18; for (const p of set) { if (p.down) continue; const q = P(cx + p.x, 0, p.z); ctx.save(); ctx.translate(q.x, q.y); ctx.scale(1, -0.6); pinPath(ctx, q.s); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore(); } ctx.restore(); }
+      [...set].sort((a, b) => b.z - a.z).forEach(p => drawPin(p, cx, other));
+    }
+
+    // ---------- Drawing: the ball and the bowler ----------
+    function drawBallAt(c, x, y, r, skin, rot) {
+      c.save(); c.translate(x, y);
+      const g = c.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r);
+      g.addColorStop(0, skin.b); g.addColorStop(1, skin.a);
+      c.fillStyle = g; c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+      c.save(); c.beginPath(); c.arc(0, 0, r, 0, TAU); c.clip(); c.rotate(rot);
+      if (skin.id === 'rainbow') ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa'].forEach((col, i) => { c.fillStyle = col; c.globalAlpha = 0.8; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, r, i * TAU / 6, (i + 1) * TAU / 6); c.closePath(); c.fill(); });
+      else if (skin.id === 'galaxy') { c.fillStyle = '#fff'; for (let k = 0; k < 9; k++) { c.beginPath(); c.arc(Math.cos(k * 2.4) * r * 0.7 * (k % 3 + 1) / 3, Math.sin(k * 2.4) * r * 0.7 * (k % 3 + 1) / 3, r * 0.05, 0, TAU); c.fill(); } }
+      else if (skin.id === 'eight') { c.fillStyle = '#fff'; c.beginPath(); c.arc(r * 0.15, -r * 0.1, r * 0.38, 0, TAU); c.fill(); c.fillStyle = '#111'; c.font = `bold ${r * 0.5}px Arial`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('8', r * 0.15, -r * 0.08); }
+      else { // marbled swirls
+        c.strokeStyle = shadeC(skin.b.length === 7 ? skin.b : '#ffffff', 0.2); c.globalAlpha = 0.5; c.lineWidth = r * 0.12;
+        for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(r * 0.2 * k - r * 0.3, r * 0.1, r * (0.4 + k * 0.2), k, k + 2.2); c.stroke(); }
+      }
+      c.globalAlpha = 1;
+      // finger holes
+      c.fillStyle = 'rgba(0,0,0,0.6)'; for (const [hx, hy, hr] of [[-0.18, -0.35, 0.11], [0.18, -0.35, 0.11], [0, 0.05, 0.13]]) { c.beginPath(); c.arc(hx * r, hy * r, hr * r, 0, TAU); c.fill(); }
+      c.restore();
+      c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.ellipse(-r * 0.38, -r * 0.42, r * 0.26, r * 0.15, -0.6, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = Math.max(0.5, r * 0.04); c.beginPath(); c.arc(0, 0, r, 0, TAU); c.stroke();
+      c.restore();
+    }
+    function drawBall() {
+      if (!ball || state === 'aim' || state === 'swing') return;
+      const b = ball, q = P(b.x, b.y, b.z), r = BR * q.s;
+      if (q.d < 0.4 || b.z > PITZ + 0.2) return;
+      const sh = P(b.x, 0, b.z);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, r * 1.05, r * 0.3, 0, 0, TAU); ctx.fill();
+      const skin = ballSkin();
+      if (skin.trail && b.rolling) b.trail.forEach((t, i) => { const tp = P(t.x, BR, t.z), a = i / b.trail.length; ctx.globalAlpha = a * 0.6; ctx.fillStyle = skin.trail === 'fire' ? (i % 2 ? '#ff922b' : '#ffd43b') : skin.trail === 'rainbow' ? `hsl(${i * 24},90%,60%)` : '#e5dbff'; ctx.beginPath(); ctx.arc(tp.x, tp.y, BR * tp.s * (0.3 + a * 0.6), 0, TAU); ctx.fill(); });
+      ctx.globalAlpha = 1;
+      // reflection on the oily lane
+      ctx.save(); ctx.globalAlpha = 0.2; drawBallAt(ctx, q.x, sh.y + r * 0.9, r * 0.9, skin, -b.rot); ctx.restore();
+      drawBallAt(ctx, q.x, q.y, Math.max(2, r), skin, b.rot);
+    }
+    // the bowler seen from behind: bowling shirt with side panels, trousers, two-tone shoes
+    function drawBowler() {
+      if (cam.z > -0.6) return;
+      const bw = bowler(), t = man.t;
+      let z = -1.25, armA = 0.15, bob = 0, lean = 0, stepL = 0, stepR = 0, hold = true;
+      if (man.phase === 'swing') {
+        const k = Math.min(1, t / 0.75);
+        z = -1.25 + k * 1.0; bob = Math.abs(Math.sin(k * Math.PI * 3)) * 0.04; lean = k * 0.18;
+        stepL = Math.max(0, Math.sin(k * Math.PI * 3)) * 0.6; stepR = Math.max(0, -Math.sin(k * Math.PI * 3)) * 0.6;
+        armA = k < 0.6 ? -0.2 - Math.sin(k / 0.6 * Math.PI / 2) * 1.3 : -1.5 + (k - 0.6) / 0.4 * 2.9;
+      } else if (state !== 'aim') { z = -0.25; hold = false; armA = 2.4; lean = 0.15; }
+      const x = (ball ? (state === 'aim' || state === 'swing' ? ball.x : aimX) : 0) - 0.2;
+      const q = P(x, 0, z), s = q.s;
+      if (q.d < 0.5) return;
+      const c = ctx; c.save(); c.translate(q.x, q.y); c.scale(s, s);
+      c.save(); c.scale(1, 0.25); const sg = c.createRadialGradient(0, 0, 0.02, 0, 0, 0.45); sg.addColorStop(0, 'rgba(0,0,0,0.45)'); sg.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = sg; c.beginPath(); c.arc(0, 0, 0.45, 0, TAU); c.fill(); c.restore();
+      c.translate(0, -bob); c.rotate(lean * 0.3);
+      const lg = (x0, x1, a, b) => { const g = c.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, a); g.addColorStop(0.42, b); g.addColorStop(1, a); return g; };
+      // legs in trousers, and shoes
+      for (const [sd, stp] of [[-1, stepL], [1, stepR]]) {
+        c.save(); c.translate(sd * 0.1, -0.92); c.scale(1, 1 - stp * 0.25);
+        c.fillStyle = lg(-0.09, 0.09, shadeC(bw.pants, -0.3), shadeC(bw.pants, 0.18));
+        c.beginPath(); c.moveTo(-0.09, 0); c.lineTo(0.09, 0); c.lineTo(0.07, 0.86); c.lineTo(-0.07, 0.86); c.closePath(); c.fill();
+        c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 0.01; c.beginPath(); c.moveTo(-0.03, 0.3); c.quadraticCurveTo(0, 0.36, 0.03, 0.3); c.stroke();
+        c.fillStyle = bw.shoes[0]; c.beginPath(); c.ellipse(0, 0.9, 0.08, 0.05, 0, 0, TAU); c.fill();
+        c.fillStyle = bw.shoes[1]; c.fillRect(-0.075, 0.875, 0.15, 0.022);
+        c.fillStyle = '#111'; c.fillRect(-0.06, 0.94, 0.12, 0.012);
+        c.restore();
+      }
+      // left arm hangs; the right arm swings the ball
+      const armDraw = (sd, ang, withBall) => {
+        c.save(); c.translate(sd * 0.23, -1.5); c.rotate(ang);
+        c.fillStyle = bw.c1; c.beginPath(); c.moveTo(-0.07, -0.03); c.lineTo(0.07, -0.03); c.lineTo(0.065, 0.18); c.lineTo(-0.06, 0.18); c.closePath(); c.fill();
+        c.fillStyle = bw.c2; c.fillRect(-0.062, 0.16, 0.127, 0.022);
+        c.fillStyle = lg(-0.05, 0.05, shadeC(bw.skin, -0.3), shadeC(bw.skin, 0.08)); c.beginPath(); c.moveTo(-0.05, 0.18); c.lineTo(0.05, 0.18); c.lineTo(0.034, 0.52); c.lineTo(-0.034, 0.52); c.closePath(); c.fill();
+        c.fillStyle = bw.skin; c.beginPath(); c.ellipse(0, 0.56, 0.042, 0.05, 0, 0, TAU); c.fill();
+        if (withBall) drawBallAt(c, 0, 0.62, BR, ballSkin(), 0.4);
+        c.restore();
+      };
+      armDraw(-1, 0.18 + (man.phase === 'swing' ? 0.5 : 0), false);
+      if (hold && Math.cos(armA) > 0) armDraw(1, -armA * 0.5, true);
+      // shirt
+      c.save(); c.beginPath(); c.moveTo(-0.235, -1.48); c.quadraticCurveTo(-0.25, -1.6, -0.15, -1.615); c.lineTo(-0.055, -1.625); c.quadraticCurveTo(0, -1.6, 0.055, -1.625); c.lineTo(0.15, -1.615); c.quadraticCurveTo(0.25, -1.6, 0.235, -1.48); c.lineTo(0.215, -1.0); c.quadraticCurveTo(0, -0.97, -0.215, -1.0); c.closePath(); c.clip();
+      c.fillStyle = bw.c1; c.fillRect(-0.3, -1.7, 0.6, 0.75);
+      c.fillStyle = bw.c2; c.fillRect(-0.3, -1.7, 0.1, 0.75); c.fillRect(0.2, -1.7, 0.1, 0.75); c.fillRect(-0.3, -1.64, 0.6, 0.05);
+      c.fillStyle = lg(-0.25, 0.25, 'rgba(0,0,0,0.35)', 'rgba(255,255,255,0.14)'); c.fillRect(-0.3, -1.7, 0.6, 0.75);
+      c.strokeStyle = 'rgba(0,0,0,0.15)'; c.lineWidth = 0.01; c.beginPath(); c.moveTo(-0.15, -1.08); c.quadraticCurveTo(-0.05, -1.12, 0.02, -1.06); c.stroke();
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'bold 0.09px "Comic Sans MS", Arial'; c.fillStyle = '#fff'; c.lineWidth = 0.015; c.strokeStyle = 'rgba(0,0,0,0.35)'; c.strokeText(bw.name, 0, -1.42); c.fillText(bw.name, 0, -1.42);
+      c.font = '0.13px sans-serif'; c.fillText('🎳', 0, -1.27);
+      c.restore();
+      if (hold && Math.cos(armA) <= 0) armDraw(1, -armA * 0.5, true);
+      if (!hold) armDraw(1, -1.1, false);
+      // head and hair
+      c.fillStyle = lg(-0.05, 0.05, shadeC(bw.skin, -0.3), bw.skin); c.fillRect(-0.048, -1.69, 0.096, 0.08);
+      c.fillStyle = shadeC(bw.skin, -0.12); c.beginPath(); c.ellipse(-0.105, -1.765, 0.024, 0.04, 0.2, 0, TAU); c.ellipse(0.105, -1.765, 0.024, 0.04, -0.2, 0, TAU); c.fill();
+      const hg = c.createRadialGradient(-0.03, -1.82, 0.01, 0, -1.77, 0.14); hg.addColorStop(0, shadeC(bw.skin, 0.12)); hg.addColorStop(1, shadeC(bw.skin, -0.2));
+      c.fillStyle = hg; c.beginPath(); c.ellipse(0, -1.77, 0.1, 0.12, 0, 0, TAU); c.fill();
+      const hr = c.createLinearGradient(0, -1.9, 0, -1.65); hr.addColorStop(0, shadeC(bw.hair, 0.25)); hr.addColorStop(1, shadeC(bw.hair, -0.25)); c.fillStyle = hr;
+      if (bw.style === 'bald') { c.beginPath(); c.ellipse(0, -1.72, 0.105, 0.05, 0, 0, Math.PI); c.fill(); c.fillStyle = 'rgba(255,255,255,0.2)'; c.beginPath(); c.ellipse(-0.03, -1.82, 0.04, 0.03, -0.4, 0, TAU); c.fill(); }
+      else {
+        c.beginPath(); c.arc(0, -1.79, 0.108, Math.PI, TAU); c.lineTo(0.104, -1.72); c.quadraticCurveTo(0, -1.69, -0.104, -1.72); c.closePath(); c.fill();
+        if (bw.style === 'pony') { c.beginPath(); c.moveTo(-0.03, -1.8); c.quadraticCurveTo(0.06 + Math.sin(time * 6) * 0.02, -1.6, 0.0, -1.48); c.quadraticCurveTo(-0.04, -1.62, -0.03, -1.8); c.fill(); c.fillStyle = bw.c2; c.fillRect(-0.03, -1.79, 0.05, 0.02); }
+        if (bw.style === 'bun') { c.beginPath(); c.arc(0, -1.9, 0.05, 0, TAU); c.fill(); }
+        if (bw.style === 'curly') for (let k = 0; k < 9; k++) { c.beginPath(); c.arc(-0.11 + k * 0.028, -1.84 + Math.sin(k * 1.7) * 0.03, 0.04, 0, TAU); c.fill(); }
+        if (bw.style === 'spiky') for (let k = -2; k <= 2; k++) { c.beginPath(); c.moveTo(k * 0.04 - 0.02, -1.86); c.lineTo(k * 0.045, -1.95); c.lineTo(k * 0.04 + 0.02, -1.86); c.fill(); }
+        c.strokeStyle = shadeC(bw.hair, 0.3); c.lineWidth = 0.007; for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(k * 0.022, -1.88); c.quadraticCurveTo(k * 0.03, -1.8, k * 0.026, -1.72); c.stroke(); }
+      }
+      c.restore();
+    }
+
+    // ---------- HUD: the scoreboard ----------
+    function drawHUD() {
+      if (mode === 'game') {
+        const sf = scoreFrames(), x0 = 8, w = (W - 16) / 10;
+        ctx.fillStyle = 'rgba(10,6,25,0.82)'; rr(6, 6, W - 12, 42, 10); ctx.fill();
+        for (let f = 0; f < 10; f++) {
+          const x = x0 + f * w, cur = f === frame && state !== 'over';
+          ctx.fillStyle = cur ? 'rgba(229,153,247,0.35)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(x + 1, 9, w - 2, 36);
+          ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '7px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(f + 1), x + 6, 14);
+          const m = sf[f].marks; ctx.font = 'bold 10px Arial';
+          m.forEach((v, i) => { ctx.fillStyle = v === 'X' ? '#ffd43b' : v === '/' ? '#69db7c' : '#fff'; ctx.fillText(v, x + w - (m.length - i) * 10 + 4, 18); });
+          if (sf[f].total !== null) { ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Arial'; ctx.fillText(String(sf[f].total), x + w / 2, 36); }
+        }
+      } else if (mode === 'chal') {
+        ctx.fillStyle = 'rgba(10,6,25,0.82)'; rr(6, 6, W - 12, 32, 10); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Comic Sans MS", sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText(`🎯 ${CHALLENGES[chal].icon} ${CHALLENGES[chal].name}`, W - 16, 22);
+        ctx.textAlign = 'left'; ctx.fillText(`ניסיון ${Math.min(3, tries + (state === 'result' || state === 'over' ? 0 : 1))}/3`, 16, 22);
+      }
+      if (popText && popText.t < 1.9) {
+        const t = popText.t, sc = Math.min(1, t * 5) * (1 + Math.max(0, 0.25 - t) * 1.5);
+        ctx.save(); ctx.translate(W / 2, 320); ctx.scale(sc, sc); ctx.globalAlpha = Math.min(1, (1.9 - t) * 2);
+        ctx.font = 'bold 54px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = popText.color; ctx.shadowBlur = 18; ctx.lineWidth = 9; ctx.strokeStyle = 'rgba(20,0,40,0.8)'; ctx.strokeText(popText.text, 0, 0);
+        ctx.fillStyle = popText.color; ctx.fillText(popText.text, 0, 0); ctx.shadowBlur = 0;
+        if (popText.sub) { ctx.font = 'bold 22px "Comic Sans MS", sans-serif'; ctx.lineWidth = 6; ctx.strokeText(popText.sub, 0, 42); ctx.fillStyle = '#fff'; ctx.fillText(popText.sub, 0, 42); }
+        ctx.restore();
+      }
+    }
+    function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+    function render() {
+      const k = canvas.width / W;
+      ctx.setTransform(k, 0, 0, k, 0, 0);
+      drawAlley();
+      // our pins and the ball, nearest drawn last
+      const ballBehind = ball && ball.z > HEAD + 0.3;
+      if (ballBehind) drawBall();
+      drawPinsAt(0, false);
+      if (!ballBehind) drawBall();
+      for (const p of parts) { const q = P(p.x, p.y, p.z); ctx.globalAlpha = Math.min(1, p.life * 2); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(q.x, q.y, Math.max(1, 0.012 * q.s), 0, TAU); ctx.fill(); }
+      ctx.globalAlpha = 1;
+      drawBowler();
+      // the swipe line and the first-time hint
+      if (swipe && swipe.pts.length > 1) { ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 14; ctx.beginPath(); swipe.pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke(); ctx.restore(); }
+      if (state === 'aim') {
+        // aiming guide: a faint line from the ball toward the pins
+        const a = P(aimX, 0.002, 0), b = P(aimX, 0.002, HEAD - 1);
+        ctx.save(); ctx.setLineDash([4, 8]); ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.restore();
+        if (firstThrow && !swipe) {
+          const t = (time * 0.7) % 1, sx = W / 2 + 30, sy = 470, fx = sx - 10 * t, fy = sy - 170 * t;
+          ctx.save(); ctx.globalAlpha = 0.85 - t * 0.4; ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 6; ctx.setLineDash([3, 10]); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(fx, fy); ctx.stroke(); ctx.restore();
+          ctx.font = '30px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👆', fx + 4, fy + 22);
+        }
+      }
+      if (flash > 0) { ctx.fillStyle = `rgba(255,240,255,${flash})`; ctx.fillRect(0, 0, W, H); }
+      // soft dark corners
+      const vg = ctx.createRadialGradient(W / 2, H * 0.45, H * 0.3, W / 2, H * 0.45, H * 0.78); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.45)');
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+      if (mode) drawHUD();
+    }
+
+    // ---------- Menu ----------
+    function coach(text, mood = '') { $('bubble').innerHTML = `<span>${text}</span>`; $('face').textContent = mood === 'oops' ? '😮' : mood === 'yay' ? '🥳' : '🎳'; }
+    function showMenu() {
+      state = 'menu'; mode = null; rollStop(); setPins([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]); ball = null; cam = { x: 0, z: -5.5, h: 2.4 };
+      $('result').classList.add('hidden'); $('menu').classList.remove('hidden');
+      buildMenu(); coach('בחרו משחק מלא או אתגר! 🎳');
+    }
+    function showTab(name) { for (const [t, p] of [['tabPlay', 'playPane'], ['tabTeam', 'teamPane'], ['tabBalls', 'ballsPane']]) { $(t).classList.toggle('on', t === name); $(p).classList.toggle('hidden', t !== name); } }
+    function buildMenu() {
+      $('coins').textContent = prog.coins;
+      $('best').textContent = prog.best ? `🏆 השיא שלכם: ${prog.best}` : '';
+      $('challenges').innerHTML = CHALLENGES.map((c, i) => { const s = prog.stars[i] || 0; return `<button class="card" data-c="${i}"><b>${c.icon}</b><span>${c.name}</span><small>${'⭐'.repeat(s) + '·'.repeat(3 - s)}</small></button>`; }).join('');
+      document.querySelectorAll('[data-c]').forEach(b => b.addEventListener('click', () => startChallenge(+b.dataset.c)));
+      $('team').innerHTML = BOWLERS.map(b => { const own = prog.team.includes(b.id); return `<button class="card ${prog.bowler === b.id ? 'on' : ''}" data-b="${b.id}"><canvas width="96" height="120" style="width:48px;height:60px"></canvas><span>${b.name}</span><small>${own ? (prog.bowler === b.id ? '✔️' : 'בחרו') : '🪙 ' + b.price}</small></button>`; }).join('');
+      document.querySelectorAll('[data-b]').forEach(el => {
+        const bw = BOWLERS.find(x => x.id === el.dataset.b), c = el.querySelector('canvas').getContext('2d');
+        c.scale(2, 2); const g = c.createLinearGradient(0, 0, 48, 0); g.addColorStop(0, shadeC(bw.c1, -0.2)); g.addColorStop(0.5, bw.c1); g.addColorStop(1, shadeC(bw.c1, -0.25));
+        c.fillStyle = g; c.beginPath(); c.moveTo(8, 60); c.lineTo(6, 24); c.quadraticCurveTo(24, 14, 42, 24); c.lineTo(40, 60); c.closePath(); c.fill();
+        c.fillStyle = bw.c2; c.fillRect(6, 24, 6, 36); c.fillRect(36, 24, 6, 36);
+        c.fillStyle = bw.skin; c.beginPath(); c.arc(24, 14, 9, 0, TAU); c.fill();
+        c.fillStyle = bw.hair; if (bw.style !== 'bald') { c.beginPath(); c.arc(24, 12, 9.3, Math.PI, TAU); c.fill(); }
+        if (bw.style === 'pony') c.fillRect(30, 10, 4, 14); if (bw.style === 'bun') { c.beginPath(); c.arc(24, 3, 4, 0, TAU); c.fill(); }
+        c.fillStyle = '#fff'; c.font = 'bold 8px sans-serif'; c.textAlign = 'center'; c.fillText(bw.name.split(' ')[0], 24, 42);
+        if (!prog.team.includes(bw.id)) { c.font = '18px sans-serif'; c.fillText('🔒', 24, 34); }
+        el.addEventListener('click', () => {
+          if (!prog.team.includes(bw.id)) { if (prog.coins < bw.price) { coach(`צריך עוד ${bw.price - prog.coins} 🪙`); tone(150, .12, 'square', 0, .05); return; } prog.coins -= bw.price; prog.team.push(bw.id); sfx.coin(); confetti(50); say(bw.name); }
+          prog.bowler = bw.id; saveProg(); buildMenu(); coach(`${bw.name} מוכנ${['pony', 'curly', 'bun'].includes(bw.style) ? 'ה' : ''} לזרוק! 🎳`, 'yay');
+        });
+      });
+      $('balls').innerHTML = BALLS.map(b => { const own = prog.balls.includes(b.id); return `<button class="card ${prog.ball === b.id ? 'on' : ''}" data-ball="${b.id}"><canvas width="92" height="92" style="width:46px;height:46px"></canvas><span>${b.name}</span><small>${own ? (prog.ball === b.id ? '✔️' : 'בחרו') : '🪙 ' + b.price}</small></button>`; }).join('');
+      document.querySelectorAll('[data-ball]').forEach(el => {
+        const b = BALLS.find(x => x.id === el.dataset.ball); drawBallAt(el.querySelector('canvas').getContext('2d'), 46, 46, 40, b, 0.3);
+        el.addEventListener('click', () => {
+          if (!prog.balls.includes(b.id)) { if (prog.coins < b.price) { coach(`צריך עוד ${b.price - prog.coins} 🪙`); tone(150, .12, 'square', 0, .05); return; } prog.coins -= b.price; prog.balls.push(b.id); sfx.coin(); confetti(50); }
+          prog.ball = b.id; saveProg(); buildMenu();
+        });
+      });
+    }
+    $('tabPlay').addEventListener('click', () => showTab('tabPlay'));
+    $('tabTeam').addEventListener('click', () => showTab('tabTeam'));
+    $('tabBalls').addEventListener('click', () => showTab('tabBalls'));
+    $('gameBtn').addEventListener('click', startGame);
+    $('againBtn').addEventListener('click', () => mode === 'chal' ? startChallenge(chal) : startGame());
+    $('menuBtn2').addEventListener('click', showMenu);
+    $('menuBtn').addEventListener('click', showMenu);
+    $('restartBtn').addEventListener('click', () => { if (mode === 'game') startGame(); else if (mode === 'chal') startChallenge(chal); });
+    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>צליל`; }
+    $('soundBtn').addEventListener('click', () => { soundOn = !soundOn; save('bowling-sound', soundOn); updateSoundBtn(); if (!soundOn) rollStop(); });
+
+    // ---------- Confetti ----------
+    const cc = $('confetti'), cctx = cc.getContext('2d');
+    let bits = [], confettiRunning = false;
+    const COLORS = ['#ff5f6d', '#ff9a3c', '#ffd23f', '#5fd068', '#3fa9f5', '#7c5cff', '#e45bd8'];
+    function sizeConfetti() { cc.width = innerWidth; cc.height = innerHeight; }
+    addEventListener('resize', sizeConfetti); sizeConfetti();
+    function confetti(n) { for (let i = 0; i < n; i++) bits.push({ x: Math.random() * cc.width, y: -20 - Math.random() * cc.height * 0.3, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3, s: 6 + Math.random() * 6, c: COLORS[i % COLORS.length] }); if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(confettiLoop); } }
+    function confettiLoop() { cctx.clearRect(0, 0, cc.width, cc.height); bits = bits.filter(b => b.y < cc.height + 20); for (const b of bits) { b.x += b.vx; b.y += b.vy; b.r += b.vr; cctx.save(); cctx.translate(b.x, b.y); cctx.rotate(b.r); cctx.fillStyle = b.c; cctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2); cctx.restore(); } if (bits.length) requestAnimationFrame(confettiLoop); else { confettiRunning = false; cctx.clearRect(0, 0, cc.width, cc.height); } }
+
+    // ---------- Main loop ----------
+    let last = performance.now();
+    function frameLoop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); render(); requestAnimationFrame(frameLoop); }
+    fit(); updateSoundBtn(); showMenu();
+    requestAnimationFrame(frameLoop);
+    // remember which pins stood before each throw
+    const _release = release;
+    release = function () { throwInfo.standing = standingNums(); _release(); };
+    window.__bowl = { get s() { return { state, mode, frame, rollInFrame, rolls: rolls.slice(), standing: standingNums(), tries, score: mode === 'game' ? scoreFrames() : null }; },
+      startGame, startChallenge, throwNow, update, scoreFrames, setRolls: r => { rolls = r; }, get ball() { return ball; }, P };
+  </script>
+  <script>
+    (function () {
+      let lastTouch = 0;
+      document.addEventListener('touchend', e => { const now = Date.now(); if (now - lastTouch < 350 && !e.target.closest('button, a')) e.preventDefault(); lastTouch = now; }, { passive: false });
+      ['gesturestart', 'gesturechange', 'gestureend', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+      document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    })();
+  </script>
+</body>
+</html>
