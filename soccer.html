@@ -239,7 +239,7 @@
     function setCamera(ballX, ballZ) {
       const camDist = ballZ < -3 ? 7.5 : 6;
       camH = ballZ < -3 ? 2.2 : 2.3;
-      camZ = ballZ - camDist; camX = ballX * 0.75 - 0.25;
+      camZ = ballZ - camDist; camX = ballZ < -3 ? ballX * 0.55 : -0.25;     // the whole goal stays in view
       F = 272 * (GZ - camZ) / 7.32;           // the goal always looks the same size
     }
     function P(x, y, z) { const d = Math.max(0.25, z - camZ), s = F / d; return { x: W / 2 + (x - camX) * s, y: HOR - (y - camH) * s, s }; }
@@ -328,14 +328,20 @@
 
     function startStage(i) {
       stIdx = i; S = STAGES[i];
-      setCamera(S.ballX, S.ballZ);
       kicks = 0; results = []; score = 0; streak = 0; parts = []; firstKick = true;
       ['menu', 'result'].forEach(id => $(id).classList.add('hidden'));
       sfx.whistle(); coach(`${S.icon} ${S.name}: ${S.tip}`);
       nextKick();
     }
+    // where this kick is taken from: free kicks switch sides and distance now and then
+    let kickX = 0, wallN = 0;
     function nextKick() {
-      ball = { x: S.ballX, y: BR, z: S.ballZ, vx: 0, vy: 0, vz: 0, ax: 0, spin: 0, rot: 0, trail: [], done: false };
+      if (S.wall) {
+        kickX = (Math.random() < 0.5 ? -1 : 1) * rnd(0.9, 1.6);
+        wallN = clamp(S.wall + Math.floor(Math.random() * 3) - 1, 2, 4);      // 2, 3 or 4 players
+      } else kickX = S.ballX;
+      setCamera(kickX, S.ballZ);
+      ball = { x: kickX, y: BR, z: S.ballZ, vx: 0, vy: 0, vz: 0, ax: 0, spin: 0, rot: 0, trail: [], done: false };
       keeper = { x: 0, y: 1.0, rot: 0, tx: 0, ty: 1.0, trot: 0, wait: 0, sway: Math.random() * TAU, moving: false, happy: 0 };
       wall = S.wall ? makeWall() : null;
       // a golden target in a different spot every kick
@@ -348,8 +354,8 @@
     }
     function makeWall() {
       // defenders stand 9.15 m in front of the ball, covering the near post side
-      const wz = S.ballZ + 9.15, dirX = (GW2 * 0.5 * Math.sign(S.ballX || 1) - S.ballX) / (GZ - S.ballZ), wx = S.ballX + dirX * 9.15;
-      return { z: wz, x: wx, n: S.wall, w: 0.55, jump: 0 };
+      const wz = S.ballZ + 9.15, dirX = (GW2 * 0.5 * Math.sign(kickX || 1) - kickX) / (GZ - S.ballZ), wx = kickX + dirX * 9.15;
+      return { z: wz, x: wx, n: wallN, w: 0.55, jump: 0 };
     }
 
     // ---------- Shooting ----------
@@ -718,8 +724,10 @@
     }
     // where the kicker stands: behind and to the left of the ball, closer when running in
     function kickerPos() {
-      const bx = S.ballX, bz = S.ballZ;              // where the ball was before the kick
-      const sx = bx - 0.55, sz = bz - 1.0, ex = bx - 0.3, ez = bz - 0.3;
+      const bx = kickX, bz = S.ballZ;                // where the ball was before the kick
+      // he stands on the inner side of the ball, so he is always in the picture
+      const side = kickX > 0.3 ? -1 : kickX < -0.3 ? 1 : -1;
+      const sx = bx + side * 0.55, sz = bz - 1.0, ex = bx + side * 0.3, ez = bz - 0.3;
       let k = 0;
       if (kicker.phase === 'run') k = Math.min(1, kicker.t / 0.42);
       else if (kicker.phase !== 'idle') k = 1;
@@ -821,7 +829,7 @@
       else if (kicker.phase === 'kick') { const k = Math.min(1, t / 0.18); pose.legR = Math.sin(k * Math.PI * 0.9) * 1.4; pose.lean = -0.12 * k; pose.swing = 0.6 * k; }
       else if (kicker.phase === 'cheer') { pose.arms = 'up'; pose.bob = Math.abs(Math.sin(t * 9)) * 0.18; }
       else if (kicker.phase === 'sad') { pose.arms = 'head'; pose.lean = Math.sin(t * 2) * 0.03; }
-      drawPlayer(ctx, p.x, p.y, p.s, player(), pose);
+      drawPlayer(ctx, p.x, p.y, p.s * 0.8, player(), pose);
     }
     function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
@@ -1041,7 +1049,7 @@
     }
     fit(); updateSoundBtn(); showMenu();
     requestAnimationFrame(frame);
-    window.__soccer = { get s() { return { state, kicks, results: results && results.slice(), score, outcome, keeper: keeper && { x: +keeper.x.toFixed(2), rot: +keeper.rot.toFixed(2) } }; }, startStage, shootAt, update, get prog() { return prog; }, P, get ball() { return ball; } };
+    window.__soccer = { get s() { return { state, kicks, results: results && results.slice(), score, outcome, keeper: keeper && { x: +keeper.x.toFixed(2), rot: +keeper.rot.toFixed(2) } }; }, startStage, shootAt, update, get kickX() { return kickX; }, get wallN() { return wall ? wall.n : 0; }, get prog() { return prog; }, P, get ball() { return ball; } };
   </script>
   <script>
     (function () {
