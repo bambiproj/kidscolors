@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>בעיטות לשער</title>
+  <style>
+    html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+    button { touch-action: manipulation; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink: #1b2a3a; --soft: #5c6b7a; --btn: #2f9e44; --btn-dark: #1e6e2e; }
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      position: fixed; inset: 0;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(160deg, #1b4332 0%, #0b2618 100%);
+      color: var(--ink);
+      user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    }
+    .app {
+      position: absolute; top: 44px; left: 0; right: 0; bottom: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 8px 4px 8px; overflow: hidden;
+    }
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.25);
+      display: flex; gap: 5px; padding: 6px 10px; z-index: 50;
+    }
+    nav a.home-link { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 0.9rem; font-weight: 800;
+      padding: 4px 16px; border-radius: 999px; background: #fff; color: #5a3fd1;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.18); text-decoration: none; white-space: nowrap; }
+    .board-wrap {
+      position: relative; flex: 1 1 auto; min-height: 260px;
+      width: min(calc(100vw - 8px), 760px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    canvas#game {
+      display: block; border-radius: 16px; touch-action: none;
+      box-shadow: 0 0 0 4px #fff, 0 10px 0 4px rgba(0,0,0,0.25), 0 18px 30px rgba(0,0,0,0.4);
+    }
+    .overlay {
+      position: absolute; inset: 0; margin: auto; border-radius: 16px;
+      background: radial-gradient(circle at 50% 30%, #2b8a3e 0%, #0f3d22 80%); color: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+      text-align: center; padding: 10px; gap: 9px; overflow-y: auto; z-index: 5;
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { font-size: clamp(1.2rem, 5.4vw, 1.8rem); text-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+    .overlay p { color: rgba(255,255,255,0.85); font-size: clamp(0.8rem, 3.4vw, 1rem); max-width: 340px; }
+    .big { font-size: clamp(2.4rem, 11vw, 3.8rem); animation: hop 1.2s infinite; }
+    @keyframes hop { 50% { transform: translateY(-6px) rotate(-8deg); } }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+    .play-btn {
+      border: none; background: #ffd43b; color: #5c3c00; font: inherit; font-size: 1.15rem; font-weight: bold;
+      padding: 8px 26px; border-radius: 999px; cursor: pointer; box-shadow: 0 5px 0 #c99a00;
+    }
+    .play-btn.alt { background: #fff; color: var(--ink); box-shadow: 0 5px 0 #adb5bd; }
+    .play-btn:active { transform: translateY(3px); }
+    .bank { font-weight: bold; background: rgba(255,212,59,0.2); color: #ffe066; border-radius: 999px; padding: 3px 14px; }
+    .tabs { display: flex; gap: 6px; }
+    .tabs button { border: none; background: rgba(255,255,255,0.15); color: #fff; border-radius: 999px; padding: 5px 14px; font: inherit; font-weight: bold; cursor: pointer; }
+    .tabs button.on { background: #fff; color: var(--ink); }
+    .pane.hidden { display: none; }
+    .stages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; width: 100%; max-width: 340px; }
+    .stage {
+      border: 3px solid transparent; border-radius: 14px; background: rgba(255,255,255,0.14); color: #fff;
+      font: inherit; padding: 6px 2px; cursor: pointer; line-height: 1.15;
+    }
+    .stage b { display: block; font-size: 1.5rem; }
+    .stage span { font-size: 0.7rem; display: block; }
+    .stage small { font-size: 0.65rem; letter-spacing: -1px; }
+    .stage.on { border-color: #ffd43b; background: rgba(255,255,255,0.25); }
+    .stage.locked { opacity: 0.45; }
+    .shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; width: 100%; max-width: 340px; }
+    .item { border: 3px solid transparent; border-radius: 14px; background: rgba(255,255,255,0.14); color: #fff; font: inherit; padding: 6px 2px; cursor: pointer; }
+    .item canvas { width: 46px; height: 46px; display: block; margin: 0 auto 2px; }
+    .item span { font-size: 0.72rem; display: block; }
+    .item.on { border-color: #ffd43b; background: rgba(255,255,255,0.25); }
+    .trophies { font-size: 1.4rem; letter-spacing: 2px; min-height: 1.6rem; }
+    .stars3 { font-size: clamp(2rem, 9vw, 2.8rem); letter-spacing: 4px; }
+    .stars3 .off { filter: grayscale(1); opacity: 0.3; }
+
+    .panel { width: min(calc(100vw - 8px), 560px); display: flex; flex-direction: column; gap: 6px; flex: none; }
+    .coach { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 4px; }
+    .coach .face { font-size: 1.4rem; }
+    .bubble { flex: 1; font-size: clamp(0.76rem, 3.2vw, 0.92rem); line-height: 1.2; overflow: hidden; color: #fff; }
+    .bubble span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .buttons button {
+      border: none; border-radius: 14px; background: #fff; color: var(--ink); font: inherit; font-size: 0.78rem;
+      height: 50px; box-shadow: 0 4px 0 rgba(0,0,0,0.3); cursor: pointer; line-height: 1.1;
+    }
+    .buttons button b { display: block; font-size: 1.3rem; }
+    .buttons button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+  </style>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="משחקים" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#7c5cff" />
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <nav dir="rtl"><a class="home-link" href="index.html">🏠 כל המשחקים</a></nav>
+
+  <div class="app">
+    <div class="board-wrap" id="wrap">
+      <canvas id="game"></canvas>
+
+      <div dir="rtl" class="overlay" id="menu">
+        <h2>⚽ בעיטות לשער</h2>
+        <div class="bank">🪙 <span id="coins">0</span></div>
+        <div class="tabs"><button id="tabStages" class="on">🏟️ שלבים</button><button id="tabShop">⚽ כדורים</button></div>
+        <div class="pane" id="stagesPane"><div class="stages" id="stages"></div></div>
+        <div class="pane hidden" id="shopPane"><div class="shop" id="shop"></div></div>
+        <button class="play-btn" id="playBtn">▶ לבעוט!</button>
+        <div class="trophies" id="trophies"></div>
+      </div>
+
+      <div dir="rtl" class="overlay hidden" id="result">
+        <div class="stars3" id="resStars"></div>
+        <h2 id="resTitle"></h2>
+        <p id="resText"></p>
+        <div class="row">
+          <button class="play-btn" id="nextBtn">▶ לשלב הבא</button>
+          <button class="play-btn alt" id="retryBtn">🔁 שוב</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="coach" dir="rtl"><div class="face" id="face">⚽</div><div class="bubble" id="bubble"><span>החליקו את האצבע מהכדור אל השער!</span></div></div>
+      <div class="buttons" dir="rtl">
+        <button id="menuBtn"><b>🏟️</b>שלבים</button>
+        <button id="restartBtn"><b>🔄</b>מחדש</button>
+        <button id="soundBtn"><b>🔊</b>צליל</button>
+      </div>
+    </div>
+  </div>
+  <canvas id="confetti"></canvas>
+
+  <script>
+    // ---------- World (meters): x right, y up, z toward the goal ----------
+    const W = 360, H = 600, TAU = Math.PI * 2, G = 9.8;
+    const GZ = 11, GW2 = 3.66, GH = 2.44, BR = 0.11, KZ = 10.6, HOR = 222;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    const $ = id => document.getElementById(id);
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    // keeper: reaction delay, speed, how often he guesses the right side
+    const STAGES = [
+      { name: 'אימון', icon: '🥅', ballZ: 0, ballX: 0, rd: 0.4, kv: 3.4, pr: 0.35, tip: 'החליקו את האצבע מהכדור אל השער! בעטו לפינות ⚽' },
+      { name: 'שכונה', icon: '🏘️', ballZ: 0, ballX: 0, rd: 0.32, kv: 4.4, pr: 0.5, tip: 'השוער כבר זריז יותר. כוונו רחוק ממנו!' },
+      { name: 'ליגה', icon: '🏟️', ballZ: 0, ballX: 0, rd: 0.26, kv: 5.4, pr: 0.6, tip: 'בעיטה מהירה = החלקה מהירה ⚡' },
+      { name: 'בעיטה חופשית', icon: '🧱', ballZ: -8, ballX: -2.2, wall: 3, rd: 0.3, kv: 5, pr: 0.5, tip: 'יש חומה! סובבו את הכדור מסביב, או הרימו מעליה 🌀' },
+      { name: 'חצי גמר', icon: '🔥', ballZ: 0, ballX: 0, rd: 0.2, kv: 6.4, pr: 0.7, tip: 'שוער אלוף! החלקה מעוקלת מסובבת את הכדור ומבלבלת אותו 🌀' },
+      { name: 'הגמר', icon: '🏆', ballZ: -8, ballX: 2.4, wall: 3, rd: 0.22, kv: 6.4, pr: 0.65, tip: 'הגמר הגדול! חומה ושוער אלוף. בהצלחה! 🏆' }
+    ];
+    const BALLS = [
+      { id: 'classic', name: 'קלאסי', price: 0 },
+      { id: 'gold', name: 'זהב', price: 80 },
+      { id: 'fire', name: 'אש', price: 160, trail: 'fire' },
+      { id: 'rainbow', name: 'קשת', price: 260, trail: 'rainbow' },
+      { id: 'star', name: 'כוכבים', price: 400, trail: 'star' },
+      { id: 'earth', name: 'כדור הארץ', price: 600 }
+    ];
+
+    // ---------- Saved progress ----------
+    function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
+    function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
+    let prog = load('soccer-progress', null) || {};
+    prog = { unlocked: prog.unlocked || 1, stars: prog.stars || [], coins: prog.coins || 0, owned: prog.owned || ['classic'], ball: prog.ball || 'classic', best: prog.best || 0 };
+    const saveProg = () => save('soccer-progress', prog);
+    let soundOn = load('soccer-sound', true), chosen = Math.min(prog.unlocked, STAGES.length) - 1;
+
+    // ---------- Sound ----------
+    let audio = null;
+    function ac() { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); return audio; }
+    function tone(freq, dur = 0.1, type = 'sine', when = 0, vol = 0.12, slide = 0) {
+      if (!soundOn) return;
+      try {
+        const a = ac(), t = a.currentTime + when, o = a.createOscillator(), g = a.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, t);
+        if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+        g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+      } catch {}
+    }
+    // crowd noise: filtered noise that swells and fades
+    function crowd(dur = 1.6, vol = 0.25, freq = 900) {
+      if (!soundOn) return;
+      try {
+        const a = ac(), n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) { const t = i / n; d[i] = (Math.random() * 2 - 1) * Math.min(1, t * 6) * (1 - t) ** 1.5; }
+        const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+        f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.7; g.gain.value = vol;
+        s.buffer = buf; s.connect(f).connect(g).connect(a.destination); s.start();
+      } catch {}
+    }
+    const sfx = {
+      kick()    { tone(110, .12, 'sine', 0, .3, .5); crowd(.15, .2, 2500); },
+      net()     { crowd(.35, .25, 3000); },
+      goal()    { crowd(2.4, .45, 800); [523, 659, 784, 1047].forEach((f, i) => tone(f, .2, 'triangle', .1 + i * .1, .1)); },
+      save()    { tone(180, .08, 'square', 0, .1); crowd(1.2, .25, 500); },
+      post()    { tone(1200, .5, 'triangle', 0, .12, .9); tone(1800, .4, 'sine', 0, .06, .95); crowd(1, .2, 600); },
+      miss()    { crowd(1, .2, 450); tone(330, .3, 'triangle', 0, .08, .7); },
+      whistle() { for (let k = 0; k < 2; k++) tone(2600, .18, 'sine', k * .22, .08, 1.05); },
+      coin()    { tone(1318, .06, 'square', 0, .05); tone(1760, .1, 'square', .05, .05); }
+    };
+    function say(text) {
+      if (!soundOn || !('speechSynthesis' in window)) return;
+      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'he-IL'; u.pitch = 1.25; u.rate = 1.1; speechSynthesis.speak(u); } catch {}
+    }
+
+    // ---------- Camera / projection ----------
+    let camX = 0, camZ = -2.5, F = 461;
+    function setCamera(ballX, ballZ) {
+      const camDist = ballZ < -3 ? 4 : 2.5;
+      camZ = ballZ - camDist; camX = ballX * 0.75;
+      F = 272 * (GZ - camZ) / 7.32;           // the goal always looks the same size
+    }
+    function P(x, y, z) { const d = Math.max(0.25, z - camZ), s = F / d; return { x: W / 2 + (x - camX) * s, y: HOR - (y - 1.6) * s, s }; }
+
+    // ---------- Canvas ----------
+    const canvas = $('game'), ctx = canvas.getContext('2d');
+    function fit() {
+      const wrap = $('wrap'), bw = wrap.clientWidth - 10, bh = wrap.clientHeight - 12;
+      const scale = Math.min(bw / W, bh / H), cw = Math.floor(W * scale), ch = Math.floor(H * scale);
+      canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+      canvas.width = Math.round(cw * DPR); canvas.height = Math.round(ch * DPR);
+      document.querySelectorAll('.overlay').forEach(o => { o.style.width = cw + 'px'; o.style.height = ch + 'px'; });
+    }
+    addEventListener('resize', fit);
+    // the crowd in the stands, painted once
+    const crowdCv = document.createElement('canvas'); crowdCv.width = W * 2; crowdCv.height = 150 * 2;
+    (() => {
+      const c = crowdCv.getContext('2d'); c.scale(2, 2);
+      const g = c.createLinearGradient(0, 0, 0, 150); g.addColorStop(0, '#1d2433'); g.addColorStop(1, '#2f3a4f');
+      c.fillStyle = g; c.fillRect(0, 0, W, 150);
+      const shirts = ['#e03131', '#fcc419', '#1c7ed6', '#f8f9fa', '#2f9e44', '#ae3ec9', '#f76707', '#e64980'];
+      for (let row = 0; row < 13; row++) {
+        const y = 8 + row * 11, sz = 3.2 + row * 0.18;
+        c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(0, y + sz + 2, W, 1.5);
+        for (let x = (row % 2) * 4; x < W; x += 8) {
+          c.fillStyle = shirts[(x * 7 + row * 13) % shirts.length]; c.fillRect(x - sz * 0.7, y + sz * 0.6, sz * 1.4, sz * 1.3);
+          c.fillStyle = ['#f1c27d', '#c68642', '#8d5524', '#ffdbac'][(x + row) % 4]; c.beginPath(); c.arc(x, y, sz * 0.62, 0, TAU); c.fill();
+        }
+      }
+      // flags and banners in the crowd
+      for (const [x, y, col] of [[40, 40, '#fcc419'], [130, 70, '#e03131'], [250, 30, '#1c7ed6'], [320, 85, '#2f9e44']]) { c.fillStyle = col; c.fillRect(x, y, 26, 14); c.fillStyle = '#fff'; c.fillRect(x, y + 5, 26, 3); }
+    })();
+
+    // ---------- Game state ----------
+    let state = 'menu', time = 0, S = null, stIdx = 0;
+    let ball, keeper, wall, target, kicks, results = [], score = 0, streak = 0, outcomeT, outcome, swipe, parts = [], net, shake = 0, popText, cheer = 0, firstKick;
+
+    function startStage(i) {
+      stIdx = i; S = STAGES[i];
+      setCamera(S.ballX, S.ballZ);
+      kicks = 0; results = []; score = 0; streak = 0; parts = []; firstKick = true;
+      ['menu', 'result'].forEach(id => $(id).classList.add('hidden'));
+      sfx.whistle(); coach(`${S.icon} ${S.name}: ${S.tip}`);
+      nextKick();
+    }
+    function nextKick() {
+      ball = { x: S.ballX, y: BR, z: S.ballZ, vx: 0, vy: 0, vz: 0, ax: 0, spin: 0, rot: 0, trail: [], done: false };
+      keeper = { x: 0, y: 1.0, rot: 0, tx: 0, ty: 1.0, trot: 0, wait: 0, sway: Math.random() * TAU, moving: false, happy: 0 };
+      wall = S.wall ? makeWall() : null;
+      // a golden target in a different spot every kick
+      const spots = [[-2.9, 1.9], [2.9, 1.9], [-2.9, 0.5], [2.9, 0.5], [0, 2.0], [-1.6, 1.9], [1.6, 1.9]];
+      const [tx, ty] = spots[Math.floor(Math.random() * spots.length)];
+      target = { x: tx, y: ty, r: 0.5 };
+      outcome = null; outcomeT = 0; swipe = null; net = null; popText = null; cheer = 0; shake = 0;
+      state = 'aim';
+    }
+    function makeWall() {
+      // defenders stand 9.15 m in front of the ball, covering the near post side
+      const wz = S.ballZ + 9.15, dirX = (GW2 * 0.5 * Math.sign(S.ballX || 1) - S.ballX) / (GZ - S.ballZ), wx = S.ballX + dirX * 9.15;
+      return { z: wz, x: wx, n: S.wall, w: 0.55, jump: 0 };
+    }
+
+    // ---------- Shooting ----------
+    // swipe from the ball toward the goal: the direction aims, the speed is the power, a bent swipe curls the ball
+    function toWorld(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H, t: performance.now() }; }
+    canvas.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      if (state !== 'aim') return;
+      const p = toWorld(e);
+      if (p.y < P(0, 0, GZ).y + 10) return;
+      swipe = { pts: [p], id: e.pointerId };
+      try { canvas.setPointerCapture(e.pointerId); } catch {}
+    });
+    canvas.addEventListener('pointermove', e => { if (swipe && e.pointerId === swipe.id && state === 'aim') { swipe.pts.push(toWorld(e)); if (swipe.pts.length > 60) swipe.pts.splice(1, 1); } });
+    const endSwipe = e => {
+      if (!swipe || e.pointerId !== swipe.id) return;
+      const pts = swipe.pts; swipe.pts.push(toWorld(e)); swipe = null;
+      if (state !== 'aim') return;
+      const a = pts[0], b = pts[pts.length - 1], vx = b.x - a.x, vy = b.y - a.y, len = Math.hypot(vx, vy);
+      if (len < 35 || vy > -20) { coach('החליקו את האצבע למעלה, מהכדור אל השער! 👆'); return; }
+      const dt = Math.max(60, b.t - a.t), speed = len / dt * 1000;
+      // how bent was the swipe? the farthest point from the straight line, signed
+      let bend = 0;
+      for (const q of pts) { const d = ((q.x - a.x) * vy - (q.y - a.y) * vx) / len; if (Math.abs(d) > Math.abs(bend)) bend = d; }
+      // aim point on the screen: the swipe, stretched up to the middle of the goal if it was short
+      // a swipe that stops below the goal is stretched up to it: the longer the swipe, the higher the shot
+      const bp = P(ball.x, ball.y, ball.z), wantH = clamp(0.35 + (len / 260) * 1.75, 0.3, 2.7), midY = P(0, wantH, GZ).y, k = Math.max(1, (bp.y - midY) / -vy);
+      const ax = bp.x + vx * k, ay = bp.y + vy * k, s = P(0, 0, GZ).s;
+      const tx = camX + (ax - W / 2) / s, ty = Math.max(BR, 1.6 - (ay - HOR) / s);
+      kick(tx, ty, clamp(15 + speed / 110, 16, 30), clamp(-bend / len, -0.45, 0.45));
+    };
+    canvas.addEventListener('pointerup', endSwipe); canvas.addEventListener('pointercancel', endSwipe);
+
+    function kick(tx, ty, vz, curve) {
+      if (state !== 'aim') return;
+      const T = (GZ - ball.z) / vz;
+      ball.vz = vz; ball.ax = curve * 36;                                  // sideways pull from the spin
+      ball.vx = (tx - ball.x) / T - 0.5 * ball.ax * T;                     // so the ball still ends where you aimed
+      ball.vy = (ty - ball.y + 0.5 * G * T * T) / T;
+      ball.spin = curve; ball.aim = { x: tx, y: ty };
+      state = 'fly'; firstKick = false; sfx.kick();
+      for (let k = 0; k < 10; k++) parts.push({ x: ball.x, y: 0.05, z: ball.z, vx: rnd(-1.5, 1.5), vy: rnd(0.5, 2), vz: rnd(-1, 1), life: 0.5, c: '#7cb342' });
+      // the keeper reads the first direction of the ball (a curling shot fools him)
+      const lx = ball.x + ball.vx * T, ly = ball.y + ball.vy * T - 0.5 * G * T * T;
+      let gx = lx, gy = ly;
+      if (Math.random() > S.pr) { gx = -Math.sign(lx || rnd(-1, 1)) * rnd(0.5, 2.6); gy = rnd(0.4, 1.8); }
+      keeper.tx = clamp(gx, -2.9, 2.9); keeper.ty = clamp(gy - 0.15, 0.7, 1.55);
+      keeper.trot = Math.abs(gx) > 0.9 ? clamp(gx / 2.4, -1, 1) * 1.3 : 0;
+      keeper.wait = S.rd; keeper.moving = true;
+      if (wall) wall.jump = 0.55;
+    }
+    // test hook
+    function shootAt(tx, ty, vz = 24, curve = 0) { kick(tx, ty, vz, curve); }
+
+    // ---------- Keeper body: a rotated capsule plus spread arms ----------
+    function keeperSegs() {
+      const c = Math.cos(keeper.rot), s = Math.sin(keeper.rot);
+      const R = (lx, ly) => [keeper.x + lx * c + ly * s, keeper.y - lx * s + ly * c];
+      const segs = [[R(0, -0.95), R(0, 1.15), 0.3]];
+      if (Math.abs(keeper.rot) < 0.4) segs.push([R(-0.8, 0.55), R(0.8, 0.55), 0.14]);
+      return segs;
+    }
+    function segDist(px, py, [ax, ay], [bx, by]) {
+      const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy, t = l2 ? clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1) : 0;
+      return Math.hypot(px - ax - dx * t, py - ay - dy * t);
+    }
+
+    // ---------- Update ----------
+    function update(dt) {
+      time += dt;
+      if (!S || state === 'menu') return;
+      // keeper: sways before the kick, then dives
+      if (state === 'aim') { keeper.sway += dt * 2; keeper.x = Math.sin(keeper.sway) * 0.35; }
+      if (keeper.moving) {
+        if (keeper.wait > 0) keeper.wait -= dt;
+        else {
+          const dx = keeper.tx - keeper.x; keeper.x += Math.sign(dx) * Math.min(Math.abs(dx), S.kv * dt);
+          keeper.y += (keeper.ty - keeper.y) * Math.min(1, dt * 8);
+          keeper.rot += (keeper.trot - keeper.rot) * Math.min(1, dt * 9);
+        }
+      }
+      if (wall && wall.jump > 0) wall.jump = Math.max(0, wall.jump - dt);
+      if (state === 'fly' || state === 'after') stepBall(dt);
+      if (state === 'after') {
+        outcomeT += dt;
+        if (outcomeT > 1.9) { kicks++; if (kicks >= 5) finishStage(); else nextKick(); }
+      }
+      for (const p of parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += (p.vz || 0) * dt; p.vy -= 6 * dt; }
+      parts = parts.filter(p => p.life > 0);
+      shake = Math.max(0, shake - dt); cheer = Math.max(0, cheer - dt * 0.5);
+      if (popText) popText.t += dt;
+    }
+    function stepBall(dt) {
+      const b = ball, sub = 4;
+      for (let k = 0; k < sub; k++) {
+        const h = dt / sub, z0 = b.z;
+        if (!b.inNet) { b.vx += b.ax * h; b.vy -= G * h; }
+        b.x += b.vx * h; b.y += b.vy * h; b.z += b.vz * h;
+        b.rot += (Math.hypot(b.vx, b.vz) * 1.6 + 2) * h;
+        if (b.y < BR) { b.y = BR; b.vy = Math.abs(b.vy) * 0.45; b.vx *= 0.85; b.vz *= 0.85; b.ax *= 0.5; }
+        if (state !== 'fly') { if (b.inNet && b.z > b.netZ) { b.z = b.netZ; b.vz = 0; b.vx *= 0.5; } continue; }
+        // the defensive wall
+        if (wall && z0 < wall.z && b.z >= wall.z) {
+          const half = wall.n * wall.w / 2, top = 1.85 + (wall.jump > 0 ? 0.35 : 0);
+          if (Math.abs(b.x - wall.x) < half + BR && b.y < top + BR) return resolve('wall');
+        }
+        // the keeper
+        if (z0 < KZ && b.z >= KZ) {
+          for (const [a2, b2, r] of keeperSegs()) if (segDist(b.x, b.y, a2, b2) < r + BR) return resolve('save');
+        }
+        // the goal line
+        if (z0 < GZ && b.z >= GZ) {
+          const ax = Math.abs(b.x);
+          if (ax < GW2 - BR && b.y < GH - BR) return resolve('goal');
+          if ((Math.abs(ax - GW2) < BR + 0.07 && b.y < GH + 0.05) || (Math.abs(b.y - GH) < BR + 0.07 && ax < GW2 + 0.05)) return resolve('post');
+          return resolve('miss');
+        }
+      }
+      if (ball.trailOn !== false) { ball.trail.push({ x: b.x, y: b.y, z: b.z }); if (ball.trail.length > 14) ball.trail.shift(); }
+    }
+    function resolve(kind) {
+      const b = ball; state = 'after'; outcome = kind; outcomeT = 0;
+      if (kind === 'goal') {
+        const hitTarget = Math.hypot(b.x - target.x, b.y - target.y) < target.r + 0.1;
+        const corner = Math.abs(b.x) > 2.5 && b.y > 1.5, curl = Math.abs(b.spin) > 0.2;
+        streak++;
+        let pts = 100 + (hitTarget ? 150 : 0) + (corner ? 50 : 0) + (curl ? 50 : 0);
+        if (streak >= 3) pts *= 2;
+        score += pts; results.push(1);
+        b.inNet = true; b.netZ = GZ + 1.1 - b.y * 0.25; b.vz *= 0.5;
+        net = { x: b.x, y: b.y, t: 0 };
+        sfx.net(); sfx.goal(); cheer = 2; shake = 0.3; keeper.happy = -1; say('גול!');
+        const words = [hitTarget ? '🎯 בול במטרה! +150' : '', corner ? '📐 פינה! +50' : '', curl ? '🌀 בעיטה מסובבת! +50' : '', streak >= 3 ? `🔥 רצף ${streak}! ×2` : ''].filter(Boolean);
+        popText = { text: 'גוֹל!', sub: `+${pts}`, color: '#ffd43b', t: 0 };
+        coach(words.length ? words.join(' · ') : 'גול! ⚽ איזו בעיטה!', 'yay');
+        for (let k = 0; k < 30; k++) parts.push({ x: b.x, y: b.y, z: GZ + 0.5, vx: rnd(-3, 3), vy: rnd(1, 5), vz: rnd(-2, 1), life: 1, c: ['#ffd43b', '#fff', '#ff6b6b', '#74c0fc'][k % 4] });
+        if (results.filter(r => r).length === 1 && kicks === 0) confetti(40);
+      } else {
+        streak = 0; results.push(0);
+        if (kind === 'save') {
+          b.vz = -Math.abs(b.vz) * 0.25; b.vx = (b.x - keeper.x) * 2 + rnd(-2, 2); b.vy = rnd(2, 4); b.ax = 0;
+          sfx.save(); keeper.happy = 1; popText = { text: 'הצלה!', sub: '🧤', color: '#74c0fc', t: 0 };
+          coach(pick(['השוער תפס! 🧤 נסו בעיטה רחוקה ממנו.', 'הצלה! נסו לבעוט לפינה השנייה 👀', 'השוער ניחש נכון! בעיטה מסובבת יכולה לבלבל אותו 🌀']), 'oops');
+        } else if (kind === 'wall') {
+          b.vz = -Math.abs(b.vz) * 0.3; b.vx = rnd(-3, 3); b.vy = rnd(1, 3); b.ax = 0;
+          sfx.save(); popText = { text: 'בחומה!', sub: '🧱', color: '#ff8787', t: 0 };
+          coach('הכדור פגע בחומה 🧱 סובבו אותו מסביב (החלקה מעוקלת) או הרימו מעל.', 'oops');
+        } else if (kind === 'post') {
+          b.vz = -Math.abs(b.vz) * 0.5; b.vx = -b.vx * 0.5 + rnd(-2, 2); b.vy = Math.abs(b.vy) * 0.3 + 1; b.ax = 0;
+          sfx.post(); shake = 0.25; popText = { text: 'קורה!', sub: '😱', color: '#fff', t: 0 };
+          coach('בום! פגעתם בקורה 😱 כמעט!', 'oops');
+        } else {
+          sfx.miss(); popText = { text: 'החוצה', sub: '🙈', color: '#ff8787', t: 0 };
+          coach('הכדור עבר ליד השער. כוונו קצת יותר פנימה 🎯', 'oops');
+        }
+      }
+    }
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+    function finishStage() {
+      state = 'done';
+      const goals = results.filter(r => r).length, passed = goals >= 3;
+      const stars = goals >= 5 ? 3 : goals >= 4 ? 2 : passed ? 1 : 0;
+      const coins = Math.round(score / 20);
+      prog.coins += coins;
+      if (passed) { prog.stars[stIdx] = Math.max(prog.stars[stIdx] || 0, stars); prog.unlocked = Math.max(prog.unlocked, Math.min(STAGES.length, stIdx + 2)); }
+      prog.best = Math.max(prog.best, score);
+      saveProg();
+      $('resStars').innerHTML = [0, 1, 2].map(k => `<span class="${k < stars ? '' : 'off'}">⭐</span>`).join('');
+      const last = stIdx === STAGES.length - 1;
+      $('resTitle').textContent = passed ? (last ? '🏆 זכיתם בגביע!' : `${STAGES[stIdx].icon} ניצחון!`) : 'כמעט! 💪';
+      $('resText').innerHTML = `⚽ ${goals} גולים מתוך 5 · ${score} נקודות<br>🪙 +${coins} מטבעות${passed ? '' : '<br>צריך 3 גולים כדי לעבור שלב'}`;
+      $('nextBtn').style.display = passed && !last ? '' : 'none';
+      $('result').classList.remove('hidden');
+      if (passed) { confetti(stars * 50); say(last ? 'אלופים!' : 'כל הכבוד!'); sfx.whistle(); } else sfx.miss();
+    }
+
+    // ---------- Drawing ----------
+    function quad(c, pts, fill) { c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.closePath(); c.fillStyle = fill; c.fill(); }
+    function line3(pts, color, w) {
+      ctx.beginPath(); let started = false;
+      for (const [x, y, z] of pts) { if (z - camZ < 0.4) { started = false; continue; } const p = P(x, y, z); if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y); }
+      ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
+    }
+    function drawStadium() {
+      // sky with floodlights
+      const sky = ctx.createLinearGradient(0, 0, 0, HOR);
+      sky.addColorStop(0, '#0b1d3a'); sky.addColorStop(1, '#2b4d7d');
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, W, HOR + 20);
+      for (const x of [30, 330]) {
+        ctx.fillStyle = '#495057'; ctx.fillRect(x - 2, 0, 4, 40);
+        const gl = ctx.createRadialGradient(x, 8, 2, x, 8, 45); gl.addColorStop(0, 'rgba(255,255,230,0.95)'); gl.addColorStop(1, 'rgba(255,255,230,0)');
+        ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, 8, 45, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.fillRect(x - 12, 2, 24, 10);
+      }
+      // the crowd, jumping when you score
+      const top = 26, hgt = P(0, 0.9, 17).y - top;
+      if (cheer > 0) { for (let i = 0; i < 18; i++) { const sx = i * 20, off = Math.abs(Math.sin(time * 14 + i)) * 4 * Math.min(1, cheer); ctx.drawImage(crowdCv, sx * 2, 0, 40, 300, sx, top - off, 20, hgt); } }
+      else ctx.drawImage(crowdCv, 0, top, W, hgt);
+      // advertising boards behind the goal
+      const b0 = P(-30, 0, 17), b1 = P(30, 0.9, 17);
+      ctx.fillStyle = '#1c7ed6'; ctx.fillRect(0, b1.y, W, b0.y - b1.y);
+      const labels = ['⚽ גול!', 'כיף לבעוט', '🏆 אלופים', 'משחקים לילדים', '⭐ כוכבים'];
+      ctx.font = `bold ${Math.round((b0.y - b1.y) * 0.62)}px "Comic Sans MS", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (let k = 0; k < 6; k++) { const x = (k * 90 + (time * 12) % 90) - 30; ctx.fillStyle = k % 2 ? '#fcc419' : '#e03131'; ctx.fillRect(x - 44, b1.y + 1, 88, b0.y - b1.y - 2); ctx.fillStyle = '#fff'; ctx.fillText(labels[k % labels.length], x, (b0.y + b1.y) / 2); }
+    }
+    function drawPitch() {
+      // grass with mowed stripes
+      const zs = [];
+      for (let z = 40; z > camZ + 0.3; z -= 2) zs.push(z);
+      ctx.fillStyle = '#2f9e44'; ctx.fillRect(0, P(0, 0, 17).y, W, H);
+      zs.forEach((z, i) => {
+        const z2 = Math.max(camZ + 0.3, z - 2), a = P(-60, 0, z), b = P(60, 0, z), c = P(60, 0, z2), d = P(-60, 0, z2);
+        quad(ctx, [a, b, c, d], i % 2 ? '#37b24d' : '#2f9e44');
+      });
+      // lines: goal line, 6 yard box, penalty box, penalty spot and arc
+      const wl = 'rgba(255,255,255,0.85)';
+      line3([[-40, 0, GZ], [40, 0, GZ]], wl, 2);
+      line3([[-9.16, 0, GZ], [-9.16, 0, GZ - 5.5], [9.16, 0, GZ - 5.5], [9.16, 0, GZ]], wl, 2);
+      line3([[-20.16, 0, GZ], [-20.16, 0, GZ - 16.5], [20.16, 0, GZ - 16.5], [20.16, 0, GZ]], wl, 2.5);
+      const arc = []; for (let a = -0.93; a <= 0.93; a += 0.08) arc.push([Math.sin(a) * 9.15, 0, -Math.cos(a) * 9.15]);
+      line3(arc.filter(p => p[2] < GZ - 16.5), wl, 2.5);
+      const sp = P(0, 0, 0); if (0 - camZ > 0.4) { ctx.fillStyle = wl; ctx.beginPath(); ctx.ellipse(sp.x, sp.y, sp.s * 0.12, sp.s * 0.05, 0, 0, TAU); ctx.fill(); }
+    }
+    function drawGoal() {
+      const ND = 1.8, NT = 1.0, posts = 'rgba(255,255,255,1)';
+      // the net: back, sides and roof as a grid, pushed back where the ball hits
+      const bulge = (x, y, z) => {
+        if (!net) return z;
+        const d = Math.hypot(x - net.x, y - net.y), k = Math.max(0, 1 - d / 1.4) * Math.max(0, 1 - net.t / 1.2);
+        return z + k * 0.7 * Math.sin(Math.min(1, net.t * 4) * Math.PI / 2);
+      };
+      const backZ = y => GZ + ND - (ND - NT) * (y / GH);
+      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      for (let x = -GW2; x <= GW2 + 0.01; x += 0.36) { ctx.beginPath(); for (let y = 0; y <= GH + 0.01; y += 0.2) { const p = P(x, y, bulge(x, y, backZ(y))); y ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); } ctx.stroke(); }
+      for (let y = 0; y <= GH + 0.01; y += 0.3) { ctx.beginPath(); for (let x = -GW2; x <= GW2 + 0.01; x += 0.36) { const p = P(x, y, bulge(x, y, backZ(y))); x === -GW2 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); } ctx.stroke(); }
+      for (const sx of [-1, 1]) for (let z = GZ; z <= GZ + ND + 0.01; z += 0.3) { const y = z > GZ + NT ? GH * (GZ + ND - z) / (ND - NT) : GH; line3([[sx * GW2, 0, z], [sx * GW2, y, z]], 'rgba(255,255,255,0.4)', 1); }
+      for (let x = -GW2; x <= GW2 + 0.01; x += 0.36) line3([[x, GH, GZ], [x, GH, GZ + NT]], 'rgba(255,255,255,0.45)', 1);
+      // the frame
+      const pl = P(-GW2, 0, GZ), pr = P(GW2, 0, GZ), tl = P(-GW2, GH, GZ), tr = P(GW2, GH, GZ), pw = Math.max(3, 0.12 * pl.s);
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(pl.x - pw / 2 + 3, tl.y + 3, pw, pl.y - tl.y);
+      ctx.strokeStyle = posts; ctx.lineWidth = pw; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(pl.x, pl.y); ctx.lineTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(pr.x, pr.y); ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
+    function drawTarget() {
+      if (!target || state === 'done') return;
+      const p = P(target.x, target.y, GZ), r = target.r * p.s, pulse = 1 + Math.sin(time * 5) * 0.06;
+      ctx.save(); ctx.globalAlpha = 0.85;
+      ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x, p.y, r * pulse, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.6 * pulse, 0, TAU); ctx.stroke();
+      ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.22, 0, TAU); ctx.fill();
+      ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText('+150', p.x, p.y - r - 7);
+      ctx.restore();
+    }
+    // a keeper seen from the front, in meters scaled to the screen
+    function drawKeeper() {
+      const p = P(keeper.x, keeper.y, KZ), s = p.s;
+      const sh = P(keeper.x, 0, KZ);
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, s * 0.45, s * 0.1, 0, 0, TAU); ctx.fill();
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(keeper.rot); ctx.scale(s, s);
+      const jump = keeper.happy && state === 'after' ? Math.abs(Math.sin(time * 9)) * 0.12 : 0;
+      ctx.translate(0, -jump);
+      // legs and boots
+      ctx.fillStyle = '#212529'; ctx.fillRect(-0.2, 0, 0.16, 0.85); ctx.fillRect(0.04, 0, 0.16, 0.85);
+      ctx.fillStyle = '#111'; ctx.fillRect(-0.24, 0.82, 0.22, 0.1); ctx.fillRect(0.02, 0.82, 0.22, 0.1);
+      ctx.fillStyle = '#343a40'; ctx.fillRect(-0.24, -0.02, 0.48, 0.3);                 // shorts
+      // shirt
+      const g = ctx.createLinearGradient(-0.3, 0, 0.3, 0); g.addColorStop(0, '#5c940d'); g.addColorStop(0.5, '#a9e34b'); g.addColorStop(1, '#5c940d');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-0.27, 0); ctx.lineTo(-0.3, -0.62); ctx.lineTo(0.3, -0.62); ctx.lineTo(0.27, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#1b1b1b'; ctx.font = 'bold 0.26px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('1', 0, -0.3);
+      // arms up (or down when the keeper cheers a save)
+      const up = state === 'aim' ? 0.2 : 0.75;
+      ctx.strokeStyle = '#a9e34b'; ctx.lineWidth = 0.13; ctx.lineCap = 'round';
+      for (const sx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sx * 0.27, -0.55); ctx.lineTo(sx * 0.62, -0.55 - up * 0.65); ctx.stroke(); }
+      ctx.fillStyle = '#ff922b'; for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(sx * 0.66, -0.6 - up * 0.65, 0.1, 0, TAU); ctx.fill(); }
+      // head
+      ctx.fillStyle = '#f1c27d'; ctx.beginPath(); ctx.arc(0, -0.78, 0.15, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#5c3c00'; ctx.beginPath(); ctx.arc(0, -0.83, 0.15, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#212529'; ctx.fillRect(-0.07, -0.79, 0.035, 0.035); ctx.fillRect(0.035, -0.79, 0.035, 0.035);
+      ctx.strokeStyle = '#7a3e00'; ctx.lineWidth = 0.02; ctx.beginPath();
+      if (keeper.happy > 0 && state === 'after') ctx.arc(0, -0.73, 0.05, 0.2, Math.PI - 0.2); else if (keeper.happy < 0 && state === 'after') ctx.arc(0, -0.68, 0.05, Math.PI + 0.3, -0.3); else { ctx.moveTo(-0.04, -0.71); ctx.lineTo(0.04, -0.71); }
+      ctx.stroke();
+      ctx.restore();
+    }
+    function drawWall() {
+      if (!wall) return;
+      for (let i = 0; i < wall.n; i++) {
+        const x = wall.x - (wall.n - 1) * wall.w / 2 + i * wall.w, j = wall.jump > 0 ? Math.sin((0.55 - wall.jump) / 0.55 * Math.PI) * 0.35 : 0;
+        const p = P(x, j, wall.z), s = p.s, sh = P(x, 0, wall.z);
+        ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, s * 0.28, s * 0.07, 0, 0, TAU); ctx.fill();
+        ctx.save(); ctx.translate(p.x, p.y); ctx.scale(s, s);
+        ctx.fillStyle = '#212529'; ctx.fillRect(-0.16, -0.85, 0.13, 0.82); ctx.fillRect(0.03, -0.85, 0.13, 0.82);
+        ctx.fillStyle = '#fff'; ctx.fillRect(-0.2, -1.0, 0.4, 0.2);
+        const g = ctx.createLinearGradient(-0.25, 0, 0.25, 0); g.addColorStop(0, '#a61e1e'); g.addColorStop(0.5, '#ff6b6b'); g.addColorStop(1, '#a61e1e');
+        ctx.fillStyle = g; rr(-0.24, -1.55, 0.48, 0.58, 0.08); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 0.22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(4 + i), 0, -1.25);
+        ctx.fillStyle = ['#f1c27d', '#c68642', '#8d5524', '#ffdbac'][i % 4]; ctx.beginPath(); ctx.arc(0, -1.7, 0.14, 0, TAU); ctx.fill();
+        ctx.fillStyle = ['#212529', '#5c3c00', '#e8590c', '#343a40'][i % 4]; ctx.beginPath(); ctx.arc(0, -1.75, 0.14, Math.PI, 0); ctx.fill();
+        // hands crossed in front
+        ctx.fillStyle = ['#f1c27d', '#c68642', '#8d5524', '#ffdbac'][i % 4]; ctx.beginPath(); ctx.arc(-0.05, -0.95, 0.06, 0, TAU); ctx.arc(0.05, -0.95, 0.06, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+    }
+    function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+    // ---------- Balls ----------
+    function drawBallAt(c, x, y, r, skin, rot) {
+      c.save(); c.translate(x, y);
+      const base = { classic: ['#ffffff', '#ced4da'], gold: ['#fff3bf', '#f59f00'], fire: ['#ffd8a8', '#e8590c'], rainbow: ['#ffffff', '#dee2e6'], star: ['#74c0fc', '#1864ab'], earth: ['#74c0fc', '#1971c2'] }[skin] || ['#fff', '#ccc'];
+      const g = c.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r);
+      g.addColorStop(0, base[0]); g.addColorStop(1, base[1]);
+      c.fillStyle = g; c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+      c.save(); c.beginPath(); c.arc(0, 0, r, 0, TAU); c.clip(); c.rotate(rot);
+      if (skin === 'rainbow') {
+        ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa'].forEach((col, i) => { c.fillStyle = col; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, r, i * TAU / 6, (i + 1) * TAU / 6); c.closePath(); c.fill(); });
+      } else if (skin === 'earth') {
+        c.fillStyle = '#40c057';
+        for (const [px, py, pr] of [[-0.3, -0.2, 0.35], [0.35, 0.25, 0.3], [0.1, -0.5, 0.2], [-0.4, 0.45, 0.2]]) { c.beginPath(); c.ellipse(px * r, py * r, pr * r, pr * r * 0.7, px, 0, TAU); c.fill(); }
+      } else if (skin === 'star') {
+        c.fillStyle = '#ffe066';
+        for (const [px, py] of [[0, 0], [0.6, 0.3], [-0.55, 0.4], [0.2, -0.65], [-0.4, -0.5]]) star(c, px * r, py * r, r * 0.22);
+      } else {
+        // pentagons of a football
+        const dark = skin === 'gold' ? '#7a4a00' : skin === 'fire' ? '#7a1f00' : '#212529';
+        c.fillStyle = dark;
+        const pent = (cx, cy, s) => { c.beginPath(); for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + k * TAU / 5; c.lineTo(cx + Math.cos(a) * s, cy + Math.sin(a) * s); } c.closePath(); c.fill(); };
+        pent(0, 0, r * 0.32);
+        for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + k * TAU / 5 + Math.PI / 5; pent(Math.cos(a) * r * 0.85, Math.sin(a) * r * 0.85, r * 0.28); }
+        c.strokeStyle = dark; c.lineWidth = Math.max(0.6, r * 0.05);
+        for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + k * TAU / 5; c.beginPath(); c.moveTo(Math.cos(a) * r * 0.32, Math.sin(a) * r * 0.32); c.lineTo(Math.cos(a) * r * 0.62, Math.sin(a) * r * 0.62); c.stroke(); }
+      }
+      c.restore();
+      // shine
+      c.fillStyle = 'rgba(255,255,255,0.55)'; c.beginPath(); c.ellipse(-r * 0.35, -r * 0.42, r * 0.28, r * 0.17, -0.6, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.3)'; c.lineWidth = Math.max(0.5, r * 0.04); c.beginPath(); c.arc(0, 0, r, 0, TAU); c.stroke();
+      c.restore();
+    }
+    function star(c, x, y, r) { c.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr2 = k % 2 ? r * 0.45 : r; c.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); } c.closePath(); c.fill(); }
+    function drawBall() {
+      const b = ball, p = P(b.x, b.y, b.z), sh = P(b.x, 0, b.z), r = BR * p.s;
+      // shadow on the grass
+      ctx.fillStyle = `rgba(0,0,0,${0.35 * Math.max(0.2, 1 - b.y / 4)})`; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, r * 1.1, r * 0.35, 0, 0, TAU); ctx.fill();
+      // magic trails for special balls
+      const skin = prog.ball, trail = (BALLS.find(x => x.id === skin) || {}).trail;
+      if (trail && (state === 'fly' || state === 'after')) b.trail.forEach((q, i) => {
+        const tp = P(q.x, q.y, q.z), a = i / b.trail.length;
+        ctx.globalAlpha = a * 0.7;
+        ctx.fillStyle = trail === 'fire' ? (i % 2 ? '#ff922b' : '#ffd43b') : trail === 'rainbow' ? `hsl(${i * 26},90%,60%)` : '#ffe066';
+        if (trail === 'star') star(ctx, tp.x, tp.y, BR * tp.s * 0.9 * a + 1); else { ctx.beginPath(); ctx.arc(tp.x, tp.y, BR * tp.s * (0.4 + a * 0.6), 0, TAU); ctx.fill(); }
+      });
+      ctx.globalAlpha = state === 'after' && outcome === 'miss' ? Math.max(0, 1 - outcomeT) : 1;
+      drawBallAt(ctx, p.x, p.y, Math.max(2.5, r), skin, b.rot);
+      ctx.globalAlpha = 1;
+    }
+
+    function render() {
+      const k = canvas.width / W;
+      ctx.setTransform(k, 0, 0, k, 0, 0);
+      if (!S) setCamera(0, 0);
+      ctx.save();
+      if (shake > 0) ctx.translate(rnd(-3, 3) * shake * 3, rnd(-3, 3) * shake * 3);
+      drawStadium(); drawPitch();
+      // depth order: goal & keeper (far), then the wall, then the ball when it is in front of them
+      const b = ball;
+      const ballFar = b && b.z > KZ;
+      drawGoal();
+      if (S) {
+        drawTarget();
+        if (ballFar) drawBall();
+        drawKeeper();
+        if (wall && b && b.z > wall.z && !ballFar) { drawBall(); drawWall(); }
+        else { drawWall(); if (!ballFar && b) drawBall(); }
+      }
+      // particles
+      for (const p of parts) { const q = P(p.x, p.y, p.z); ctx.globalAlpha = Math.min(1, p.life * 2); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(q.x, q.y, Math.max(1.5, 0.05 * q.s), 0, TAU); ctx.fill(); }
+      ctx.globalAlpha = 1;
+      // swipe trail
+      if (swipe && swipe.pts.length > 1) {
+        ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 14; ctx.beginPath(); swipe.pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke(); ctx.restore();
+      }
+      // a moving finger shows how to shoot on the first kick
+      if (S && state === 'aim' && firstKick && !swipe) {
+        const bp = P(ball.x, ball.y, ball.z), t = (time * 0.7) % 1, tp = P(2.6, 1.8, GZ);
+        const fx = bp.x + (tp.x - bp.x) * t, fy = bp.y + (tp.y - bp.y) * t;
+        ctx.save(); ctx.globalAlpha = 0.9 - t * 0.5; ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 6; ctx.setLineDash([3, 10]); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(bp.x, bp.y); ctx.lineTo(fx, fy); ctx.stroke(); ctx.restore();
+        ctx.font = '30px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👆', fx + 4, fy + 22);
+      }
+      ctx.restore();
+      if (S) drawHUD();
+    }
+    function drawHUD() {
+      ctx.fillStyle = 'rgba(10,20,35,0.75)'; rr(6, 6, W - 12, 32, 12); ctx.fill();
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Comic Sans MS", sans-serif';
+      ctx.fillText(`${S.icon} ${S.name}`, W - 14, 22);
+      // five kick dots
+      for (let k = 0; k < 5; k++) {
+        const x = 132 + k * 18, r = results[k];
+        ctx.fillStyle = r === undefined ? (k === kicks && state !== 'done' ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)') : r ? '#40c057' : '#fa5252';
+        ctx.beginPath(); ctx.arc(x, 22, 6.5, 0, TAU); ctx.fill();
+        if (r !== undefined) { ctx.fillStyle = '#fff'; ctx.font = 'bold 9px Arial'; ctx.textAlign = 'center'; ctx.fillText(r ? '✓' : '✕', x, 22.5); }
+      }
+      ctx.textAlign = 'left'; ctx.fillStyle = '#ffd43b'; ctx.font = 'bold 14px "Comic Sans MS", sans-serif';
+      ctx.fillText(`${score}`, 16, 22);
+      if (streak >= 2) { ctx.fillStyle = '#ff922b'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(`🔥×${streak}`, 60, 22); }
+      // big result text
+      if (popText && popText.t < 1.8) {
+        const t = popText.t, sc = Math.min(1, t * 5) * (1 + Math.max(0, 0.25 - t) * 1.5);
+        ctx.save(); ctx.translate(W / 2, 375); ctx.scale(sc, sc); ctx.globalAlpha = Math.min(1, (1.8 - t) * 2);
+        ctx.font = 'bold 56px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.lineWidth = 10; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.strokeText(popText.text, 0, 0);
+        ctx.fillStyle = popText.color; ctx.fillText(popText.text, 0, 0);
+        ctx.font = 'bold 26px "Comic Sans MS", sans-serif'; ctx.lineWidth = 6; ctx.strokeText(popText.sub, 0, 44); ctx.fillStyle = '#fff'; ctx.fillText(popText.sub, 0, 44);
+        ctx.restore();
+      }
+    }
+
+    // ---------- Menu ----------
+    function coach(text, mood = '') {
+      $('bubble').innerHTML = `<span>${text}</span>`;
+      $('face').textContent = mood === 'oops' ? '😮' : mood === 'yay' ? '🥳' : '⚽';
+    }
+    function showMenu() {
+      state = 'menu'; S = null; ball = null;
+      $('result').classList.add('hidden'); $('menu').classList.remove('hidden');
+      chosen = Math.min(chosen, prog.unlocked - 1);
+      buildMenu(); coach('בחרו שלב ובעטו! ⚽');
+    }
+    function buildMenu() {
+      $('coins').textContent = prog.coins;
+      $('stages').innerHTML = STAGES.map((st, i) => {
+        const locked = i >= prog.unlocked, s = prog.stars[i] || 0;
+        return `<button class="stage ${locked ? 'locked' : ''} ${i === chosen ? 'on' : ''}" data-i="${i}"><b>${locked ? '🔒' : st.icon}</b><span>${st.name}</span><small>${locked ? '' : '⭐'.repeat(s) + '·'.repeat(3 - s)}</small></button>`;
+      }).join('');
+      document.querySelectorAll('.stage').forEach(b => b.addEventListener('click', () => {
+        const i = +b.dataset.i; if (i >= prog.unlocked) { coach('השלב נעול 🔒 צריך 3 גולים בשלב הקודם.'); return; }
+        chosen = i; tone(600, .05, 'triangle'); buildMenu();
+      }));
+      $('shop').innerHTML = BALLS.map(bl => {
+        const owned = prog.owned.includes(bl.id);
+        return `<button class="item ${prog.ball === bl.id ? 'on' : ''}" data-b="${bl.id}"><canvas width="92" height="92"></canvas><span>${bl.name}</span><span>${owned ? (prog.ball === bl.id ? '✔️ בשימוש' : 'בחרו') : `🪙 ${bl.price}`}</span></button>`;
+      }).join('');
+      document.querySelectorAll('.item').forEach(el => {
+        const c = el.querySelector('canvas').getContext('2d'); drawBallAt(c, 46, 46, 40, el.dataset.b, 0.3);
+        el.addEventListener('click', () => {
+          const bl = BALLS.find(x => x.id === el.dataset.b);
+          if (!prog.owned.includes(bl.id)) {
+            if (prog.coins < bl.price) { coach(`צריך עוד ${bl.price - prog.coins} 🪙 כדי לקנות את הכדור הזה`); tone(150, .12, 'square', 0, .05); return; }
+            prog.coins -= bl.price; prog.owned.push(bl.id); sfx.coin(); confetti(50); coach(`קניתם כדור ${bl.name}! ⚽✨`, 'yay');
+          }
+          prog.ball = bl.id; saveProg(); buildMenu();
+        });
+      });
+      const cups = STAGES.map((st, i) => (prog.stars[i] || 0) ? (i === STAGES.length - 1 ? '🏆' : '🥇') : '').join('');
+      $('trophies').textContent = cups ? cups : '';
+    }
+    $('tabStages').addEventListener('click', () => { $('tabStages').classList.add('on'); $('tabShop').classList.remove('on'); $('stagesPane').classList.remove('hidden'); $('shopPane').classList.add('hidden'); });
+    $('tabShop').addEventListener('click', () => { $('tabShop').classList.add('on'); $('tabStages').classList.remove('on'); $('shopPane').classList.remove('hidden'); $('stagesPane').classList.add('hidden'); });
+    $('playBtn').addEventListener('click', () => startStage(chosen));
+    $('nextBtn').addEventListener('click', () => { chosen = Math.min(STAGES.length - 1, stIdx + 1); startStage(chosen); });
+    $('retryBtn').addEventListener('click', () => startStage(stIdx));
+    $('menuBtn').addEventListener('click', showMenu);
+    $('restartBtn').addEventListener('click', () => { if (S) startStage(stIdx); });
+    function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>צליל`; }
+    $('soundBtn').addEventListener('click', () => { soundOn = !soundOn; save('soccer-sound', soundOn); updateSoundBtn(); });
+
+    // ---------- Confetti ----------
+    const cc = $('confetti'), cctx = cc.getContext('2d');
+    let bits = [], confettiRunning = false;
+    const COLORS = ['#ff5f6d', '#ff9a3c', '#ffd23f', '#5fd068', '#3fa9f5', '#7c5cff', '#e45bd8'];
+    function sizeConfetti() { cc.width = innerWidth; cc.height = innerHeight; }
+    addEventListener('resize', sizeConfetti); sizeConfetti();
+    function confetti(n) {
+      for (let i = 0; i < n; i++) bits.push({ x: Math.random() * cc.width, y: -20 - Math.random() * cc.height * 0.3, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3, s: 6 + Math.random() * 6, c: COLORS[i % COLORS.length] });
+      if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(confettiLoop); }
+    }
+    function confettiLoop() {
+      cctx.clearRect(0, 0, cc.width, cc.height);
+      bits = bits.filter(b => b.y < cc.height + 20);
+      for (const b of bits) { b.x += b.vx; b.y += b.vy; b.r += b.vr; cctx.save(); cctx.translate(b.x, b.y); cctx.rotate(b.r); cctx.fillStyle = b.c; cctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2); cctx.restore(); }
+      if (bits.length) requestAnimationFrame(confettiLoop); else { confettiRunning = false; cctx.clearRect(0, 0, cc.width, cc.height); }
+    }
+
+    // ---------- Main loop ----------
+    let last = performance.now();
+    function frame(now) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      update(dt);
+      if (net) net.t += dt;
+      render();
+      requestAnimationFrame(frame);
+    }
+    fit(); updateSoundBtn(); showMenu();
+    requestAnimationFrame(frame);
+    window.__soccer = { get s() { return { state, kicks, results: results && results.slice(), score, outcome, keeper: keeper && { x: +keeper.x.toFixed(2), rot: +keeper.rot.toFixed(2) } }; }, startStage, shootAt, update, get prog() { return prog; }, P, get ball() { return ball; } };
+  </script>
+  <script>
+    (function () {
+      let lastTouch = 0;
+      document.addEventListener('touchend', e => { const now = Date.now(); if (now - lastTouch < 350 && !e.target.closest('button, a')) e.preventDefault(); lastTouch = now; }, { passive: false });
+      ['gesturestart', 'gesturechange', 'gestureend', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+      document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    })();
+  </script>
+</body>
+</html>
