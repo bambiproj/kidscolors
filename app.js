@@ -1,3 +1,27 @@
+// Sound on phones, for every game:
+// - iPhone mutes web-game sound when the phone is on silent; ask for 'playback' so it still plays
+// - browsers start game sound paused until a tap; wake every sound engine on each tap
+(function () {
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  const Orig = window.AudioContext || window.webkitAudioContext;
+  if (!Orig || Orig.__kids) return;
+  const all = [];
+  function Wrapped(opts) { const c = opts ? new Orig(opts) : new Orig(); all.push(c); return c; }
+  Wrapped.prototype = Orig.prototype; Wrapped.__kids = true;
+  window.AudioContext = Wrapped;
+  if (window.webkitAudioContext) window.webkitAudioContext = Wrapped;
+  let silent = null;
+  const unlock = () => {
+    for (const c of all) {
+      if (c.state !== 'running') { try { c.resume(); } catch (e) {} }
+      // a tiny silent sound inside the tap fully wakes iOS
+      try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch (e) {}
+    }
+    try { if (!silent && window.speechSynthesis) { silent = true; const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
+  };
+  ['touchend', 'click', 'pointerup', 'keydown'].forEach(t => document.addEventListener(t, unlock, { capture: true, passive: true }));
+})();
+
 // Shared by every page: a "full screen" button.
 // Android / computer / iPad: real browser full screen (and it comes back on the next page at the first tap).
 // iPhone: the browser does not allow full screen for pages, so we show how to add the site to the home screen,

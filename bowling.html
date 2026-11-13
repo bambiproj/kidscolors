@@ -206,8 +206,8 @@
     function say(text) { if (!soundOn || !('speechSynthesis' in window)) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'he-IL'; u.pitch = 1.25; u.rate = 1.1; speechSynthesis.speak(u); } catch {} }
 
     // ---------- Camera ----------
-    const F = 770, HOR = 150;
-    let cam = { x: 0, z: -5.5, h: 2.4 };
+    const F = 1100, HOR = 140, CAM0 = -7.2;
+    let cam = { x: 0, z: CAM0, h: 2.4 };
     function P(x, y, z) { const d = Math.max(0.2, z - cam.z), s = F / d; return { x: W / 2 + (x - cam.x) * s, y: HOR - (y - cam.h) * s, s, d }; }
 
     const canvas = $('game'), ctx = canvas.getContext('2d');
@@ -242,7 +242,7 @@
     }
     function newThrow() {
       ball = { x: aimX, y: BR, z: -0.3, vx: 0, vz: 0, ax: 0, rot: 0, rolling: false, gutter: false, done: false, trail: [] };
-      cam = { x: aimX + 0.32, z: -5.5, h: 2.4 };
+      cam = { x: aimX * 0.5, z: CAM0, h: 2.4 };
       man = { phase: 'idle', t: 0 }; settleT = 0; popText = null; throwInfo = null; swipe = null;
       state = 'aim';
     }
@@ -260,7 +260,7 @@
       const p = toWorld(e); swipe.pts.push(p); if (swipe.pts.length > 80) swipe.pts.splice(1, 1);
       const a = swipe.pts[0], dx = p.x - a.x, dy = p.y - a.y;
       // mostly sideways and not going up yet: slide the bowler along the line
-      if (Math.abs(dy) < 30 || Math.abs(dx) > Math.abs(dy) * 1.6) { aimX = clamp(swipe.x0 + dx / P(0, 0, 0).s * 1.4, -0.42, 0.42); ball.x = aimX; cam.x = aimX + 0.32; swipe.moved = true; }
+      if (Math.abs(dy) < 30 || Math.abs(dx) > Math.abs(dy) * 1.6) { aimX = clamp(swipe.x0 + dx / P(0, 0, 0).s * 1.4, -0.42, 0.42); ball.x = aimX; cam.x = aimX * 0.5; swipe.moved = true; }
     });
     const endSwipe = e => {
       if (!swipe || e.pointerId !== swipe.id) return;
@@ -356,7 +356,7 @@
       if (state === 'roll' || state === 'settle') {
         step(dt);
         // the camera rides along behind the ball, then stops in front of the pins
-        const tz = Math.min(ball.z - 4.2, HEAD - 5.2), th = 2.4 - clamp((cam.z + 5.5) / (HEAD - 0.3), 0, 1) * 1.1;
+        const tz = Math.min(ball.z - 5.5, HEAD - 7.2), th = 2.4 - clamp((cam.z - CAM0) / (HEAD - 7.2 - CAM0), 0, 1) * 0.9;
         cam.z += (tz - cam.z) * Math.min(1, dt * 3); cam.h += (th - cam.h) * Math.min(1, dt * 3); cam.x += (ball.x * 0.5 - cam.x) * Math.min(1, dt * 2);
         if (ball.trail) { ball.trail.push({ x: ball.x, z: ball.z }); if (ball.trail.length > 16) ball.trail.shift(); }
         if (state === 'roll' && (ball.done || ball.z > HEAD + 1.6)) { state = 'settle'; settleT = 0; }
@@ -611,7 +611,7 @@
         fade = Math.max(0, 1 - man.t / 0.35);
         if (fade <= 0) return;
       } else if (state !== 'aim') return;
-      const x = (ball ? (state === 'aim' || state === 'swing' ? ball.x : aimX) : 0) - 0.3;
+      const x = (ball ? (state === 'aim' || state === 'swing' ? ball.x : aimX) : 0) - 0.42;
       const q = P(x, 0, z), s = q.s * 0.78;
       if (q.d < 0.5) return;
       const c = ctx; c.save(); c.globalAlpha = fade; c.translate(q.x, q.y); c.scale(s, s);
@@ -740,7 +740,7 @@
     // ---------- Menu ----------
     function coach(text, mood = '') { $('bubble').innerHTML = `<span>${text}</span>`; $('face').textContent = mood === 'oops' ? '😮' : mood === 'yay' ? '🥳' : '🎳'; }
     function showMenu() {
-      state = 'menu'; mode = null; rollStop(); setPins([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]); ball = null; cam = { x: 0, z: -5.5, h: 2.4 };
+      state = 'menu'; mode = null; rollStop(); setPins([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]); ball = null; cam = { x: 0, z: CAM0, h: 2.4 };
       $('result').classList.add('hidden'); $('menu').classList.remove('hidden');
       buildMenu(); coach('בחרו משחק מלא או אתגר! 🎳');
     }
