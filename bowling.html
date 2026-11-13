@@ -89,7 +89,7 @@
       <div dir="rtl" class="overlay" id="menu">
         <h2>🎳 באולינג</h2>
         <div class="bank">🪙 <span id="coins">0</span></div>
-        <div class="tabs"><button id="tabPlay" class="on">🎳 משחק</button><button id="tabTeam">🧑 שחקנים</button><button id="tabBalls">🎱 כדורים</button></div>
+        <div class="tabs"><button id="tabPlay" class="on">🎳 משחק</button><button id="tabTeam">👕 בגדים לאדם</button><button id="tabBalls">🎱 כדורים</button></div>
         <div class="pane" id="playPane">
           <button class="play-btn" id="gameBtn">▶ משחק מלא · 10 סיבובים</button>
           <div style="font-weight:bold;font-size:0.9rem">🎯 אתגרים</div>
@@ -124,7 +124,7 @@
   <script>
     // ---------- World (meters): x across the lane, y up, z down the lane ----------
     const W = 360, H = 600, TAU = Math.PI * 2;
-    const LANE = 0.525, GUT = 0.765, HEAD = 18.29, PITZ = 19.25, BR = 0.109, PR = 0.06, PIN_H = 0.38;
+    const LANE = 0.525, GUT = 0.765, HEAD = 9.5, PITZ = HEAD + 0.96, BR = 0.109, PR = 0.06, PIN_H = 0.38;
     const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
     const $ = id => document.getElementById(id);
     const rnd = (a, b) => a + Math.random() * (b - a);
@@ -142,13 +142,15 @@
       { name: 'הכפולה', icon: '✌️', pins: [1, 5] },
       { name: 'השורה', icon: '🧱', pins: [4, 7, 8] }
     ];
-    const BOWLERS = [
-      { id: 'noa', name: 'נועה', price: 0, c1: '#e64980', c2: '#7048e8', pants: '#212529', shoes: ['#e64980', '#f8f9fa'], skin: '#f1c9a5', hair: '#6b3e1e', style: 'pony' },
-      { id: 'itay', name: 'איתי', price: 0, c1: '#1c7ed6', c2: '#fcc419', pants: '#343a40', shoes: ['#1c7ed6', '#f8f9fa'], skin: '#e0ac69', hair: '#2b1b0e', style: 'short' },
-      { id: 'maya', name: 'מאיה', price: 60, c1: '#12b886', c2: '#ff922b', pants: '#1b2a3a', shoes: ['#ff922b', '#f8f9fa'], skin: '#a0673f', hair: '#1b1b1b', style: 'curly' },
-      { id: 'ron', name: 'רון', price: 120, c1: '#e03131', c2: '#212529', pants: '#212529', shoes: ['#e03131', '#212529'], skin: '#ffdbac', hair: '#e8590c', style: 'spiky' },
-      { id: 'lia', name: 'ליה', price: 200, c1: '#94d82d', c2: '#f8f9fa', pants: '#495057', shoes: ['#2b8a3e', '#f8f9fa'], skin: '#d9a07a', hair: '#e9c46a', style: 'bun' },
-      { id: 'saba', name: 'סבא משה', price: 300, c1: '#7950f2', c2: '#ffd43b', pants: '#5c4033', shoes: ['#7a4a00', '#e9ecef'], skin: '#f1c9a5', hair: '#ced4da', style: 'bald' }
+    // Adam is the bowler; coins unlock new outfits for him
+    const ADAM = { name: 'אדם', skin: '#e0ac69', hair: '#3b2412', style: 'short' };
+    const OUTFITS = [
+      { id: 'classic', name: 'קלאסי', price: 0, c1: '#1c7ed6', c2: '#fcc419', pants: '#343a40', shoes: ['#1c7ed6', '#f8f9fa'] },
+      { id: 'fire', name: 'אש', price: 60, c1: '#e03131', c2: '#ffd43b', pants: '#212529', shoes: ['#e03131', '#212529'] },
+      { id: 'neon', name: 'ניאון', price: 120, c1: '#12b886', c2: '#e64980', pants: '#1b2a3a', shoes: ['#e64980', '#f8f9fa'] },
+      { id: 'space', name: 'חלל', price: 200, c1: '#3b1f7a', c2: '#66d9e8', pants: '#16112b', shoes: ['#66d9e8', '#3b1f7a'] },
+      { id: 'gold', name: 'אלוף זהב', price: 300, c1: '#f59f00', c2: '#212529', pants: '#212529', shoes: ['#fcc419', '#212529'] },
+      { id: 'king', name: 'מלך הבאולינג', price: 450, c1: '#7950f2', c2: '#ffd43b', pants: '#2b1b0e', shoes: ['#ffd43b', '#7950f2'], crown: true }
     ];
     const BALLS = [
       { id: 'blue', name: 'כחול', price: 0, a: '#1971c2', b: '#74c0fc' },
@@ -164,10 +166,11 @@
     function load(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch { return def; } }
     function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
     let prog = load('bowling-progress', null) || {};
-    prog = { coins: prog.coins || 0, best: prog.best || 0, stars: prog.stars || [], team: prog.team || ['noa', 'itay'], bowler: prog.bowler || 'noa', balls: prog.balls || ['blue'], ball: prog.ball || 'blue' };
+    prog = { coins: prog.coins || 0, best: prog.best || 0, stars: prog.stars || [], outfits: prog.outfits || ['classic'], outfit: prog.outfit || 'classic', balls: prog.balls || ['blue'], ball: prog.ball || 'blue' };
     const saveProg = () => save('bowling-progress', prog);
     let soundOn = load('bowling-sound', true);
-    const bowler = () => BOWLERS.find(b => b.id === prog.bowler) || BOWLERS[0];
+    const outfit = () => OUTFITS.find(o => o.id === prog.outfit) || OUTFITS[0];
+    const bowler = () => ({ ...ADAM, ...outfit() , name: ADAM.name });
     const ballSkin = () => BALLS.find(b => b.id === prog.ball) || BALLS[0];
 
     // ---------- Sound ----------
@@ -203,7 +206,7 @@
     function say(text) { if (!soundOn || !('speechSynthesis' in window)) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'he-IL'; u.pitch = 1.25; u.rate = 1.1; speechSynthesis.speak(u); } catch {} }
 
     // ---------- Camera ----------
-    const F = 700, HOR = 150;
+    const F = 770, HOR = 150;
     let cam = { x: 0, z: -5.5, h: 2.4 };
     function P(x, y, z) { const d = Math.max(0.2, z - cam.z), s = F / d; return { x: W / 2 + (x - cam.x) * s, y: HOR - (y - cam.h) * s, s, d }; }
 
@@ -228,7 +231,7 @@
     function startGame() {
       mode = 'game'; rolls = []; frame = 0; rollInFrame = 0; setPins([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       ['menu', 'result'].forEach(id => $(id).classList.add('hidden'));
-      coach(`${bowler().name} משחקת! 🎳 גררו הצידה כדי לזוז, החליקו למעלה כדי לזרוק.`.replace('משחקת', bowler().style === 'short' || bowler().style === 'spiky' || bowler().style === 'bald' ? 'משחק' : 'משחקת'));
+      coach('אדם משחק! 🎳 גררו הצידה כדי לזוז, החליקו למעלה כדי לזרוק.');
       newThrow();
     }
     function startChallenge(i) {
@@ -274,7 +277,7 @@
       // a straight-up swipe rolls straight down the lane; tilting the swipe turns the throw
       const bp = P(ball.x, 0, 0), st = P(ball.x, 0, HEAD), sx = st.x + (vx / -vy) * (bp.y - st.y) * 0.25;
       const tx = cam.x + (sx - W / 2) / st.s;
-      throwBall(clamp(tx, -1, 1), clamp(5.5 + speed / 170, 6, 10.5), clamp(-bend / len, -0.4, 0.4));
+      throwBall(clamp(tx, -1, 1), clamp(4.5 + speed / 210, 5, 8.5), clamp(-bend / len, -0.4, 0.4));
     };
     canvas.addEventListener('pointerup', endSwipe); canvas.addEventListener('pointercancel', endSwipe);
 
@@ -285,7 +288,7 @@
     function release() {
       const { tx, vz, curve } = throwInfo;
       const T = (HEAD - 0) / vz;
-      ball.z = 0.05; ball.y = BR; ball.vz = vz; ball.ax = curve * 1.8;
+      ball.z = 0.05; ball.y = BR; ball.vz = vz; ball.ax = curve * 6.6;
       ball.vx = (tx - ball.x) / T - 0.5 * ball.ax * T; ball.spin = curve; ball.rolling = true;
       state = 'roll'; rollStart(); tone(90, .15, 'sine', 0, .25, .6);
     }
@@ -353,7 +356,7 @@
       if (state === 'roll' || state === 'settle') {
         step(dt);
         // the camera rides along behind the ball, then stops in front of the pins
-        const tz = Math.min(ball.z - 4.2, 12.6), th = 2.4 - clamp((cam.z + 5.5) / 18, 0, 1) * 1.1;
+        const tz = Math.min(ball.z - 4.2, HEAD - 5.2), th = 2.4 - clamp((cam.z + 5.5) / (HEAD - 0.3), 0, 1) * 1.1;
         cam.z += (tz - cam.z) * Math.min(1, dt * 3); cam.h += (th - cam.h) * Math.min(1, dt * 3); cam.x += (ball.x * 0.5 - cam.x) * Math.min(1, dt * 2);
         if (ball.trail) { ball.trail.push({ x: ball.x, z: ball.z }); if (ball.trail.length > 16) ball.trail.shift(); }
         if (state === 'roll' && (ball.done || ball.z > HEAD + 1.6)) { state = 'settle'; settleT = 0; }
@@ -464,22 +467,22 @@
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
       // ceiling neon strips running down the hall
       for (const [x, col] of [[-1.6, '#e599f7'], [1.6, '#66d9e8'], [-4.2, '#ffd43b'], [4.2, '#ff8787']]) {
-        const a = P(x, 3.2, zNear() + 0.5), b = P(x, 3.2, 26);
+        const a = P(x, 3.2, zNear() + 0.5), b = P(x, 3.2, HEAD + 8);
         ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 16; ctx.strokeStyle = col; ctx.lineWidth = Math.max(2, 0.06 * a.s); ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.restore();
       }
       // back wall and the masking unit with a glowing sign above the pins
-      const wl = P(-6, 0, 20.2), wr = P(6, 2.6, 20.2);
+      const wl = P(-6, 0, HEAD + 1.9), wr = P(6, 2.6, HEAD + 1.9);
       ctx.fillStyle = '#140a2c'; ctx.fillRect(wl.x, wr.y, wr.x - wl.x, wl.y - wr.y);
       for (let lane = -2; lane <= 2; lane++) {
-        const cx = lane * 1.9, m0 = P(cx - 0.9, 0.95, 19.6), m1 = P(cx + 0.9, 1.75, 19.6);
+        const cx = lane * 1.9, m0 = P(cx - 0.9, 0.95, HEAD + 1.3), m1 = P(cx + 0.9, 1.75, HEAD + 1.3);
         const mg = ctx.createLinearGradient(0, m1.y, 0, m0.y); mg.addColorStop(0, '#2b1a55'); mg.addColorStop(1, '#170d33');
         ctx.fillStyle = mg; ctx.fillRect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y);
         ctx.save(); ctx.shadowColor = lane === 0 ? '#ff6bd6' : '#66d9e8'; ctx.shadowBlur = 12; ctx.fillStyle = lane === 0 ? '#ff9ff3' : '#99e9f2';
         ctx.font = `bold ${Math.max(6, 0.26 * m0.s)}px "Comic Sans MS", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(lane === 0 ? '★ STRIKE ★' : String(7 + lane), (m0.x + m1.x) / 2, (m0.y + m1.y) / 2); ctx.restore();
         // pit (dark hole behind the pins)
-        poly([P(cx - 0.6, 0, PITZ - 0.1), P(cx + 0.6, 0, PITZ - 0.1), P(cx + 0.6, 0.95, 19.6), P(cx - 0.6, 0.95, 19.6)], '#05030c');
+        poly([P(cx - 0.6, 0, PITZ - 0.1), P(cx + 0.6, 0, PITZ - 0.1), P(cx + 0.6, 0.95, HEAD + 1.3), P(cx - 0.6, 0.95, HEAD + 1.3)], '#05030c');
       }
       // neighbour lanes, then ours on top
       for (const lane of [-2, 2, -1, 1]) drawLane(lane * 1.9, true);
@@ -518,9 +521,9 @@
       // foul line, dots and arrows
       if (z0 < 0.02) { const a = P(-GUT, 0.001, 0), b = P(GUT, 0.001, 0); ctx.strokeStyle = '#1b1b1b'; ctx.lineWidth = Math.max(1.5, 0.02 * a.s); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
       for (let k = -3; k <= 3; k++) {
-        const x = k * 0.13, zA = 4.6 + Math.abs(k) * 0.3;
+        const x = k * 0.13, zA = 2.6 + Math.abs(k) * 0.18;
         if (zA - 0.25 > z0) { const t = P(x, 0, zA), l = P(x - 0.025, 0, zA - 0.25), r = P(x + 0.025, 0, zA - 0.25); poly([t, r, l], 'rgba(60,25,10,0.7)'); }
-        if (2.1 > z0) { const d = P(x, 0, 2.1); ctx.fillStyle = 'rgba(60,25,10,0.6)'; ctx.beginPath(); ctx.ellipse(d.x, d.y, Math.max(0.8, 0.015 * d.s), Math.max(0.4, 0.006 * d.s), 0, 0, TAU); ctx.fill(); }
+        if (1.3 > z0) { const d = P(x, 0, 1.3); ctx.fillStyle = 'rgba(60,25,10,0.6)'; ctx.beginPath(); ctx.ellipse(d.x, d.y, Math.max(0.8, 0.015 * d.s), Math.max(0.4, 0.006 * d.s), 0, 0, TAU); ctx.fill(); }
       }
     }
     // the bowling pin profile (radius at each height), white with two red stripes
@@ -659,6 +662,11 @@
         if (bw.style === 'spiky') for (let k = -2; k <= 2; k++) { c.beginPath(); c.moveTo(k * 0.04 - 0.02, -1.86); c.lineTo(k * 0.045, -1.95); c.lineTo(k * 0.04 + 0.02, -1.86); c.fill(); }
         c.strokeStyle = shadeC(bw.hair, 0.3); c.lineWidth = 0.007; for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(k * 0.022, -1.88); c.quadraticCurveTo(k * 0.03, -1.8, k * 0.026, -1.72); c.stroke(); }
       }
+      if (bw.crown) {
+        const cg = c.createLinearGradient(0, -2.02, 0, -1.88); cg.addColorStop(0, '#fff3bf'); cg.addColorStop(1, '#f59f00'); c.fillStyle = cg;
+        c.beginPath(); c.moveTo(-0.08, -1.87); c.lineTo(-0.085, -1.98); c.lineTo(-0.04, -1.93); c.lineTo(0, -2.01); c.lineTo(0.04, -1.93); c.lineTo(0.085, -1.98); c.lineTo(0.08, -1.87); c.closePath(); c.fill();
+        c.fillStyle = '#e03131'; c.beginPath(); c.arc(0, -1.91, 0.015, 0, TAU); c.fill();
+      }
       c.restore();
     }
 
@@ -737,20 +745,21 @@
       $('best').textContent = prog.best ? `🏆 השיא שלכם: ${prog.best}` : '';
       $('challenges').innerHTML = CHALLENGES.map((c, i) => { const s = prog.stars[i] || 0; return `<button class="card" data-c="${i}"><b>${c.icon}</b><span>${c.name}</span><small>${'⭐'.repeat(s) + '·'.repeat(3 - s)}</small></button>`; }).join('');
       document.querySelectorAll('[data-c]').forEach(b => b.addEventListener('click', () => startChallenge(+b.dataset.c)));
-      $('team').innerHTML = BOWLERS.map(b => { const own = prog.team.includes(b.id); return `<button class="card ${prog.bowler === b.id ? 'on' : ''}" data-b="${b.id}"><canvas width="96" height="120" style="width:48px;height:60px"></canvas><span>${b.name}</span><small>${own ? (prog.bowler === b.id ? '✔️' : 'בחרו') : '🪙 ' + b.price}</small></button>`; }).join('');
-      document.querySelectorAll('[data-b]').forEach(el => {
-        const bw = BOWLERS.find(x => x.id === el.dataset.b), c = el.querySelector('canvas').getContext('2d');
-        c.scale(2, 2); const g = c.createLinearGradient(0, 0, 48, 0); g.addColorStop(0, shadeC(bw.c1, -0.2)); g.addColorStop(0.5, bw.c1); g.addColorStop(1, shadeC(bw.c1, -0.25));
-        c.fillStyle = g; c.beginPath(); c.moveTo(8, 60); c.lineTo(6, 24); c.quadraticCurveTo(24, 14, 42, 24); c.lineTo(40, 60); c.closePath(); c.fill();
-        c.fillStyle = bw.c2; c.fillRect(6, 24, 6, 36); c.fillRect(36, 24, 6, 36);
-        c.fillStyle = bw.skin; c.beginPath(); c.arc(24, 14, 9, 0, TAU); c.fill();
-        c.fillStyle = bw.hair; if (bw.style !== 'bald') { c.beginPath(); c.arc(24, 12, 9.3, Math.PI, TAU); c.fill(); }
-        if (bw.style === 'pony') c.fillRect(30, 10, 4, 14); if (bw.style === 'bun') { c.beginPath(); c.arc(24, 3, 4, 0, TAU); c.fill(); }
-        c.fillStyle = '#fff'; c.font = 'bold 8px sans-serif'; c.textAlign = 'center'; c.fillText(bw.name.split(' ')[0], 24, 42);
-        if (!prog.team.includes(bw.id)) { c.font = '18px sans-serif'; c.fillText('🔒', 24, 34); }
+      $('team').innerHTML = OUTFITS.map(o => { const own = prog.outfits.includes(o.id); return `<button class="card ${prog.outfit === o.id ? 'on' : ''}" data-o="${o.id}"><canvas width="96" height="120" style="width:48px;height:60px"></canvas><span>${o.name}</span><small>${own ? (prog.outfit === o.id ? '✔️' : 'בחרו') : '🪙 ' + o.price}</small></button>`; }).join('');
+      document.querySelectorAll('[data-o]').forEach(el => {
+        const o = OUTFITS.find(x => x.id === el.dataset.o), c = el.querySelector('canvas').getContext('2d');
+        // Adam from behind in this outfit
+        c.scale(2, 2); const g = c.createLinearGradient(0, 0, 48, 0); g.addColorStop(0, shadeC(o.c1, -0.25)); g.addColorStop(0.5, o.c1); g.addColorStop(1, shadeC(o.c1, -0.3));
+        c.fillStyle = g; c.beginPath(); c.moveTo(8, 60); c.lineTo(6, 24); c.quadraticCurveTo(24, 16, 42, 24); c.lineTo(40, 60); c.closePath(); c.fill();
+        c.fillStyle = o.c2; c.fillRect(6, 24, 6, 36); c.fillRect(36, 24, 6, 36); c.fillRect(8, 22, 32, 3);
+        c.fillStyle = ADAM.skin; c.beginPath(); c.arc(24, 13, 8.5, 0, TAU); c.fill();
+        c.fillStyle = ADAM.hair; c.beginPath(); c.arc(24, 12, 8.8, Math.PI, TAU); c.lineTo(32.8, 15); c.quadraticCurveTo(24, 18, 15.2, 15); c.closePath(); c.fill();
+        if (o.crown) { c.fillStyle = '#ffd43b'; c.beginPath(); c.moveTo(16, 6); c.lineTo(18, 0); c.lineTo(21, 4); c.lineTo(24, -1); c.lineTo(27, 4); c.lineTo(30, 0); c.lineTo(32, 6); c.closePath(); c.fill(); }
+        c.fillStyle = '#fff'; c.font = 'bold 8px sans-serif'; c.textAlign = 'center'; c.fillText('אדם', 24, 40);
+        if (!prog.outfits.includes(o.id)) { c.font = '18px sans-serif'; c.fillText('🔒', 24, 34); }
         el.addEventListener('click', () => {
-          if (!prog.team.includes(bw.id)) { if (prog.coins < bw.price) { coach(`צריך עוד ${bw.price - prog.coins} 🪙`); tone(150, .12, 'square', 0, .05); return; } prog.coins -= bw.price; prog.team.push(bw.id); sfx.coin(); confetti(50); say(bw.name); }
-          prog.bowler = bw.id; saveProg(); buildMenu(); coach(`${bw.name} מוכנ${['pony', 'curly', 'bun'].includes(bw.style) ? 'ה' : ''} לזרוק! 🎳`, 'yay');
+          if (!prog.outfits.includes(o.id)) { if (prog.coins < o.price) { coach(`צריך עוד ${o.price - prog.coins} 🪙 לבגד הזה`); tone(150, .12, 'square', 0, .05); return; } prog.coins -= o.price; prog.outfits.push(o.id); sfx.coin(); confetti(50); }
+          prog.outfit = o.id; saveProg(); buildMenu(); coach(`אדם לבש את בגד ה${o.name}! 👕🎳`, 'yay');
         });
       });
       $('balls').innerHTML = BALLS.map(b => { const own = prog.balls.includes(b.id); return `<button class="card ${prog.ball === b.id ? 'on' : ''}" data-ball="${b.id}"><canvas width="92" height="92" style="width:46px;height:46px"></canvas><span>${b.name}</span><small>${own ? (prog.ball === b.id ? '✔️' : 'בחרו') : '🪙 ' + b.price}</small></button>`; }).join('');
