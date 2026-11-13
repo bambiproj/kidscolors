@@ -60,7 +60,7 @@
     .overlay .label { font-size: 0.8rem; font-weight: bold; color: var(--soft); }
     .big { font-size: clamp(2.4rem, 11vw, 4rem); animation: hop 1.2s infinite; }
     @keyframes hop { 50% { transform: translateY(-6px) rotate(-6deg); } }
-    .levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 360px; }
+    .levels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; width: 100%; max-width: 380px; }
     .lvl {
       border: 3px solid transparent; border-radius: 12px; padding: 5px 0; background: #fff3bf;
       font: inherit; font-weight: bold; font-size: clamp(1rem, 4.2vw, 1.25rem); cursor: pointer; color: var(--ink);
@@ -165,7 +165,7 @@
   <script>
     // ---------- World ----------
     const W = 360, H = 600, CELL = 4, GW = W / CELL, GH = H / CELL;
-    const EMPTY = 0, DIRT = 1, STONE = 2, SPIKE = 3;
+    const EMPTY = 0, DIRT = 1, STONE = 2, SPIKE = 3, GATE = 4;
     const R = 13, ROCK_R = 15, DIG_R = 17, GRAV = 900;
     const TAU = Math.PI * 2;
     const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
@@ -238,7 +238,49 @@
         balls: [[60, 60], [180, 60], [300, 60]], rocks: [[120, 170], [240, 170]], cup: [140, 505, 80, 82],
         stone: [{ x: 150, y: 320, w: 60, h: 14, kind: 'wall' }, { x: 0, y: 410, w: 110, h: 16, kind: 'wood' }, { x: 250, y: 410, w: 110, h: 16, kind: 'wood' }],
         spikes: [{ x: 150, y: 306, w: 60, h: 14 }, { x: 0, y: 396, w: 60, h: 14 }, { x: 300, y: 396, w: 60, h: 14 }],
-        stars: [[60, 330], [300, 330], [180, 450]] }
+        stars: [[60, 330], [300, 330], [180, 450]] },
+      { need: 1, tip: 'פורטל קסום! 🌀 חבר שנכנס לפורטל אחד יוצא מהשני.',
+        pockets: [[60, 70, 26]], balls: [[60, 70]], cup: [50, 515, 60, 72],
+        stone: [{ x: 0, y: 250, w: 360, h: 24, kind: 'wall' }], portals: [[300, 200, 90, 330]],
+        stars: [[180, 170], [270, 190], [85, 430]], hint: [[60, 70], [60, 150], [300, 195]] },
+      { need: 1, tip: 'הכוס נעולה! 🔒 קודם קחו את המפתח 🔑 ורק אז לכו לכוס.',
+        pockets: [[60, 70, 26]], balls: [[60, 70]], cup: [150, 515, 60, 72], keys: [[290, 300]],
+        gates: [{ x: 138, y: 500, w: 84, h: 12 }],
+        stars: [[150, 225], [270, 360], [215, 455]], hint: [[60, 70], [60, 200], [290, 295], [200, 470], [180, 493]] },
+      { need: 1, tip: 'פצצה! 💣 רק סלע כבד מפוצץ אותה. הפילו עליה את הסלע, ואם הוא נתקע בחור, חפרו גם מתחתיו!',
+        pockets: [[60, 70, 26], [300, 70, 28]], balls: [[60, 70]], rocks: [[300, 70]], cup: [150, 515, 60, 72],
+        stone: [{ x: 0, y: 330, w: 360, h: 28, kind: 'wall' }], bombs: [[180, 312]],
+        stars: [[120, 260], [180, 420], [250, 250]], hint: [[300, 70], [300, 180], [195, 300]] },
+      { need: 1, tip: 'מסור מסתובב! ⚙️ חפרו עד מעליו, חכו שיתרחק, ואז המשיכו למטה.',
+        pockets: [[180, 60, 26]], balls: [[180, 60]], cup: [150, 515, 60, 72], saws: [[40, 320, 300, 110]],
+        stars: [[180, 180], [180, 400], [180, 470]], hint: [[180, 60], [180, 250]] },
+      { need: 1, tip: 'שני פורטלים! 🌀🌀 רק אחד מהם מוביל לכוס. לאיזה כדאי להיכנס?',
+        pockets: [[180, 60, 26]], balls: [[180, 60]], cup: [40, 515, 60, 72],
+        stone: [{ x: 0, y: 220, w: 360, h: 24, kind: 'wall' }], portals: [[60, 190, 300, 300], [300, 190, 60, 300]],
+        spikes: [{ x: 270, y: 316, w: 60, h: 14 }],
+        stars: [[240, 150], [65, 400], [70, 470]], hint: [[180, 60], [180, 120], [300, 185]] },
+      { need: 1, tip: 'המפתח ליד הקוצים 🔑🌵 קחו אותו בזהירות ועברו מסביב לקוצים.',
+        pockets: [[300, 60, 26]], balls: [[300, 60]], cup: [40, 515, 60, 72], keys: [[60, 330]],
+        gates: [{ x: 28, y: 500, w: 84, h: 12 }], spikes: [{ x: 40, y: 372, w: 120, h: 14 }],
+        stars: [[200, 250], [22, 420], [300, 160]], hint: [[300, 60], [300, 200], [70, 320], [22, 345], [22, 470], [70, 505]] },
+      { need: 1, tip: 'שתי פצצות ושתי שכבות אבן! 💣💣 הסלע יכול לפוצץ את שתיהן, אם תעזרו לו.',
+        pockets: [[60, 70, 26], [300, 70, 28]], balls: [[60, 70]], rocks: [[300, 70]], cup: [150, 515, 60, 72],
+        stone: [{ x: 0, y: 250, w: 360, h: 24, kind: 'wall' }, { x: 0, y: 420, w: 360, h: 24, kind: 'wall' }], bombs: [[180, 232], [180, 402]],
+        stars: [[120, 200], [180, 330], [180, 480]], hint: [[300, 70], [300, 150], [195, 222]] },
+      { need: 2, tip: 'שני מסורים ושני חברים! ⚙️⚙️ העבירו אותם אחד-אחד, בזמן הנכון.',
+        pockets: [[100, 60, 24], [260, 60, 24]], balls: [[100, 60], [260, 60]], cup: [140, 505, 80, 82],
+        saws: [[30, 330, 220, 120], [30, 330, 400, 160, 150]],
+        stars: [[100, 300], [260, 300], [180, 470]], hint: [[100, 60], [100, 170]] },
+      { need: 1, tip: 'פורטל, מפתח וכוס נעולה 🌀🔑🔒 תכננו את כל הדרך!',
+        pockets: [[60, 60, 26]], balls: [[60, 60]], cup: [150, 515, 60, 72], keys: [[300, 400]],
+        stone: [{ x: 0, y: 250, w: 360, h: 24, kind: 'wall' }], portals: [[300, 200, 60, 330]],
+        gates: [{ x: 138, y: 500, w: 84, h: 12 }], spikes: [{ x: 60, y: 460, w: 90, h: 14 }],
+        stars: [[180, 170], [180, 365], [250, 450]], hint: [[60, 60], [60, 140], [300, 195]] },
+      { need: 2, tip: 'השלב הכי קשה! 👑 פצצה, מפתח, מסור ושני חברים. בהצלחה!',
+        pockets: [[60, 70, 24], [300, 70, 24], [180, 70, 28]], balls: [[60, 70], [300, 70]], rocks: [[180, 70]], cup: [140, 505, 80, 82],
+        stone: [{ x: 0, y: 250, w: 360, h: 24, kind: 'wall' }], bombs: [[180, 232]], keys: [[300, 190]],
+        gates: [{ x: 128, y: 490, w: 104, h: 12 }], saws: [[30, 330, 400, 120]],
+        stars: [[240, 215], [180, 330], [100, 200]], hint: [[180, 70], [180, 215]] }
     ];
 
     // ---------- Settings ----------
@@ -295,6 +337,7 @@
     addEventListener('resize', fit);
 
     // ---------- Level state ----------
+    let pockets = [], portals = [], bombs = [], keys = [], saws = [], gates = [], stonesNow = [], holed = false;
     let grid, L, levelIdx = 0, objs, stars, cupInside, homeCount, state = 'menu', time = 0, popped, particles, cheer = 0, hintPath = null, winT = 0;
 
     function cellRect(r, v) {
@@ -321,7 +364,17 @@
       cellRect({ x: c.inside.x, y: L.cup[1], w: c.inside.w, h: L.cup[3] }, EMPTY);
       for (const s of stones) cellRect(s, STONE);
       for (const s of L.spikes || []) cellRect(s, SPIKE);
-      for (const [x, y, r] of L.pockets) cellCircle(x, y, r, DIRT, EMPTY);
+      // new things: gates (open with a key), portal pairs, bombs, keys, and saws on a track
+      gates = (L.gates || []).map(g => ({ ...g }));
+      for (const g of gates) cellRect(g, GATE);
+      portals = (L.portals || []).map(([ax, ay, bx, by], k) => ({ ax, ay, bx, by, hue: ['#7048e8', '#e8590c', '#0ca678'][k % 3] }));
+      bombs = (L.bombs || []).map(([x, y]) => ({ x, y, dead: false }));
+      keys = (L.keys || []).map(([x, y]) => ({ x, y, got: false }));
+      saws = (L.saws || []).map(([x1, x2, y, sp, ph]) => ({ x1, x2, y, sp, ph: ph || 0, x: x1 }));
+      pockets = [...L.pockets, ...portals.flatMap(p => [[p.ax, p.ay, 19], [p.bx, p.by, 19]]), ...bombs.map(b => [b.x, b.y, 17]), ...keys.map(k => [k.x, k.y, 15])];
+      for (const [x, y, r] of pockets) cellCircle(x, y, r, DIRT, EMPTY);
+      for (const sw of saws) cellRect({ x: sw.x1 - 18, y: sw.y - 18, w: sw.x2 - sw.x1 + 36, h: 36 }, EMPTY);
+      stonesNow = stones; holed = false;
       paintDirt(); paintStone(stones);
       objs = [...L.balls.map(([x, y]) => ({ x, y, x0: x, y0: y, vx: 0, vy: 0, r: R, rock: false, home: false, look: 0, blink: Math.random() * 3, dir: Math.sign(L.cup[0] + L.cup[2] / 2 - x) || 1 })),
               ...(L.rocks || []).map(([x, y]) => ({ x, y, vx: 0, vy: 0, r: ROCK_R, rock: true }))];
@@ -349,7 +402,8 @@
       dctx.save(); dctx.globalCompositeOperation = 'destination-out'; dctx.fillStyle = '#000';
       for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) if (grid[gy * GW + gx] !== DIRT) dctx.fillRect(gx * CELL, gy * CELL, CELL, CELL);
       dctx.restore();
-      for (const [x, y, r] of L.pockets) carveLook(x, y, r);
+      for (const [x, y, r] of pockets) carveLook(x, y, r);
+      for (const sw of saws || []) { for (let x = sw.x1; x <= sw.x2; x += 12) carveLook(x, sw.y, 18); }
     }
     // a soft orange rim around every hole, then the hole itself
     function carveLook(x, y, r) {
@@ -362,6 +416,15 @@
     }
     function paintStone(stones) {
       sctx.clearRect(0, 0, W, H);
+      for (const g of gates) if (!g.open) {
+        // a golden gate with bars and a keyhole
+        sctx.fillStyle = '#ffd43b'; roundRect(sctx, g.x, g.y, g.w, g.h, 4); sctx.fill();
+        sctx.strokeStyle = '#e67700'; sctx.lineWidth = 2; sctx.stroke();
+        sctx.fillStyle = '#f59f00';
+        if (g.w >= g.h) for (let x = g.x + 6; x < g.x + g.w - 3; x += 10) sctx.fillRect(x, g.y + 2, 4, g.h - 4);
+        else for (let y = g.y + 6; y < g.y + g.h - 3; y += 10) sctx.fillRect(g.x + 2, y, g.w - 4, 4);
+        sctx.font = '13px sans-serif'; sctx.textAlign = 'center'; sctx.textBaseline = 'middle'; sctx.fillText('🔒', g.x + g.w / 2, g.y + g.h / 2);
+      }
       for (const s of stones) {
         sctx.save();
         if (s.kind === 'wood') {
@@ -389,6 +452,99 @@
           sctx.fillStyle = g; sctx.strokeStyle = '#495057'; sctx.lineWidth = 1.2;
           sctx.beginPath(); sctx.moveTo(x, s.y + s.h); sctx.lineTo(x + 6, s.y); sctx.lineTo(x + 12, s.y + s.h); sctx.closePath(); sctx.fill(); sctx.stroke();
         }
+      }
+      // after a blast: wipe the stone picture wherever the grid has no stone any more
+      if (holed) {
+        sctx.save(); sctx.globalCompositeOperation = 'destination-out'; sctx.fillStyle = '#000';
+        for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) { const c = grid[gy * GW + gx]; if (c === EMPTY || c === DIRT) sctx.fillRect(gx * CELL, gy * CELL, CELL, CELL); }
+        sctx.restore();
+      }
+    }
+    // ---------- New elements ----------
+    function openGates() {
+      for (const g of gates) { g.open = true; cellRect(g, EMPTY); }
+      paintStone(stonesNow); sfx.home();
+      for (const g of gates) for (let k = 0; k < 14; k++) particles.push({ x: g.x + Math.random() * g.w, y: g.y + Math.random() * g.h, vx: (Math.random() - .5) * 160, vy: -Math.random() * 160, c: '#ffd43b', life: .7, r: 3, star: true });
+      coach('🔑 המפתח פתח את השער! 🔓', 'yay');
+    }
+    function blast(b) {
+      b.dead = true; holed = true; sfx.pop(); tone(70, .5, 'sawtooth', 0, .16, .4);
+      const R2 = 56, cx0 = L.cup[0] - 14, cx1 = L.cup[0] + L.cup[2] + 14, cy0 = L.cup[1] - 2;
+      for (let gy = Math.floor((b.y - R2) / CELL); gy <= Math.floor((b.y + R2) / CELL); gy++)
+        for (let gx = Math.floor((b.x - R2) / CELL); gx <= Math.floor((b.x + R2) / CELL); gx++) {
+          if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) continue;
+          const px = gx * CELL + 2, py = gy * CELL + 2;
+          if (Math.hypot(px - b.x, py - b.y) > R2) continue;
+          if (px > cx0 && px < cx1 && py > cy0) continue;          // never break the cup
+          grid[gy * GW + gx] = EMPTY;
+        }
+      paintDirt(); carveLook(b.x, b.y, R2); paintStone(stonesNow);
+      for (let k = 0; k < 40; k++) { const a = Math.random() * TAU, s = 80 + Math.random() * 260; particles.push({ x: b.x, y: b.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, c: k % 3 ? '#ff922b' : '#ffe066', life: .7, r: 3 + Math.random() * 3, grav: true }); }
+      boomT = 0.5; boomAt = { x: b.x, y: b.y };
+      for (const o of objs) { const dx = o.x - b.x, dy = o.y - b.y, d = Math.hypot(dx, dy) || 1; if (d < 100) { o.vx += dx / d * 260; o.vy += dy / d * 260 - 120; } }
+      coach('בום! 💥 הפצצה פתחה חור באבן!', 'yay');
+    }
+    let boomT = 0, boomAt = null;
+    function sawX(sw) { const span = sw.x2 - sw.x1, u = ((time * sw.sp + sw.ph) % (2 * span) + 2 * span) % (2 * span); return sw.x1 + (u < span ? u : 2 * span - u); }
+    function updateElements(dt) {
+      for (const sw of saws) sw.x = sawX(sw);
+      boomT = Math.max(0, boomT - dt);
+      for (const o of objs) {
+        if (o.dead || o.home) continue;
+        o.tp = Math.max(0, (o.tp || 0) - dt);
+        // portals: step in one end, pop out of the other
+        if (!o.tp) for (const p of portals) {
+          for (const [ix, iy, ox, oy] of [[p.ax, p.ay, p.bx, p.by], [p.bx, p.by, p.ax, p.ay]]) {
+            if (Math.hypot(o.x - ix, o.y - iy) < 12) {
+              o.x = ox; o.y = oy; o.tp = 0.7; o.lostT = 0; tone(300, .25, 'sine', 0, .1, 3);
+              for (let k = 0; k < 12; k++) { const a = Math.random() * TAU; particles.push({ x: ox, y: oy, vx: Math.cos(a) * 110, vy: Math.sin(a) * 110, c: p.hue, life: .5, r: 3 }); }
+              break;
+            }
+          }
+          if (o.tp) break;
+        }
+        // a heavy rock sets off a bomb
+        if (o.rock) for (const b of bombs) if (!b.dead && Math.hypot(o.x - b.x, o.y - b.y) < o.r + 15) blast(b);
+        if (!o.rock) {
+          for (const k of keys) if (!k.got && Math.hypot(o.x - k.x, o.y - k.y) < o.r + 12) { k.got = true; openGates(); }
+          for (const sw of saws) if (Math.hypot(o.x - sw.x, o.y - sw.y) < o.r + 14) { pop(o, true); break; }
+        }
+      }
+    }
+    function drawElements() {
+      for (const p of portals) for (const [x, y, k] of [[p.ax, p.ay, 1], [p.bx, p.by, -1]]) {
+        ctx.save(); ctx.translate(x, y);
+        const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 17); g.addColorStop(0, '#fff'); g.addColorStop(0.5, p.hue); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 17, 0, TAU); ctx.fill();
+        ctx.rotate(time * 4 * k); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+        for (let s = 0; s < 3; s++) { ctx.beginPath(); ctx.arc(0, 0, 11, s * TAU / 3, s * TAU / 3 + 1.4); ctx.stroke(); }
+        ctx.restore();
+      }
+      for (const b of bombs) if (!b.dead) {
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.arc(b.x + 2, b.y + 3, 13, 0, TAU); ctx.fill();
+        const g = ctx.createRadialGradient(b.x - 4, b.y - 4, 1, b.x, b.y, 13); g.addColorStop(0, '#868e96'); g.addColorStop(1, '#212529');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, 13, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#a0522d'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(b.x + 6, b.y - 10); ctx.quadraticCurveTo(b.x + 12, b.y - 18, b.x + 8, b.y - 20); ctx.stroke();
+        if (Math.floor(time * 8) % 2) { ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(b.x + 8, b.y - 21, 3, 0, TAU); ctx.fill(); }
+      }
+      for (const k of keys) if (!k.got) {
+        const gl = ctx.createRadialGradient(k.x, k.y, 2, k.x, k.y, 20); gl.addColorStop(0, 'rgba(255,230,100,0.9)'); gl.addColorStop(1, 'rgba(255,230,100,0)');
+        ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(k.x, k.y, 20, 0, TAU); ctx.fill();
+        ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔑', k.x, k.y + Math.sin(time * 3) * 2);
+      }
+      for (const sw of saws) {
+        ctx.strokeStyle = 'rgba(80,60,40,0.35)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(sw.x1, sw.y); ctx.lineTo(sw.x2, sw.y); ctx.stroke();
+        ctx.save(); ctx.translate(sw.x, sw.y); ctx.rotate(time * 12);
+        ctx.fillStyle = '#ced4da'; ctx.strokeStyle = '#495057'; ctx.lineWidth = 1.5; ctx.beginPath();
+        for (let t = 0; t < 12; t++) { const a = t / 12 * TAU; ctx.lineTo(Math.cos(a) * 16, Math.sin(a) * 16); ctx.lineTo(Math.cos(a + 0.26) * 11, Math.sin(a + 0.26) * 11); }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#e03131'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+      if (boomT > 0 && boomAt) {
+        const k = 1 - boomT / 0.5, g = ctx.createRadialGradient(boomAt.x, boomAt.y, 2, boomAt.x, boomAt.y, 20 + k * 60);
+        g.addColorStop(0, `rgba(255,255,200,${boomT * 2})`); g.addColorStop(1, 'rgba(255,120,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(boomAt.x, boomAt.y, 20 + k * 60, 0, TAU); ctx.fill();
       }
     }
     function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
@@ -476,7 +632,9 @@
         if (rv < 0) { const imp = -rv * 0.6; a.vx -= imp * ux * (wa * 2); a.vy -= imp * uy * (wa * 2); b.vx += imp * ux * (wb * 2); b.vy += imp * uy * (wb * 2); }
       }
     }
-    function pop(o) {
+    function pop(o, saw) {
+      if (saw) { o.dead = true; popped++; sfx.pop(); for (let k = 0; k < 18; k++) { const a = Math.random() * TAU, s = 60 + Math.random() * 150; particles.push({ x: o.x, y: o.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, c: k % 2 ? '#ff4d6d' : '#fff', life: .6, r: 3 }); }
+        coach('אוי! המסור! ⚙️', 'oops'); checkFail('אוי! המסור פגע בחבר ⚙️', 'חכו שהמסור יתרחק, ורק אז חפרו את הדרך מתחתיו. ⏳'); return; }
       o.dead = true; popped++; sfx.pop();
       for (let k = 0; k < 18; k++) { const a = Math.random() * TAU, s = 60 + Math.random() * 150; particles.push({ x: o.x, y: o.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, c: k % 2 ? '#ff4d6d' : '#fff', life: .6, r: 3 }); }
       coach('אוי! הקוצים! 🌵', 'oops');
@@ -507,6 +665,7 @@
     function update(dt) {
       time += dt;
       if (state === 'play' || state === 'win') {
+        updateElements(dt);
         for (const o of objs) if (!o.dead) stepObj(o, dt);
         collideObjs();
         for (const o of objs) {
@@ -516,7 +675,7 @@
             for (let k = 0; k < 14; k++) { const a = Math.random() * TAU; particles.push({ x: s.x, y: s.y, vx: Math.cos(a) * 120, vy: Math.sin(a) * 120, c: '#ffd43b', life: .5, r: 3, star: true }); }
             coach(`כוכב! ⭐ (${stars.filter(z => z.got).length}/3)`, 'yay');
           }
-          if (!o.home && !o.lost) checkLost(o, dt);
+          if (!o.home && !o.lost && !L.noLost) checkLost(o, dt);
           const c = cupInside;
           if (!o.home && o.x > c.x && o.x < c.x + c.w && o.y > c.y && o.y < c.y + c.h + 10) {
             o.home = true; homeCount++; cheer = 1; sfx.home();
@@ -636,6 +795,7 @@
         ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(s.x, s.y, 22, 0, TAU); ctx.fill();
         starShape(s.x, s.y + Math.sin(time * 3 + s.x) * 2, 11, time, '#ffd43b');
       }
+      drawElements();
       for (const o of objs) if (!o.dead) drawCreature(o);
       for (const p of particles) {
         ctx.globalAlpha = Math.max(0, p.life * 2);
@@ -652,6 +812,7 @@
 
     // ---------- Hint: show a dotted path for the first buddy that is not home ----------
     function makeHint() {
+      if (L.hint) { hintPath = L.hint; coach('💡 חפרו לאורך הקו הלבן! 👆', 'yay'); return; }
       const b = objs.find(o => !o.rock && !o.dead && !o.home);
       if (!b) return;
       // breadth-first search over cells that are not stone/spike, from the buddy to the cup
@@ -743,7 +904,7 @@
     fit(); updateSoundBtn();
     loadLevel(chosen); state = 'menu'; showMenu();
     requestAnimationFrame(frame);
-    window.__dig = { get s() { return { state, homeCount, popped, stars: stars.filter(s => s.got).length, objs: objs.map(o => ({ x: Math.round(o.x), y: Math.round(o.y), rock: o.rock, dead: !!o.dead, home: !!o.home })) }; }, digLine, digAt, loadLevel, LEVELS, get cup() { return cupInside; } };
+    window.__dig = { get s() { return { state, homeCount, popped, stars: stars.filter(s => s.got).length, objs: objs.map(o => ({ x: Math.round(o.x), y: Math.round(o.y), rock: o.rock, dead: !!o.dead, home: !!o.home, lost: !!o.lost })), saws: saws.map(s => Math.round(s.x)), bombs: bombs.map(b => b.dead), keys: keys.map(k => k.got) }; }, digLine, digAt, loadLevel, LEVELS, get cup() { return cupInside; } };
   </script>
   <script>
     // stop accidental zooming when little fingers tap fast (iPhone double-tap zoom and pinch zoom)
