@@ -59,7 +59,7 @@
     .overlay .label { font-size: 0.8rem; font-weight: bold; color: var(--soft); }
     .big { font-size: clamp(2.4rem, 11vw, 4rem); animation: hop 1.2s infinite; }
     @keyframes hop { 50% { transform: translateY(-6px) rotate(-6deg); } }
-    .levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 360px; }
+    .levels { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; width: 100%; max-width: 360px; }
     .lvl {
       border: 3px solid transparent; border-radius: 12px; padding: 5px 0; background: #d3f9d8;
       font: inherit; font-weight: bold; font-size: clamp(1rem, 4.2vw, 1.25rem); cursor: pointer; color: var(--ink);
@@ -201,7 +201,54 @@
         zone: { x: 10, y: 60, w: 150, h: 160 },
         bricks: [GROUND, { x: 0, y: 330, w: 180, h: 230 }, { x: 330, y: 200, w: 30, h: 360 }, { x: 180, y: 380, w: 50, h: 180 }],
         eggs: [[262, 542], [298, 542], [280, 511]], wheels: [[140, 300]], ink: 50,
-        hint: [[20, 120], [130, 215], [20, 215], [20, 120]] }
+        hint: [[20, 120], [130, 215], [20, 215], [20, 120]] },
+      { tip: 'ארגז TNT! 🧨 הפילו עליו משהו והוא יתפוצץ ויפצח את הביצים המוסתרות.',
+        zone: { x: 120, y: 120, w: 120, h: 200 },
+        bricks: [GROUND, { x: 40, y: 498, w: 70, h: 12 }, { x: 40, y: 498, w: 8, h: 62 }, { x: 102, y: 498, w: 8, h: 62 },
+                 { x: 250, y: 498, w: 70, h: 12 }, { x: 250, y: 498, w: 8, h: 62 }, { x: 312, y: 498, w: 8, h: 62 }],
+        eggs: [[75, 542], [285, 542]], wheels: [], tnt: [[180, 539]], ink: 45,
+        hint: [[155, 200], [205, 200], [205, 245], [155, 245], [155, 200]] },
+      { tip: 'מגלשת עץ! 🪵 ציירו כדור שיתגלגל במגלשה אל הביצה.',
+        zone: { x: 20, y: 80, w: 170, h: 140 }, ramps: [{ a: [30, 250], b: [240, 360], t: 14 }],
+        bricks: [GROUND, { x: 335, y: 330, w: 25, h: 230 }], eggs: [[305, 542]], wheels: [], ink: 45,
+        hint: [[90, 130], [115, 145], [115, 175], [90, 190], [65, 175], [65, 145], [90, 130]] },
+      { tip: 'הכדור הקופץ 🏀 נוחת על השולחן. ציירו לו מגלשה משולשת!',
+        zone: { x: 15, y: 170, w: 115, h: 160 },
+        bricks: [GROUND, { x: 15, y: 330, w: 115, h: 18 }, { x: 215, y: 360, w: 22, h: 200 }], eggs: [[180, 542]], wheels: [], balls: [[45, 110]], ink: 50,
+        hint: [[25, 318], [25, 235], [120, 318], [25, 318]] },
+      { tip: 'מגדל ארגזים 📦 הפילו משהו כבד על הצד הימני שלו, והוא יקרוס על הביצה!',
+        zone: { x: 150, y: 70, w: 130, h: 210 },
+        bricks: [GROUND, { x: 150, y: 420, w: 70, h: 140 }], crates: [[212, 399], [212, 357], [212, 315]],
+        eggs: [[285, 542]], wheels: [], ink: 60,
+        hint: [[225, 150], [265, 150], [265, 190], [225, 190], [225, 150]] },
+      { tip: 'הביצה בבור צר! 🕳️ רק משהו דק יעבור בפתח.',
+        zone: { x: 60, y: 120, w: 240, h: 230 },
+        bricks: [GROUND, { x: 140, y: 430, w: 18, h: 130 }, { x: 202, y: 430, w: 18, h: 130 }, { x: 0, y: 430, w: 140, h: 16 }, { x: 220, y: 430, w: 140, h: 16 }],
+        eggs: [[180, 542]], wheels: [], ink: 35, time: 10,
+        hint: [[180, 150], [180, 330]] },
+      { tip: 'בנו גשר ארוך! 🌉 מהמגלשה ועד המדף, והגלגל יתגלגל עליו אל הביצה.',
+        zone: { x: 120, y: 240, w: 130, h: 85 }, ramps: [{ a: [15, 200], b: [140, 300], t: 14 }],
+        bricks: [GROUND, { x: 225, y: 300, w: 135, h: 20 }], eggs: [[310, 282]], wheels: [[45, 140]], ink: 35,
+        hint: [[134, 272], [240, 282]] },
+      { tip: 'פיצוץ שרשרת! 🧨🧨 הארגז הראשון יפוצץ את השני.',
+        zone: { x: 20, y: 150, w: 105, h: 200 },
+        bricks: [GROUND, { x: 125, y: 466, w: 95, h: 12 }, { x: 215, y: 420, w: 16, h: 140 }, { x: 215, y: 420, w: 145, h: 14 }],
+        eggs: [[255, 542], [290, 542]], wheels: [], tnt: [[70, 539], [172, 539]], ink: 45,
+        hint: [[50, 220], [95, 220], [95, 265], [50, 265], [50, 220]] },
+      { tip: 'קיר קטן חוסם את הגלגל 🛞 ציירו לו מדרגה קטנה לפני הקיר, והוא יקפוץ אל ה-TNT!',
+        zone: { x: 135, y: 400, w: 85, h: 155 }, ramps: [{ a: [15, 270], b: [130, 410], t: 14 }],
+        bricks: [GROUND, { x: 225, y: 518, w: 18, h: 42 }, { x: 255, y: 440, w: 105, h: 14 }],
+        eggs: [[290, 422], [335, 422]], wheels: [[65, 210]], tnt: [[310, 539]], ink: 45, time: 11,
+        hint: [[150, 450], [175, 450], [175, 475], [150, 475], [150, 450]] },
+      { tip: 'הגלגל בורח ימינה ➡️ ציירו מגלשה שתחזיר אותו אל הביצה!',
+        zone: { x: 150, y: 290, w: 200, h: 265 }, ramps: [{ a: [15, 160], b: [200, 240], t: 14 }],
+        bricks: [GROUND], eggs: [[60, 542]], wheels: [[40, 100]], ink: 70, time: 11,
+        hint: [[340, 300], [340, 548], [165, 548], [340, 300]] },
+      { tip: 'המכונה הגדולה! 🏆 גשר, גלגל ו-TNT. בהצלחה!',
+        zone: { x: 120, y: 240, w: 115, h: 85 }, ramps: [{ a: [15, 200], b: [140, 300], t: 14 }],
+        bricks: [GROUND, { x: 220, y: 300, w: 140, h: 16 }, { x: 240, y: 360, w: 120, h: 14 }],
+        eggs: [[335, 283], [305, 343]], wheels: [[45, 140]], tnt: [[255, 279]], ink: 30, time: 11,
+        hint: [[134, 272], [226, 284]] }
     ];
     const STICKERS = ['🦄', '🐼', '🦊', '🐸', '🐙', '🦖', '🐳', '🦋', '🐞', '🦁', '🐧', '🐨', '🌈', '🍩', '🚀', '⚽'];
 
@@ -228,6 +275,7 @@
     }
     let lastBeadSound = 0;
     const sfx = {
+      boom()  { tone(90, .5, 'sawtooth', 0, .18, .3); tone(60, .6, 'square', .02, .12, .5); tone(400, .2, 'triangle', 0, .08, .2); },
       bead() { const n = performance.now(); if (n - lastBeadSound < 60) return; lastBeadSound = n; tone(500 + Math.random() * 300, .04, 'triangle', 0, .04); },
       crack() { tone(900, .08, 'square', 0, .08, .4); tone(300, .15, 'triangle', .05, .12, .5); },
       thud() { tone(110, .1, 'sine', 0, .14); },
@@ -252,7 +300,14 @@
     }
     function partPos(b, p) { const c = Math.cos(b.a), s = Math.sin(b.a); return { x: b.x + p.lx * c - p.ly * s, y: b.y + p.lx * s + p.ly * c }; }
 
-    let bodies = [], bricks = [], contacts = [];
+    let bodies = [], bricks = [], ramps = [], contacts = [], booms = [];
+    // closest point on a plank (a thick line segment)
+    function rampHit(px, py, r) {
+      const dx = r.b[0] - r.a[0], dy = r.b[1] - r.a[1], l2 = dx * dx + dy * dy;
+      const t = Math.max(0, Math.min(1, ((px - r.a[0]) * dx + (py - r.a[1]) * dy) / l2));
+      const qx = r.a[0] + dx * t, qy = r.a[1] + dy * t;
+      return { qx, qy, d: Math.hypot(px - qx, py - qy) };
+    }
     function collide() {
       contacts = [];
       const world = bodies.filter(b => !b.dead).map(b => ({ b, ps: b.parts.map(p => ({ ...partPos(b, p), r: p.r })) }));
@@ -268,6 +323,12 @@
             nx = opts[0][1]; ny = opts[0][2]; pen = opts[0][0] + p.r;
           }
           contacts.push({ a: null, b, nx, ny, pen, px: p.x - nx * p.r, py: p.y - ny * p.r });
+        }
+        for (const p of ps) for (const r of ramps) {          // part against slanted planks
+          const h = rampHit(p.x, p.y, r), rad = p.r + r.t / 2;
+          if (h.d >= rad || h.d < 1e-6) continue;
+          const nx = (p.x - h.qx) / h.d, ny = (p.y - h.qy) / h.d;
+          contacts.push({ a: null, b, nx, ny, pen: rad - h.d, px: p.x - nx * p.r, py: p.y - ny * p.r });
         }
       }
       for (let i = 0; i < world.length; i++) for (let j = i + 1; j < world.length; j++) {
@@ -294,7 +355,8 @@
         if (it === 0) c.impact = -vn;
         const raN = rax * c.ny - ray * c.nx, rbN = rbx * c.ny - rby * c.nx;
         const kn = (A ? A.im + raN * raN * A.iI : 0) + B.im + rbN * rbN * B.iI;
-        let jn = -(1 + (it === 0 && vn < -60 ? 0.15 : 0)) * vn / kn;
+        const bounce = B.kind === 'ball' || (A && A.kind === 'ball') ? 0.6 : 0.15;
+        let jn = -(1 + (it === 0 && vn < -60 ? bounce : 0)) * vn / kn;
         const old = c.jn; c.jn = Math.max(0, old + jn); jn = c.jn - old;
         // friction
         const tx = -c.ny, ty = c.nx, vt = rvx * tx + rvy * ty;
@@ -334,16 +396,38 @@
         }
       }
       for (const e of bodies) if (e.kind === 'egg' && !e.dead) { e.crush = e.pressed ? e.crush + DT : Math.max(0, e.crush - DT * 0.3); if (e.crush > 0.2) crack(e); }
+      for (const c of contacts) for (const t of [c.a, c.b]) if (t && t.kind === 'tnt' && !t.dead && c.impact > 110 && !t.fuse) t.fuse = 0.06;
+      for (const t of bodies) if (t.kind === 'tnt' && !t.dead && t.fuse) { t.fuse -= DT; if (t.fuse <= 0) explode(t); }
+    }
+    // a TNT box blows up: eggs nearby crack, other TNT boxes catch fire, everything else is thrown away
+    const BLAST = 105;
+    function explode(t) {
+      t.dead = true; sfx.boom();
+      booms.push({ x: t.x, y: t.y, life: 0.6 });
+      for (let k = 0; k < 16; k++) { const a = Math.random() * TAU, s = 120 + Math.random() * 260; shells.push({ x: t.x, y: t.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 100, rot: 0, vr: 6, life: 0.8, fire: true }); }
+      for (const b of bodies) {
+        if (b.dead || b === t) continue;
+        const dx = b.x - t.x, dy = b.y - t.y, d = Math.hypot(dx, dy) || 1;
+        if (d > BLAST + 20) continue;
+        if (b.kind === 'egg') crack(b);
+        else if (b.kind === 'tnt') { if (!b.fuse) b.fuse = 0.18; }
+        else { const f = 700 * (1 - d / (BLAST + 20)); b.vx += dx / d * f; b.vy += dy / d * f - 150; b.w += (Math.random() - 0.5) * 6; }
+      }
     }
 
     // ---------- Game state ----------
     let L, levelIdx = 0, state = 'menu', drawing = null, beads = [], drawId = null, time = 0, runT = 0, stillT = 0, shells = [], hintOn = false;
     function loadLevel(i) {
       levelIdx = i; L = LEVELS[i];
-      bricks = L.bricks;
+      bricks = L.bricks; ramps = L.ramps || []; booms = [];
+      // a box is a 3x3 grid of circles, so it can tumble and stack
+      const box = (x, y, kind, dens) => makeBody([-13, 0, 13].flatMap(dx => [-13, 0, 13].map(dy => ({ x: x + dx, y: y + dy, r: 8 }))), kind, dens);
       bodies = [
         ...L.eggs.map(([x, y]) => Object.assign(makeBody([{ x, y, r: 17 }], 'egg', 0.6), { mood: 0 })),
-        ...L.wheels.map(([x, y]) => makeBody([{ x, y, r: 28 }], 'wheel', 1.6))
+        ...L.wheels.map(([x, y]) => makeBody([{ x, y, r: 28 }], 'wheel', 1.6)),
+        ...(L.crates || []).map(([x, y]) => box(x, y, 'crate', 1.4)),
+        ...(L.tnt || []).map(([x, y]) => box(x, y, 'tnt', 1)),
+        ...(L.balls || []).map(([x, y]) => makeBody([{ x, y, r: 14 }], 'ball', 0.5))
       ];
       beads = []; drawing = null; shells = []; runT = 0; stillT = 0; hintOn = false;
       state = 'draw';
@@ -378,6 +462,7 @@
     const inZone = (x, y) => x >= L.zone.x + BEAD && x <= L.zone.x + L.zone.w - BEAD && y >= L.zone.y + BEAD && y <= L.zone.y + L.zone.h - BEAD;
     function blocked(x, y) {
       for (const r of bricks) if (x > r.x - BEAD && x < r.x + r.w + BEAD && y > r.y - BEAD && y < r.y + r.h + BEAD) return true;
+      for (const r of ramps) if (rampHit(x, y, r).d < r.t / 2 + BEAD) return true;
       for (const b of bodies) for (const p of b.parts) { const q = partPos(b, p); if (Math.hypot(q.x - x, q.y - y) < q.r + BEAD) return true; }
       return false;
     }
@@ -425,11 +510,12 @@
           runT += dt;
           const moving = bodies.some(b => !b.dead && (Math.hypot(b.vx, b.vy) > 8 || Math.abs(b.w) > 0.3));
           stillT = moving ? 0 : stillT + dt;
-          if ((stillT > 1.2 && runT > 1.5) || runT > 9) fail();
+          if ((stillT > 1.2 && runT > 1.5) || runT > (L.time || 9)) fail();
         }
       }
       for (const s of shells) { s.life -= dt; s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 900 * dt; s.rot += s.vr * dt; }
       shells = shells.filter(s => s.life > 0);
+      for (const b of booms) b.life -= dt; booms = booms.filter(b => b.life > 0);
     }
     function fail() {
       state = 'fail'; sfx.lose();
@@ -539,6 +625,47 @@
       ctx.fillStyle = '#5f3dc4'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, TAU); ctx.fill();
       ctx.restore();
     }
+    // a wooden plank on a slant, held by two bolts
+    function drawRamp(r) {
+      ctx.save(); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(r.a[0], r.a[1] + 3); ctx.lineTo(r.b[0], r.b[1] + 3); ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = r.t; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r.a[0], r.a[1]); ctx.lineTo(r.b[0], r.b[1]); ctx.strokeStyle = '#8a4b1b'; ctx.lineWidth = r.t; ctx.stroke();
+      ctx.strokeStyle = '#d9894a'; ctx.lineWidth = r.t - 4; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(r.a[0], r.a[1] - r.t / 4); ctx.lineTo(r.b[0], r.b[1] - r.t / 4); ctx.stroke();
+      ctx.fillStyle = '#495057'; for (const [x, y] of [r.a, r.b]) { ctx.beginPath(); ctx.arc(x, y, 3, 0, TAU); ctx.fill(); }
+      ctx.restore();
+    }
+    // wooden crate or red TNT box
+    function drawBox(b) {
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a);
+      const S = 42, tnt = b.kind === 'tnt';
+      ctx.fillStyle = 'rgba(0,0,0,0.15)'; roundRect(-S / 2 + 2, -S / 2 + 3, S, S, 5); ctx.fill();
+      const g = ctx.createLinearGradient(0, -S / 2, 0, S / 2);
+      g.addColorStop(0, tnt ? '#ff6b6b' : '#e9a55c'); g.addColorStop(1, tnt ? '#c92a2a' : '#b5702f');
+      ctx.fillStyle = g; roundRect(-S / 2, -S / 2, S, S, 5); ctx.fill();
+      ctx.strokeStyle = tnt ? '#7a1010' : '#7a4314'; ctx.lineWidth = 2.5; ctx.stroke();
+      if (tnt) {
+        ctx.fillStyle = '#fff'; ctx.fillRect(-S / 2 + 3, -7, S - 6, 14);
+        ctx.fillStyle = '#c92a2a'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('TNT', 0, 1);
+        ctx.strokeStyle = '#495057'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -S / 2); ctx.quadraticCurveTo(6, -S / 2 - 8, 2, -S / 2 - 12); ctx.stroke();
+        if (Math.floor(time * 10) % 2 || b.fuse) { ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(2, -S / 2 - 13, b.fuse ? 5 : 2.5, 0, TAU); ctx.fill(); }
+      } else {
+        ctx.strokeStyle = 'rgba(122,67,20,0.7)'; ctx.lineWidth = 2;
+        for (const y of [-7, 7]) { ctx.beginPath(); ctx.moveTo(-S / 2 + 3, y); ctx.lineTo(S / 2 - 3, y); ctx.stroke(); }
+        ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-S / 2 + 4, -S / 2 + 4); ctx.lineTo(S / 2 - 4, S / 2 - 4); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function drawBall(b) {
+      const r = 14;
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a);
+      ctx.fillStyle = '#f783ac'; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r, 0, TAU / 3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#4dabf7'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r, TAU / 3, TAU * 2 / 3); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#a61e4d'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.arc(b.x - 4, b.y - 5, 4, 0, TAU); ctx.fill();
+    }
     function render() {
       const k = canvas.width / W;
       ctx.setTransform(k, 0, 0, k, 0, 0);
@@ -551,6 +678,7 @@
         ctx.strokeStyle = 'rgba(120,30,20,0.5)'; ctx.lineWidth = 2; ctx.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
         ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(r.x, r.y + r.h - 4, r.w, 4);
       }
+      for (const r of ramps) drawRamp(r);
       // hint
       if (hintOn && state === 'draw') {
         ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 8; ctx.setLineDash([2, 13]); ctx.lineCap = 'round'; ctx.lineDashOffset = -time * 30;
@@ -563,14 +691,25 @@
         if (b.dead) continue;
         if (b.kind === 'egg') drawEgg(b);
         else if (b.kind === 'wheel') drawWheel(b);
+        else if (b.kind === 'crate' || b.kind === 'tnt') drawBox(b);
+        else if (b.kind === 'ball') drawBall(b);
         else for (const p of b.parts) { const q = partPos(b, p); bead(q.x, q.y, p.r + 0.6); }
       }
       for (const bb of beads) bead(bb.x, bb.y, BEAD + 0.6);
       for (const s of shells) {
         ctx.save(); ctx.globalAlpha = Math.min(1, s.life * 2); ctx.translate(s.x, s.y); ctx.rotate(s.rot);
-        if (s.yolk) { ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, TAU); ctx.fill(); }
+        if (s.fire) { ctx.fillStyle = s.life > 0.4 ? '#ffd43b' : '#ff6b00'; ctx.beginPath(); ctx.arc(0, 0, 5 * s.life + 2, 0, TAU); ctx.fill(); }
+        else if (s.yolk) { ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, TAU); ctx.fill(); }
         else { ctx.fillStyle = '#d8f56b'; ctx.strokeStyle = '#7d9a1d'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-7, -4); ctx.lineTo(6, -6); ctx.lineTo(3, 6); ctx.lineTo(-5, 4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
         ctx.restore();
+      }
+      for (const b of booms) {
+        const k = 1 - b.life / 0.6, rr = 20 + k * BLAST;
+        const g = ctx.createRadialGradient(b.x, b.y, 2, b.x, b.y, rr);
+        g.addColorStop(0, `rgba(255,255,200,${b.life * 1.6})`); g.addColorStop(0.4, `rgba(255,160,40,${b.life * 1.4})`); g.addColorStop(1, 'rgba(255,80,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, rr, 0, TAU); ctx.fill();
+        ctx.font = `bold ${22 + k * 14}px "Comic Sans MS", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.globalAlpha = Math.min(1, b.life * 3);
+        ctx.lineWidth = 5; ctx.strokeStyle = '#7a1f00'; ctx.strokeText('בום!', b.x, b.y - 30 - k * 20); ctx.fillStyle = '#ffd43b'; ctx.fillText('בום!', b.x, b.y - 30 - k * 20); ctx.globalAlpha = 1;
       }
       // ink meter and level
       if (state === 'draw' || state === 'run') {
