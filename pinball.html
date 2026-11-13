@@ -31,7 +31,7 @@
     .best:empty { display: none; }
     /* two big flipper pads: each half of the screen is a flipper */
     .pads { width: min(calc(100vw - 8px), 560px); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: none; direction: ltr; }
-    .pad { height: 70px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; color: #3d2600; font-size: 0.95rem;
+    .pad { height: 54px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; color: #3d2600; font-size: 0.95rem;
       background: linear-gradient(180deg, #ffe066, #f59f00); box-shadow: 0 6px 0 #9c5d00, inset 0 2px 0 rgba(255,255,255,0.6); transition: transform .05s; }
     .pad b { font-size: 1.6rem; }
     .pad.down { transform: translateY(5px); box-shadow: 0 1px 0 #9c5d00, inset 0 2px 0 rgba(255,255,255,0.6); filter: brightness(1.12); }
@@ -104,7 +104,7 @@
     const DROPS = [298, 322, 346].map(y => ({ x: 314, y, h: 20, down: false, t: 0 }));
     const LANES = [144, 176, 208].map(x => ({ x, y: 112, lit: false }));
     const SAUCER = { x: 172, y: 312 };
-    const TOY = { x: 270, y: 122, r: 16, wob: 0, hits: 0 };
+    const TOY = { x: 270, y: 124, r: 19, wob: 0, hits: 0 };
     const SPINNER = { x0: 12, x1: 44, y: 290, a: 0, w: 0 };
     const RAMPS = [
       { name: 'שמאל', ent: [[80, 330], [126, 330]], path: [[103, 328], [100, 250], [86, 190], [58, 170], [34, 204], [36, 300], [48, 425]], clear: 3, exit: [0, 260], col: '#4dabf7' },
@@ -115,7 +115,7 @@
       { x: 110, y: 562, rest: 0.52, up: -0.46, a: 0.52, w: 0, on: false },
       { x: 230, y: 562, rest: Math.PI - 0.52, up: Math.PI + 0.46, a: Math.PI - 0.52, w: 0, on: false }
     ];
-    const CREATURES = [{ name: 'זיפי', col: '#ffd43b', kind: 'zap' }, { name: 'בובי', col: '#4dabf7', kind: 'water' }, { name: 'עלעלי', col: '#69db7c', kind: 'leaf' }, { name: 'גחלי', col: '#ff922b', kind: 'fire' }];
+    const CREATURES = [{ name: 'זיפי', col: '#b197fc', kind: 'zap' }, { name: 'בובי', col: '#4dabf7', kind: 'water' }, { name: 'עלעלי', col: '#69db7c', kind: 'leaf' }, { name: 'גחלי', col: '#ff922b', kind: 'fire' }];
     const MODES = [
       { name: 'סופת ברקים', tip: 'באמפרים ×10!', icon: '⚡' },
       { name: 'ריצת רמפות', tip: 'כל רמפה 15,000!', icon: '🛝' },
@@ -183,26 +183,99 @@
     // ---------- Canvas ----------
     const canvas = $('game'), ctx = canvas.getContext('2d');
     function fit() {
-      const wrap = $('wrap'), bw = wrap.clientWidth - 18, bh = wrap.clientHeight - 18, sc = Math.min(bw / W, bh / H);
-      const cw = Math.floor(W * sc), ch = Math.floor(H * sc);
+      // as wide as the screen allows; if the table is then too tall, show most of it and scroll with the ball
+      const wrap = $('wrap'), bw = wrap.clientWidth - 14, bh = wrap.clientHeight - 14, sc = Math.min(bw / W, bh / (H * 0.8));
+      const cw = Math.floor(W * sc), ch = Math.floor(Math.min(H * sc, bh));
+      VIEW_H = ch / sc;
       canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px'; canvas.width = Math.round(cw * DPR); canvas.height = Math.round(ch * DPR);
       document.querySelectorAll('.overlay').forEach(o => { o.style.width = cw + 'px'; o.style.height = ch + 'px'; });
     }
     addEventListener('resize', fit);
+    let VIEW_H = H, camY = 0;
+    function moveCamera(dt) {
+      const maxY = H - VIEW_H; if (maxY <= 0.5) { camY = 0; return; }
+      if (state !== 'play') { camY = maxY * (0.5 + 0.5 * Math.sin(time * 0.35)); return; }
+      const live = balls.filter(b => !b.gone && !b.lockedAway);
+      if (!live.length) { camY += (maxY - camY) * Math.min(1, dt * 5); return; }
+      const y = Math.max(...live.map(b => b.y));                       // follow the lowest ball: that is the one to save
+      camY += (clamp(y - VIEW_H * 0.55, 0, maxY) - camY) * Math.min(1, dt * 6);
+      camY = clamp(camY, clamp(y - VIEW_H + 70, 0, maxY), clamp(y - DMD_H - 24, 0, maxY));
+    }
 
     // ---------- Creatures ----------
-    function creature(c, x, y, s, cr) {
-      c.save(); c.translate(x, y); c.scale(s, s);
-      if (cr.kind === 'zap') { c.fillStyle = shade(cr.col, -0.1); for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(sd * 8, -14); c.lineTo(sd * 21, -34); c.lineTo(sd * 15, -12); c.closePath(); c.fill(); } c.fillStyle = '#343a40'; for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(sd * 18, -29); c.lineTo(sd * 21, -34); c.lineTo(sd * 15.5, -30); c.fill(); } }
-      if (cr.kind === 'water') { c.fillStyle = shade(cr.col, 0.3); c.beginPath(); c.moveTo(-6, -17); c.quadraticCurveTo(0, -38, 6, -17); c.fill(); }
-      if (cr.kind === 'leaf') { c.fillStyle = '#2b8a3e'; c.beginPath(); c.ellipse(-10, -20, 6, 12, -0.6, 0, TAU); c.ellipse(10, -20, 6, 12, 0.6, 0, TAU); c.fill(); }
-      if (cr.kind === 'fire') { const fg = c.createLinearGradient(0, -38, 0, -14); fg.addColorStop(0, '#ffe066'); fg.addColorStop(1, '#f03e3e'); c.fillStyle = fg; c.beginPath(); c.moveTo(-10, -14); c.quadraticCurveTo(-13, -30, -2, -39); c.quadraticCurveTo(-2, -26, 4, -31); c.quadraticCurveTo(13, -24, 10, -14); c.fill(); }
-      const g = c.createRadialGradient(-7, -8, 2, 0, 0, 23); g.addColorStop(0, shade(cr.col, 0.5)); g.addColorStop(0.6, cr.col); g.addColorStop(1, shade(cr.col, -0.4));
-      c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, 20, 18, 0, 0, TAU); c.fill(); c.strokeStyle = shade(cr.col, -0.55); c.lineWidth = 1.4; c.stroke();
-      c.fillStyle = shade(cr.col, 0.4); c.beginPath(); c.ellipse(0, 8, 11, 7, 0, 0, TAU); c.fill();
-      for (const sd of [-1, 1]) { c.fillStyle = '#fff'; c.beginPath(); c.ellipse(sd * 7, -3, 5.5, 6.5, 0, 0, TAU); c.fill(); c.fillStyle = '#111'; c.beginPath(); c.arc(sd * 7 + 1, -2, 3.4, 0, TAU); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(sd * 7 + 2.2, -3.6, 1.3, 0, TAU); c.fill(); }
-      c.fillStyle = 'rgba(255,90,110,0.55)'; for (const sd of [-1, 1]) { c.beginPath(); c.ellipse(sd * 13, 5, 3.5, 2.2, 0, 0, TAU); c.fill(); }
-      c.strokeStyle = '#4a1010'; c.lineWidth = 1.6; c.lineCap = 'round'; c.beginPath(); c.arc(0, 4, 4, 0.2, Math.PI - 0.2); c.stroke();
+    function creature(c, x, y, s, cr, t = 0) {
+      const col = cr.col, dark = shade(col, -0.5), light = shade(col, 0.6), wob = Math.sin(t * 9);
+      c.save(); c.translate(x, y); c.scale(s, s); c.lineJoin = 'round'; c.lineCap = 'round';
+      c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(2, 22, 20, 5, 0, 0, TAU); c.fill();
+      const outline = () => { c.strokeStyle = dark; c.lineWidth = 1.3; c.stroke(); };
+      // ---- behind the body: tails, ears, crests
+      if (cr.kind === 'zap') {
+        c.fillStyle = col; c.beginPath(); c.moveTo(14, 10); c.lineTo(30, 2); c.lineTo(25, -4); c.lineTo(36, -16); c.lineTo(22, -10); c.lineTo(26, -3); c.lineTo(12, 4); c.closePath(); c.fill(); outline();
+        for (const sd of [-1, 1]) {
+          const g = c.createLinearGradient(sd * 8, -12, sd * 22, -40); g.addColorStop(0, col); g.addColorStop(1, light);
+          c.fillStyle = g; c.beginPath(); c.moveTo(sd * 5, -15); c.lineTo(sd * 13, -30); c.lineTo(sd * 10, -31); c.lineTo(sd * 20, -42); c.lineTo(sd * 18, -29); c.lineTo(sd * 21, -28); c.lineTo(sd * 15, -12); c.closePath(); c.fill(); outline();
+        }
+      }
+      if (cr.kind === 'water') {
+        const g = c.createLinearGradient(14, 0, 34, 0); g.addColorStop(0, col); g.addColorStop(1, '#a5d8ff');
+        c.fillStyle = g; c.beginPath(); c.moveTo(14, 8); c.quadraticCurveTo(26, 6, 30, -6); c.quadraticCurveTo(31, 4, 38, 6); c.quadraticCurveTo(30, 10, 34, 18); c.quadraticCurveTo(24, 12, 14, 14); c.closePath(); c.fill(); outline();
+        for (const sd of [-1, 1]) { c.fillStyle = '#a5d8ff'; c.beginPath(); c.moveTo(sd * 15, -10); c.quadraticCurveTo(sd * 28, -16, sd * 25, -2); c.quadraticCurveTo(sd * 22, -6, sd * 17, -4); c.closePath(); c.fill(); outline(); }
+        const dg = c.createRadialGradient(-2, -30, 1, 0, -26, 12); dg.addColorStop(0, '#e7f5ff'); dg.addColorStop(1, '#339af0');
+        c.fillStyle = dg; c.beginPath(); c.moveTo(0, -42); c.bezierCurveTo(4, -34, 9, -28, 8, -22); c.bezierCurveTo(7, -16, -7, -16, -8, -22); c.bezierCurveTo(-9, -28, -4, -34, 0, -42); c.fill(); outline();
+      }
+      if (cr.kind === 'leaf') {
+        c.strokeStyle = '#2b8a3e'; c.lineWidth = 3; c.beginPath(); c.moveTo(15, 12); c.bezierCurveTo(30, 14, 34, 0, 26, -2); c.bezierCurveTo(20, -3, 21, 6, 27, 5); c.stroke();
+        for (const sd of [-1, 1]) {
+          c.save(); c.translate(sd * 4, -17); c.rotate(sd * 0.55 + wob * 0.05);
+          const g = c.createLinearGradient(0, 0, 0, -26); g.addColorStop(0, '#2b8a3e'); g.addColorStop(1, '#8ce99a');
+          c.fillStyle = g; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-11, -12, 0, -27); c.quadraticCurveTo(11, -12, 0, 0); c.fill(); c.strokeStyle = '#1b5e20'; c.lineWidth = 1.1; c.stroke();
+          c.strokeStyle = 'rgba(20,80,30,0.7)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(0, -2); c.lineTo(0, -24); for (let k = 1; k < 4; k++) { c.moveTo(0, -k * 6); c.lineTo(-4, -k * 6 - 4); c.moveTo(0, -k * 6); c.lineTo(4, -k * 6 - 4); } c.stroke();
+          c.restore();
+        }
+      }
+      if (cr.kind === 'fire') {
+        c.strokeStyle = col; c.lineWidth = 5; c.beginPath(); c.moveTo(14, 12); c.quadraticCurveTo(30, 14, 30, 0); c.stroke(); c.strokeStyle = dark; c.lineWidth = 1; c.stroke();
+        const flame = (fx, fy, sz) => {
+          for (const [cc, k] of [['#e03131', 1], ['#ff922b', 0.72], ['#ffe066', 0.42]]) {
+            c.fillStyle = cc; c.beginPath(); c.moveTo(fx - 8 * sz * k, fy); c.quadraticCurveTo(fx - 10 * sz * k, fy - 14 * sz * k, fx - 1 + wob, fy - 24 * sz * k); c.quadraticCurveTo(fx + 1, fy - 13 * sz * k, fx + 4 * sz * k, fy - 17 * sz * k); c.quadraticCurveTo(fx + 11 * sz * k, fy - 9 * sz * k, fx + 8 * sz * k, fy); c.closePath(); c.fill();
+          }
+        };
+        flame(30, 1, 0.7); flame(0, -14, 1.05);
+        for (const sd of [-1, 1]) { c.fillStyle = '#fff4e6'; c.beginPath(); c.moveTo(sd * 10, -15); c.lineTo(sd * 15, -25); c.lineTo(sd * 16, -13); c.closePath(); c.fill(); outline(); }
+      }
+      // ---- feet
+      for (const sd of [-1, 1]) { const g = c.createLinearGradient(0, 13, 0, 22); g.addColorStop(0, col); g.addColorStop(1, dark); c.fillStyle = g; c.beginPath(); c.ellipse(sd * 9, 18, 7.5, 4.5, 0, 0, TAU); c.fill(); outline(); c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(sd * 9 - 2, 20); c.lineTo(sd * 9 - 2, 22); c.moveTo(sd * 9 + 2, 20); c.lineTo(sd * 9 + 2, 22); c.stroke(); }
+      // ---- body: a soft round shape with light from the top left
+      const body = () => { c.beginPath(); c.moveTo(0, -19); c.bezierCurveTo(15, -19, 22, -6, 21, 5); c.bezierCurveTo(20, 16, 10, 19, 0, 19); c.bezierCurveTo(-10, 19, -20, 16, -21, 5); c.bezierCurveTo(-22, -6, -15, -19, 0, -19); c.closePath(); };
+      const bg = c.createRadialGradient(-7, -10, 2, 0, 0, 27); bg.addColorStop(0, light); bg.addColorStop(0.45, col); bg.addColorStop(1, dark);
+      body(); c.fillStyle = bg; c.fill(); outline();
+      c.save(); body(); c.clip();
+      c.fillStyle = 'rgba(0,0,0,0.18)'; c.beginPath(); c.ellipse(4, 24, 26, 12, 0, 0, TAU); c.fill();
+      if (cr.kind === 'leaf') { c.fillStyle = 'rgba(20,90,40,0.35)'; for (const [sx, sy, sr] of [[-14, -8, 3], [15, -4, 2.5], [-16, 6, 2]]) { c.beginPath(); c.arc(sx, sy, sr, 0, TAU); c.fill(); } }
+      if (cr.kind === 'zap') { c.fillStyle = '#ffd43b'; c.beginPath(); c.moveTo(-2, -18); c.lineTo(3, -18); c.lineTo(0, -13); c.lineTo(3, -13); c.lineTo(-3, -6); c.lineTo(-1, -11); c.lineTo(-4, -11); c.closePath(); c.fill(); }
+      c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.ellipse(-9, -12, 7, 3.5, -0.5, 0, TAU); c.fill();
+      c.restore();
+      // belly
+      const by = c.createRadialGradient(-2, 6, 1, 0, 9, 13); by.addColorStop(0, '#fffbea'); by.addColorStop(1, shade(col, 0.35));
+      c.fillStyle = by; c.beginPath(); c.ellipse(0, 9, 11, 8, 0, 0, TAU); c.fill();
+      // arms
+      for (const sd of [-1, 1]) { c.fillStyle = col; c.beginPath(); c.ellipse(sd * 17, 6, 4, 6.5, sd * -0.5, 0, TAU); c.fill(); outline(); }
+      // eyes: shaded white, coloured iris, pupil and two highlights
+      const iris = { zap: '#5f3dc4', water: '#1864ab', leaf: '#2b8a3e', fire: '#a61e1e' }[cr.kind];
+      for (const sd of [-1, 1]) {
+        const ex = sd * 7.5, ey = -4;
+        const wg = c.createLinearGradient(0, ey - 7, 0, ey + 7); wg.addColorStop(0, '#dee2e6'); wg.addColorStop(0.35, '#ffffff'); wg.addColorStop(1, '#f1f3f5');
+        c.fillStyle = wg; c.beginPath(); c.ellipse(ex, ey, 5.8, 7, 0, 0, TAU); c.fill(); c.strokeStyle = '#212529'; c.lineWidth = 1; c.stroke();
+        const ig = c.createRadialGradient(ex + 0.6, ey + 1.6, 0.5, ex + 0.6, ey + 0.8, 4.4); ig.addColorStop(0, shade(iris, 0.5)); ig.addColorStop(1, iris);
+        c.fillStyle = ig; c.beginPath(); c.arc(ex + 0.6, ey + 0.8, 4.3, 0, TAU); c.fill();
+        c.fillStyle = '#0b0b0b'; c.beginPath(); c.arc(ex + 0.6, ey + 1, 2.3, 0, TAU); c.fill();
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(ex + 2.1, ey - 1.4, 1.6, 0, TAU); c.fill(); c.beginPath(); c.arc(ex - 0.9, ey + 2.6, 0.7, 0, TAU); c.fill();
+        c.strokeStyle = dark; c.lineWidth = 1.2; c.beginPath(); c.arc(ex, ey - 11, 4, Math.PI * 0.25 + (sd < 0 ? 0.1 : -0.1), Math.PI * 0.75); c.stroke();
+      }
+      // cheeks and an open happy mouth with a tongue
+      for (const sd of [-1, 1]) { const cg = c.createRadialGradient(sd * 14, 5, 0, sd * 14, 5, 4.5); cg.addColorStop(0, 'rgba(255,100,120,0.7)'); cg.addColorStop(1, 'rgba(255,100,120,0)'); c.fillStyle = cg; c.beginPath(); c.arc(sd * 14, 5, 4.5, 0, TAU); c.fill(); }
+      c.fillStyle = '#5c1a1a'; c.beginPath(); c.moveTo(-4.5, 3.5); c.quadraticCurveTo(0, 5, 4.5, 3.5); c.quadraticCurveTo(4, 10, 0, 10); c.quadraticCurveTo(-4, 10, -4.5, 3.5); c.fill();
+      c.fillStyle = '#ff8787'; c.beginPath(); c.ellipse(0, 8.4, 2.6, 1.6, 0, 0, TAU); c.fill();
       c.restore();
     }
 
@@ -243,7 +316,7 @@
       const ring = c.createLinearGradient(cx - 90, cy - 90, cx + 90, cy + 90); ring.addColorStop(0, '#fff3bf'); ring.addColorStop(0.5, '#e8a33a'); ring.addColorStop(1, '#7a4a00');
       c.strokeStyle = ring; c.lineWidth = 7; c.beginPath(); c.arc(cx, cy, 88, 0, TAU); c.stroke();
       c.strokeStyle = 'rgba(0,0,0,0.4)'; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, 84, 0, TAU); c.stroke();
-      CREATURES.forEach((cr, i) => creature(c, cx + [-40, 40, -42, 42][i], cy + [-32, -32, 30, 30][i], 0.85, cr));
+      CREATURES.forEach((cr, i) => creature(c, cx + [-42, 42, -42, 42][i], cy + [-38, -38, 34, 34][i], 0.95, cr));
       c.font = 'bold 15px "Comic Sans MS", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
       c.lineWidth = 5; c.strokeStyle = '#3d1300'; c.strokeText('פינבול היצורים', cx, cy); const tg = c.createLinearGradient(0, cy - 8, 0, cy + 8); tg.addColorStop(0, '#fff3bf'); tg.addColorStop(1, '#f59f00'); c.fillStyle = tg; c.fillText('פינבול היצורים', cx, cy);
       // lane decals
@@ -274,7 +347,7 @@
     DROPS.forEach((d, i) => lamp(`drop${i}`, 296, d.y + 10, 'circle', '#ff6b6b'));
     LANES.forEach((l, i) => lamp(`lane${i}`, l.x, l.y + 24, 'circle', '#ffd43b', { label: ['א', 'ב', 'ג'][i] }));
     [2, 3, 4, 5].forEach((m, i) => lamp(`x${m}`, 121 + i * 33, 548, 'oval', '#69db7c', { label: m + '×' }));
-    CREATURES.forEach((cr, i) => lamp(`cr${i}`, 172 + [-40, 40, -42, 42][i], 440 + [-32, -32, 30, 30][i] + 24, 'small', cr.col));
+    CREATURES.forEach((cr, i) => lamp(`cr${i}`, 172 + [-62, 62, -62, 62][i], 440 + [-38, -38, 34, 34][i] + 18, 'small', cr.col));
     lamp('lock0', 160, 290, 'circle', '#da77f2'); lamp('lock1', 184, 290, 'circle', '#da77f2');
     lamp('mode', 172, 372, 'arrow', '#ffd43b');
     lamp('toy0', 246, 150, 'small', '#ff922b'); lamp('toy1', 256, 158, 'small', '#ff922b'); lamp('toy2', 266, 164, 'small', '#ff922b');
@@ -622,8 +695,8 @@
       const w = Math.sin(time * 30) * TOY.wob * 0.25, awake = modeReady || mode || TOY.hits > 0;
       ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(TOY.x + 5, TOY.y + 12, 20, 9, 0, 0, TAU); ctx.fill();
       ctx.fillStyle = '#495057'; ctx.beginPath(); ctx.ellipse(TOY.x, TOY.y + 10, 14, 6, 0, 0, TAU); ctx.fill();
-      ctx.save(); ctx.translate(TOY.x, TOY.y + 6); ctx.rotate(w); creature(ctx, 0, -6, 0.95, CREATURES[3]);
-      if (!awake) { ctx.fillStyle = '#ff922b'; for (const sd of [-1, 1]) ctx.fillRect(sd * 7 - 6, -11, 12, 5.5); ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = 'bold 8px Arial'; ctx.textAlign = 'center'; ctx.fillText('z', 18, -26 - (time * 8) % 10); }
+      ctx.save(); ctx.translate(TOY.x, TOY.y + 6); ctx.rotate(w); creature(ctx, 0, -8, 1.2, CREATURES[3], time);
+      if (!awake) { ctx.fillStyle = '#ff922b'; for (const sd of [-1, 1]) { ctx.fillStyle = shade('#ff922b', -0.1); ctx.beginPath(); ctx.ellipse(sd * 9, -13, 7.5, 9, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = '#5c1a1a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(sd * 9, -13, 5, 0.2, Math.PI - 0.2); ctx.stroke(); } ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = 'bold 8px Arial'; ctx.textAlign = 'center'; ctx.fillText('z', 24, -34 - (time * 8) % 10); }
       ctx.restore();
       if (modeReady) glow(TOY.x, TOY.y, 34, '#ff922b', 0.4 + 0.3 * Math.sin(time * 8));
     }
@@ -659,7 +732,7 @@
     }
 
     function render() {
-      const k = canvas.width / W; ctx.setTransform(k, 0, 0, k, 0, 0);
+      const k = canvas.width / W; ctx.setTransform(k, 0, 0, k, 0, -camY * k);
       ctx.save(); if (shake > 0) ctx.translate(rnd(-2, 2) * shake * 10, rnd(-2, 2) * shake * 10);
       ctx.drawImage(art, 0, 0, W, H);
       // general illumination: warm bulbs along the lanes and under the slings (they blink off when a ball drains)
@@ -734,7 +807,7 @@
       const vg = ctx.createRadialGradient(W / 2, H * 0.55, H * 0.3, W / 2, H * 0.55, H * 0.75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.35)');
       ctx.fillStyle = vg; ctx.fillRect(0, DMD_H, W, H);
       ctx.restore();
-      drawDMD();
+      ctx.setTransform(k, 0, 0, k, 0, 0); drawDMD();
     }
 
     // ---------- Controls: each half of the screen is a flipper; when the ball waits, a touch pulls the plunger ----------
@@ -786,7 +859,7 @@
     let lastT = performance.now();
     function frame(now) {
       const dt = Math.min(1 / 30, (now - lastT) / 1000); lastT = now;
-      update(Math.round(dt / DT) * DT || DT);
+      update(Math.round(dt / DT) * DT || DT); moveCamera(dt);
       updatePads(); render(); requestAnimationFrame(frame);
     }
     paintArt(); fit(); updateSoundBtn(); refreshLamps(); updatePads();
