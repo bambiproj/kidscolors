@@ -95,6 +95,12 @@
       height: 50px; box-shadow: 0 4px 0 rgba(0,0,0,0.3); cursor: pointer; line-height: 1.1;
     }
     .buttons button b { display: block; font-size: 1.3rem; }
+    .buttons .mbtn { display: none; font-weight: bold; }
+    body.inmatch .buttons { grid-template-columns: 1.6fr 1.6fr 1fr 1fr 1fr; }
+    body.inmatch .buttons .mbtn { display: block; }
+    .buttons #passBtn { background: #ffd43b; color: #5c3c00; }
+    .buttons #shootBtn { background: #ff8787; color: #fff; }
+    .buttons .mbtn.off { filter: grayscale(1); opacity: 0.55; }
     .buttons button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
     .match-btn { background: #fff; color: #1e6e2e; box-shadow: 0 5px 0 #adb5bd; }
     .vs { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 0.95rem; }
@@ -130,15 +136,15 @@
         <div class="pane" id="stagesPane"><div class="stages" id="stages"></div></div>
         <div class="pane hidden" id="teamPane"><div class="shop team" id="team"></div></div>
         <div class="pane hidden" id="shopPane"><div class="shop" id="shop"></div></div>
-        <div class="row"><button class="play-btn" id="playBtn">▶ לבעוט!</button><button class="play-btn match-btn" id="matchBtn">🏟️ משחק 6 נגד 6</button></div>
+        <div class="row"><button class="play-btn" id="playBtn">▶ לבעוט!</button><button class="play-btn match-btn" id="matchBtn">🏟️ משחק 11 נגד 11</button></div>
         <div class="trophies" id="trophies"></div>
       </div>
 
       <div dir="rtl" class="overlay hidden" id="matchMenu">
         <div class="big">🏟️</div>
-        <h2>משחק 6 נגד 6</h2>
+        <h2>משחק 11 נגד 11</h2>
         <div class="vs" id="vsLine"></div>
-        <p>👆 <b>הקישו על חבר</b> (עם עיגול לבן) = מסירה אליו<br>👉 או החליקו מהר לכיוון שלו<br>✋ <b>החזיקו את האצבע</b> = השחקן רץ לשם<br>🎯 הקישו על השער או הגיעו לרחבה - בעיטה כמו באימון!<br>🛡️ כשליריב יש כדור - הקישו כדי לתקל (זהירות מכרטיסים 🟨🟥)</p>
+        <p>⚽ <b>כפתור מסירה</b> = מסירה לחבר עם 👆 הצהוב<br>👆 או הקישו על כל חבר עם מספר כחול<br>✋ <b>החזיקו את האצבע</b> = השחקן רץ לשם<br>🎯 הקישו על השער או הגיעו לרחבה - בעיטה כמו באימון!<br>🛡️ כשליריב יש כדור - הקישו כדי לתקל (זהירות מכרטיסים 🟨🟥)</p>
         <div class="diffs" id="diffs"></div>
         <div class="row"><button class="play-btn" id="kickoffBtn">▶ שריקת פתיחה!</button><button class="play-btn alt" id="backBtn">↩ חזרה</button></div>
       </div>
@@ -157,6 +163,8 @@
     <div class="panel">
       <div class="coach" dir="rtl"><div class="face" id="face">⚽</div><div class="bubble" id="bubble"><span>החליקו את האצבע מהכדור אל השער!</span></div></div>
       <div class="buttons" dir="rtl">
+        <button class="mbtn" id="passBtn"><b>⚽</b><span id="passTxt">מסירה</span></button>
+        <button class="mbtn" id="shootBtn"><b>🎯</b>בעיטה</button>
         <button id="menuBtn"><b>🏟️</b>שלבים</button>
         <button id="restartBtn"><b>🔄</b>מחדש</button>
         <button id="soundBtn"><b>🔊</b>צליל</button>
@@ -981,23 +989,25 @@
     // ---------- 5 vs 5 match: a full pitch seen from above ----------
     // field in meters: x across (-20..20), y along (0 = our goal, 60 = their goal); we attack up the screen
     // =====================================================================
-    const FW = 40, FL = 60, MK = 8.4, FY0 = 52, BOX_W = 8, BOX_D = 9, GOAL_W = 2.6;
-    const mx = x => W / 2 + x * MK, my = y => FY0 + (FL - y) * MK;
+    const FW = 44, FL = 90, MK = 7.4, FY0 = 52, BOX_W = 12, BOX_D = 13, GOAL_W = 3.4;
+    let camOff = 0;                                        // how far the camera has scrolled down the pitch (pixels)
+    const PITCH_H = FY0 + FL * MK + 30;
+    const mx = x => W / 2 + x * MK, my = y => FY0 + (FL - y) * MK - camOff;
     const DIFFS = [
       { name: 'קל', icon: '🙂', pace: 1, spd: 4.2, tackle: 0.14, ourSave: 0.6, rd: 0.38, kv: 3.8, pr: 0.4, acc: 0.55 },
       { name: 'בינוני', icon: '😎', pace: 1.25, spd: 4.8, tackle: 0.22, ourSave: 0.5, rd: 0.3, kv: 4.8, pr: 0.5, acc: 0.65 },
       { name: 'קשה', icon: '🔥', pace: 1.45, spd: 5.4, tackle: 0.3, ourSave: 0.4, rd: 0.24, kv: 5.8, pr: 0.6, acc: 0.75 }
     ];
-    const MATES = [['עומר', 1], ['נועם', 4], ['איתי', 5], ['יונתן', 6], ['דניאל', 8]];
-    const OPPS = [['רועי', 1], ['גיל', 3], ['טל', 2], ['בן', 8], ['שי', 11]];
+    const MATES = [['עומר', 1], ['נועם', 2], ['איתי', 4], ['יונתן', 5], ['דניאל', 3], ['אורי', 6], ['רון', 8], ['עידו', 14], ['אלון', 7], ['גיא', 11]];
+    const OPPS = [['רועי', 1], ['גיל', 2], ['טל', 4], ['בן', 5], ['שי', 3], ['עמית', 6], ['ליאור', 8], ['אדם', 14], ['נדב', 7], ['יואב', 11]];
     const SKINS = ['#e8b48a', '#d9a07a', '#c68a5e', '#8d5524', '#f1c9a5', '#a0673f'], HAIRS = ['#1b1b1b', '#5c3c1e', '#3b2412', '#e9c46a', '#1b1b1b'], STYLES = ['short', 'curly', 'short', 'bald', 'gel'];
-    const HOMES = [[0, 1.4, 'gk'], [-10, 11, 'def'], [10, 11, 'def'], [0, 20, 'mid'], [-11, 31, 'fwd'], [11, 31, 'fwd']];
+    const HOMES = [[0, 1.4, 'gk'], [-15, 15, 'def'], [-5, 13, 'def'], [5, 13, 'def'], [15, 15, 'def'], [-12, 32, 'mid'], [0, 28, 'mid'], [12, 32, 'mid'], [-13, 48, 'fwd'], [13, 48, 'fwd'], [0, 50, 'fwd']];
     const REF_KIT = { c1: '#212529', c2: '#fcc419', shirt: 'solid', shorts: '#212529', socks: '#212529', skin: '#e3b088', hair: '#5c3c1e', style: 'short', text: '#fcc419', num: '' };
     let M = null, matchShot = null, matchDiff = clamp(load('soccer-match-diff', 0), 0, 2), lastWasMatch = false, pendingOpp = null;
 
     function colDist(a, b) { const p = parseInt(a.slice(1), 16), q = parseInt(b.slice(1), 16); return Math.abs((p >> 16) - (q >> 16)) + Math.abs(((p >> 8) & 255) - ((q >> 8) & 255)) + Math.abs((p & 255) - (q & 255)); }
     function pickOpp(pl) {
-      const opts = PLAYERS.filter(o => o.id !== pl.id && colDist(o.c1, pl.c1) > 200);
+      const opts = PLAYERS.filter(o => o.id !== pl.id && colDist(o.c1, pl.c1) > 260 && colDist(o.c1, pl.c2) > 160);
       return opts.length ? pick(opts) : PLAYERS.find(o => o.id !== pl.id);
     }
     function makeTeam(team, base) {
@@ -1027,16 +1037,16 @@
       const ours = player(), opp = pendingOpp || pickOpp(ours);
       M = { d: DIFFS[matchDiff], t: 0, dur: 180 * (DIFFS[matchDiff].pace || 1), half: false, score: [0, 0], phase: 'play', deadT: 0, next: null, msg: null, card: null, cards: [[0, 0], [0, 0]], fouls: 0,
         ourKit: ours, oppKit: opp, players: [...makeTeam(0, ours), ...makeTeam(1, opp)], ball: null, ref: { x: 7, y: 30, vx: 0, vy: 0, ph: 0, face: 1 }, touch: null, shots: [0, 0], shake: 0 };
-      matchShot = null; S = null; state = 'match'; lastWasMatch = true; parts = [];
+      matchShot = null; S = null; state = 'match'; lastWasMatch = true; parts = []; document.body.classList.add('inmatch'); camOff = 0;
       $('retryBtn').textContent = '🔁 עוד משחק';
       ['menu', 'result', 'matchMenu'].forEach(id => $(id).classList.add('hidden'));
-      kickoff(0); M.phase = 'intro'; M.next = null; M.msg = null; crowd(2.5, .2, 700);
-      coach('הקישו על חבר עם עיגול לבן כדי למסור לו ⚽ החזיקו אצבע = ריצה 🏃');
+      kickoff(0); updateMatchBtns(); M.phase = 'intro'; M.next = null; M.msg = null; crowd(2.5, .2, 700);
+      coach('⚽ כפתור מסירה = מסירה לחבר עם 👆 · או הקישו על חבר · 🎯 בעיטה ליד השער');
     }
     function dead(sec, next, text, sub) { M.phase = 'dead'; M.deadT = sec; M.next = next; if (text) popMsg(text, sub); }
     function popMsg(text, sub = '', color = '#fff') { M.msg = { text, sub, color, t: 0 }; }
     function placeHome(p) {
-      const ry = p.gk ? 1.4 : p.role === 'def' ? 11 : p.role === 'mid' ? 18 : 25;
+      const ry = p.gk ? 1.4 : p.role === 'def' ? 14 : p.role === 'mid' ? 28 : 40;
       p.x = p.team ? -p.hx : p.hx; p.y = p.team ? FL - ry : ry; p.vx = p.vy = 0; p.slide = p.down = p.dive = 0; p.diveX = null; p.face = p.team ? -1 : 1;
     }
     function newBall(x, y) { return { x, y, z: 0, vx: 0, vy: 0, vz: 0, rot: 0, owner: null, last: 0, passTo: null, noPick: null, noPickT: 0, shot: false, tried: new Set(), dest: null }; }
@@ -1106,6 +1116,9 @@
       }
       separate();
       if (b.owner) carry(b, dt); else freeBall(b, dt);
+      m.bestT = (m.bestT || 0) - dt;
+      if (m.bestT <= 0) { m.bestT = 0.3; m.best = m.ball.owner && m.ball.owner.team === 0 ? bestPass(m.ball.owner) : null; }
+      updateMatchBtns();
     }
     function clampP(p) { p.x = clamp(p.x, -FW / 2 + 0.4, FW / 2 - 0.4); p.y = clamp(p.y, 0.4, FL - 0.4); }
     function steer(p, tx, ty, spd, dt) {
@@ -1152,20 +1165,20 @@
       const b = M.ball, lineY = p.team ? FL - 1.3 : 1.3;
       if (b.shot && p.diveX !== null && b.last !== p.team) return [p.diveX, lineY, 7.5];
       if (!b.owner && !b.shot && inBox(p.team, b.x, b.y) && Math.hypot(b.vx, b.vy) < 9 && Math.hypot(b.x - p.x, b.y - p.y) < 7) return [b.x, b.y, 6];
-      return [clamp(b.x * 0.22, -2, 2), p.team ? FL - 1.3 - clamp((FL - b.y) < 18 ? 0.8 : 0, 0, 1) : 1.3 + (b.y < 18 ? 0.8 : 0), 4];
+      return [clamp(b.x * 0.22, -2, 2), p.team ? FL - 1.3 - clamp((FL - b.y) < 25 ? 0.8 : 0, 0, 1) : 1.3 + (b.y < 25 ? 0.8 : 0), 4];
     }
     function supportTarget(p, ownerTeam) {
       const b = M.ball, by = rel(p.team, b.y), bx = p.team ? -b.x : b.x, attacking = ownerTeam === p.team;
       let rx = p.hx + bx * 0.18 + Math.sin(time * 0.6 + p.hx) * 1.2, ry;
-      if (p.role === 'def') ry = clamp(by * 0.5 + (attacking ? 11 : 0), 5, attacking ? 40 : 24);
-      else if (p.role === 'mid') ry = clamp(by * 0.6 + (attacking ? 14 : 4), 10, attacking ? 50 : 34);
-      else ry = clamp(by * 0.55 + (attacking ? 18 : 10), 16, attacking ? 56 : 42);
+      if (p.role === 'def') ry = clamp(by * 0.5 + (attacking ? 16 : 2), 7, attacking ? 58 : 36);
+      else if (p.role === 'mid') ry = clamp(by * 0.6 + (attacking ? 21 : 8), 16, attacking ? 74 : 52);
+      else ry = clamp(by * 0.55 + (attacking ? 27 : 16), 26, attacking ? 84 : 64);
       // attackers sprint forward into space so the ball can be passed ahead of them
       if (attacking && p.role !== 'def') {
-        if (!p.runT || p.runT < time) { p.runT = time + rnd(2.2, 3.8); p.runDY = rnd(7, 14) * (p.role === 'mid' ? 0.6 : 1); p.runDX = rnd(-3, 3); }
+        if (!p.runT || p.runT < time) { p.runT = time + rnd(2.2, 3.8); p.runDY = rnd(10, 20) * (p.role === 'mid' ? 0.6 : 1); p.runDX = rnd(-3, 3); }
         // when we keep the ball the whole team pushes up: forwards wait high, near the other box
-        const high = p.role === 'fwd' ? 42 + (p.runDY - 7) * 0.8 : 30;
-        ry = clamp(Math.max(ry, by + p.runDY, high), 12, 56); rx = p.hx * 0.9 + p.runDX;
+        const high = p.role === 'fwd' ? 64 + (p.runDY - 10) * 1.0 : 46;
+        ry = clamp(Math.max(ry, by + p.runDY, high), 16, 85); rx = p.hx * 0.9 + p.runDX;
       } else p.runT = 0;
       // the second defender covers the space between the ball and the goal
       if (!attacking && p.role === 'def' && ownerTeam !== -1) { ry = Math.max(3, Math.min(ry, by * 0.6)); rx = rx * 0.7 + bx * 0.25; }
@@ -1174,13 +1187,13 @@
       for (const q of M.players) {
         if (q === p || q.team !== p.team || q.off || q.gk) continue;
         const dx = tx - q.x, dy = ty - q.y, d = Math.hypot(dx, dy);
-        if (d < 7 && d > 0.01) { tx += dx / d * (7 - d) * 0.6; ty += dy / d * (7 - d) * 0.6; }
+        if (d < 6.5 && d > 0.01) { tx += dx / d * (6.5 - d) * 0.6; ty += dy / d * (6.5 - d) * 0.6; }
       }
       return [clamp(tx, -FW / 2 + 1.5, FW / 2 - 1.5), clamp(ty, 2, FL - 2)];
     }
     function moveRef(dt) {
       const r = M.ref, b = M.ball || { x: 0, y: 30 };
-      const tx = clamp(b.x + (b.x > 0 ? -7 : 7), -17, 17), ty = clamp(b.y - 3, 6, 54);
+      const tx = clamp(b.x + (b.x > 0 ? -7 : 7), -FW / 2 + 3, FW / 2 - 3), ty = clamp(b.y - 3, 6, FL - 6);
       const dx = tx - r.x, dy = ty - r.y, d = Math.hypot(dx, dy), v = Math.min(5, d * 1.5);
       r.vx = d > 0.3 ? dx / d * v : 0; r.vy = d > 0.3 ? dy / d * v : 0; r.x += r.vx * dt; r.y += r.vy * dt; r.ph += Math.hypot(r.vx, r.vy) * dt * 2.3; if (Math.abs(r.vy) > 0.5) r.face = Math.sign(r.vy);
     }
@@ -1203,7 +1216,7 @@
         if (p.think <= 0) {
           p.think = 0.45;
           const [, od] = nearestOpp(p), toGoal = p.y;
-          if (toGoal < 9 || (toGoal < 19 && Math.random() < 0.35)) return aiShoot(p, 1);
+          if (toGoal < 13 || (toGoal < 26 && Math.random() < 0.35)) return aiShoot(p, 1);
           if ((od < 2.2 && Math.random() < 0.35) || Math.random() < 0.04) return aiPass(p);
         }
       }
@@ -1241,6 +1254,18 @@
       p.hold = 0; tone(170, .07, 'sine', 0, .2, .7);
       if (p.team === 0) { M.slow = 1.6; M.passFrom = [b.x, b.y]; }
     }
+    // the best team-mate to pass to right now (shown with a yellow bubble, used by the pass button)
+    function passScore(p, q) {
+      const fwd = rel(p.team, q.y) - rel(p.team, p.y), d = Math.hypot(q.x - p.x, q.y - p.y);
+      let open = 8, lane = 8;
+      for (const o of M.players) if (o.team !== p.team && !o.off) { open = Math.min(open, Math.hypot(o.x - q.x, o.y - q.y)); lane = Math.min(lane, segDist(o.x, o.y, [p.x, p.y], [q.x, q.y])); }
+      return fwd * 0.35 + open * 0.5 + lane * 0.9 - Math.abs(d - 14) * 0.12;
+    }
+    function bestPass(p) {
+      let best = null, bs = -1e9;
+      for (const q of M.players) if (q.team === p.team && q !== p && !q.off && !q.gk && q.down <= 0) { const sc = passScore(p, q) + (q === M.best ? 1 : 0); if (sc > bs) { bs = sc; best = q; } }
+      return best;
+    }
     function aiPass(p) {
       let best = null, bs = -1e9;
       for (const q of M.players) {
@@ -1266,11 +1291,31 @@
       }
       if (best) return passTo(p, best);
       // nobody there: a swipe toward the goal from close enough is a shot
-      if (!p.gk && dy > 0.55 && p.y >= 34) { popMsg('🎯 בעיטה!', ''); return dead(0.35, () => goShot('open', p)); }
+      if (!p.gk && dy > 0.55 && p.y >= FL - 28) { popMsg('🎯 בעיטה!', ''); return dead(0.35, () => goShot('open', p)); }
       const dist = clamp(len / MK * 1.3, 6, 22), tx = p.x + dx * dist, ty = p.y + dy * dist;
       passTo(p, nearestTo(0, tx, ty, true), tx, ty);
     }
     // the child's tap while defending: the nearest player tackles (or sprints if too far)
+    function updateMatchBtns() {
+      const b = M && M.ball, mine = b && ((b.owner && b.owner.team === 0) || (!b.owner && b.passTo && b.passTo.team === 0));
+      const pt = mine ? 'מסירה' : 'תיקול';
+      if ($('passTxt').textContent !== pt) { $('passTxt').textContent = pt; $('passBtn').querySelector('b').textContent = mine ? '⚽' : '🛡️'; }
+      $('shootBtn').classList.toggle('off', !(mine && b.owner && !b.owner.gk && b.owner.y >= FL - 30));
+      $('passBtn').classList.toggle('off', !!(mine && !b.owner));
+    }
+    function passButton() {
+      if (!M || state !== 'match' || M.phase !== 'play') return;
+      const b = M.ball;
+      if (b.owner && b.owner.team === 0) { const q = M.best || bestPass(b.owner); if (q) passTo(b.owner, q); }
+      else kidTackle();
+    }
+    function shootButton() {
+      if (!M || state !== 'match' || M.phase !== 'play') return;
+      const b = M.ball, me = b.owner;
+      if (!me || me.team !== 0 || me.gk) return;
+      if (me.y < FL - 30) { coach('קרבו לשער של היריב כדי לבעוט 🎯 (מסרו קדימה!)', 'oops'); tone(150, .1, 'square', 0, .06); return; }
+      popMsg('🎯 בעיטה!', ''); dead(0.35, () => goShot('open', me));
+    }
     function kidTackle() {
       const b = M.ball, c = b.owner, me = M.ctrlDef || nearestTo(0, b.x, b.y, true);
       if (!me || me.down > 0 || me.slide > 0 || me.cd > 0) return;
@@ -1341,7 +1386,7 @@
         if (Math.abs(b.x) < GOAL_W && b.z < 2.4) return scoreGoal(1 - end);
         b.vx = b.vy = 0;
         if (b.last !== end) return dead(1.1, () => goalKick(end), 'החוצה', 'בעיטת שער');
-        return dead(1.1, () => restartAt(1 - end, Math.sign(b.x || 1) * 18.6, end ? FL - 0.8 : 0.8), 'קרן! 🚩', '');
+        return dead(1.1, () => restartAt(1 - end, Math.sign(b.x || 1) * (FW / 2 - 1.4), end ? FL - 0.8 : 0.8), 'קרן! 🚩', '');
       }
       // a dead roll: the nearest player walks over anyway (chasers do this)
     }
@@ -1379,13 +1424,13 @@
         coach(card === 'red' ? `🟥 כרטיס אדום ל${who}! ${off.team ? 'היריב משחק עם שחקן פחות' : 'נשארנו עם שחקן פחות 😬'}` : `🟨 כרטיס צהוב ל${who}. ${off.team === 0 ? 'תקלו בעדינות מקדימה, לא מאחור!' : ''}`, off.team ? 'yay' : 'oops');
       } else coach(off.team ? 'עבירה של היריב! ⚽ בעיטה חופשית לנו' : 'עבירה! 😬 תקלו מקדימה, לא מאחור', off.team ? 'yay' : 'oops');
       let next;
-      if (team === 0) next = inBox(1, x, y) ? () => { m.ball = newBall(0, FL - 7); goShot('penalty', vic); } : rel(1, y) < 26 ? () => { m.ball = newBall(x, y); goShot('free', vic); } : () => restartAt(0, x, y);
-      else next = inBox(0, x, y) ? () => aiPenalty(vic) : y < 22 ? () => { restartAt(1, x, y); aiShoot(M.ball.owner || vic, 0.7); } : () => restartAt(1, x, y);
+      if (team === 0) next = inBox(1, x, y) ? () => { m.ball = newBall(0, FL - 9); goShot('penalty', vic); } : rel(1, y) < 30 ? () => { m.ball = newBall(x, y); goShot('free', vic); } : () => restartAt(0, x, y);
+      else next = inBox(0, x, y) ? () => aiPenalty(vic) : y < 28 ? () => { restartAt(1, x, y); aiShoot(M.ball.owner || vic, 0.7); } : () => restartAt(1, x, y);
       dead(card ? 2.7 : 1.5, next, card ? '' : 'עבירה!', card ? '' : (inBox(team ? 0 : 1, x, y) ? 'פנדל!' : 'בעיטה חופשית'));
     }
     function aiPenalty(vic) {
-      for (const q of live()) if (!q.gk) { if (q.y < 11) q.y = 11 + Math.random() * 3; }
-      vic.x = 0; vic.y = 7; M.ball = newBall(0, 6.6); give(vic); vic.shield = 9;
+      for (const q of live()) if (!q.gk) { if (q.y < 15) q.y = 15 + Math.random() * 3; }
+      vic.x = 0; vic.y = 9.4; M.ball = newBall(0, 9); give(vic); vic.shield = 9;
       popMsg('פנדל ליריב 😬', 'השוער שלנו מוכן!');
       dead(1.4, () => aiShoot(vic, 1.1));
     }
@@ -1417,7 +1462,7 @@
       else { m.ball = newBall(0, FL - 2); dead(0.9, () => goalKick(1), res === 'save' ? 'הצלה של השוער' : 'בעיטת שער', ''); }
     }
     function fullTime() {
-      const m = M; state = 'done'; m.phase = 'over';
+      const m = M; state = 'done'; m.phase = 'over'; document.body.classList.remove('inmatch');
       sfx.whistle(); setTimeout(() => sfx.whistle(), 400);
       const [a, c] = m.score, win = a > c, draw = a === c;
       const coins = a * 15 + (win ? 60 : draw ? 25 : 5);
@@ -1436,7 +1481,7 @@
     const toField = q => ({ fx: (q.x - W / 2) / MK, fy: FL - (q.y - FY0) / MK });
     canvas.addEventListener('pointerdown', e => {
       if (state !== 'match' || !M) return;
-      if (M.phase === 'intro') { sfx.whistle(); say('יאללה!'); dead(0.4, null, 'יאללה! ⚽', 'הכדור אצלכם'); coach('הקישו על חבר עם עיגול לבן כדי למסור לו ⚽ החזיקו אצבע = ריצה 🏃'); return; }
+      if (M.phase === 'intro') { sfx.whistle(); say('יאללה!'); dead(0.4, null, 'יאללה! ⚽', 'הכדור אצלכם'); coach('⚽ כפתור מסירה = מסירה לחבר עם 👆 · או הקישו על חבר · 🎯 בעיטה ליד השער'); return; }
       const q = toWorld(e); M.touch = { id: e.pointerId, pts: [q], t0: q.t, hold: false, ...toField(q) };
       try { canvas.setPointerCapture(e.pointerId); } catch {}
     });
@@ -1455,14 +1500,14 @@
       const b = M.ball, mine = b.owner && b.owner.team === 0;
       if (mine && len < 20 && dur < 380) {
         const f = toField(q), me = b.owner;
-        let best = null, bd = 40;
+        let best = null, bd = 56;
         for (const o of M.players) {
           if (o.team !== 0 || o === me || o.off || o.down > 0) continue;
-          const d = Math.hypot(mx(o.x) - q.x, my(o.y) - 24 - q.y);      // around the body, not just the feet
+          const d = Math.hypot(mx(o.x) - q.x, my(o.y) - 26 - q.y);      // around the body, not just the feet
           if (d < bd) { bd = d; best = o; }
         }
         if (best) return passTo(me, best);
-        if (!me.gk && f.fy > FL - 6 && Math.abs(f.fx) < 9 && me.y >= 32) { popMsg('🎯 בעיטה!', ''); return dead(0.35, () => goShot('open', me)); }
+        if (!me.gk && f.fy > FL - 7 && Math.abs(f.fx) < 10 && me.y >= FL - 30) { popMsg('🎯 בעיטה!', ''); return dead(0.35, () => goShot('open', me)); }
         if (Math.hypot(f.fx - me.x, f.fy - me.y) > 4) return passTo(me, nearestTo(0, f.fx, f.fy, true), f.fx, f.fy);
         return;
       }
@@ -1476,12 +1521,12 @@
 
     // ---------- Drawing the pitch ----------
     const pitchCv = (() => {
-      const cv = document.createElement('canvas'); cv.width = W * 2; cv.height = H * 2; const c = cv.getContext('2d'); c.scale(2, 2);
+      const cv = document.createElement('canvas'); cv.width = W * 2; cv.height = PITCH_H * 2; const c = cv.getContext('2d'); c.scale(2, 2);
       // stadium around the pitch: stands with people, then ad boards
-      const bg = c.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#141a26'); bg.addColorStop(1, '#22304a'); c.fillStyle = bg; c.fillRect(0, 0, W, H);
+      const bg = c.createLinearGradient(0, 0, 0, PITCH_H); bg.addColorStop(0, '#141a26'); bg.addColorStop(1, '#22304a'); c.fillStyle = bg; c.fillRect(0, 0, W, PITCH_H);
       let seed = 7; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
       const cols = ['#1c7ed6', '#ffffff', '#e03131', '#fcc419', '#2f9e44', '#f76707', '#ae3ec9', '#74c0fc'];
-      for (let k = 0; k < 900; k++) { const x = r() * W, y = r() * H; if (x > mx(-FW / 2) - 12 && x < mx(FW / 2) + 12 && y > my(FL) - 14 && y < my(0) + 14) continue; c.fillStyle = cols[Math.floor(r() * cols.length)]; c.beginPath(); c.arc(x, y, 1.3 + r() * 0.8, 0, TAU); c.fill(); c.fillStyle = 'rgba(241,194,125,0.9)'; c.beginPath(); c.arc(x, y - 1.6, 0.9, 0, TAU); c.fill(); }
+      for (let k = 0; k < 1000; k++) { const x = r() * W, y = r() * PITCH_H; if (x > mx(-FW / 2) - 12 && x < mx(FW / 2) + 12 && y > my(FL) - 14 && y < my(0) + 14) continue; c.fillStyle = cols[Math.floor(r() * cols.length)]; c.beginPath(); c.arc(x, y, 1.3 + r() * 0.8, 0, TAU); c.fill(); c.fillStyle = 'rgba(241,194,125,0.9)'; c.beginPath(); c.arc(x, y - 1.6, 0.9, 0, TAU); c.fill(); }
       // track and boards
       c.fillStyle = '#1f5130'; c.fillRect(mx(-FW / 2) - 10, my(FL) - 12, FW * MK + 20, FL * MK + 24);
       const ads = ['#1864ab', '#c92a2a', '#2b8a3e', '#f08c00', '#5f3dc4'];
@@ -1490,23 +1535,23 @@
         for (const y of [my(FL) - 13, my(0) + 9]) { c.fillStyle = ads[i % ads.length]; c.fillRect(x, y, 34, 4); c.fillStyle = '#fff'; c.fillText(i % 2 ? '⚽ GOAL' : 'KIDS ⭐', x + 17, y + 2.2); }
       }
       // grass with mowing stripes
-      for (let k = 0; k < 12; k++) { c.fillStyle = k % 2 ? '#3c9a3c' : '#358c35'; c.fillRect(mx(-FW / 2) - 6, my(FL - k * 5), FW * MK + 12, 5 * MK + 0.5); }
+      for (let k = 0; k < FL / 5; k++) { c.fillStyle = k % 2 ? '#3c9a3c' : '#358c35'; c.fillRect(mx(-FW / 2) - 6, my(FL - k * 5), FW * MK + 12, 5 * MK + 0.5); }
       c.fillStyle = '#358c35'; c.fillRect(mx(-FW / 2) - 6, my(FL) - 6, FW * MK + 12, 6); c.fillStyle = '#3c9a3c'; c.fillRect(mx(-FW / 2) - 6, my(0), FW * MK + 12, 6);
       c.fillStyle = grassPat; c.fillRect(mx(-FW / 2) - 6, my(FL) - 6, FW * MK + 12, FL * MK + 12);
       // lines
       c.strokeStyle = 'rgba(255,255,255,0.9)'; c.lineWidth = 1.5;
       c.strokeRect(mx(-FW / 2), my(FL), FW * MK, FL * MK);
       c.beginPath(); c.moveTo(mx(-FW / 2), my(FL / 2)); c.lineTo(mx(FW / 2), my(FL / 2)); c.stroke();
-      c.beginPath(); c.arc(mx(0), my(FL / 2), 5 * MK, 0, TAU); c.stroke();
+      c.beginPath(); c.arc(mx(0), my(FL / 2), 7 * MK, 0, TAU); c.stroke();
       c.fillStyle = '#fff'; c.beginPath(); c.arc(mx(0), my(FL / 2), 1.8, 0, TAU); c.fill();
       c.save(); c.font = 'bold 11px "Comic Sans MS", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = 'rgba(255,255,255,0.42)';
-      c.fillText('⬆ שער היריב ⬆', mx(0), my(FL - 11.5)); c.fillText('🛡️ השער שלנו', mx(0), my(11.5)); c.restore();
+      c.fillText('⬆ שער היריב ⬆', mx(0), my(FL - 16)); c.fillText('🛡️ השער שלנו', mx(0), my(16)); c.restore();
       for (const end of [0, 1]) {
         const y0 = end ? FL : 0, s = end ? -1 : 1;
         c.strokeRect(mx(-BOX_W), Math.min(my(y0), my(y0 + s * BOX_D)), BOX_W * 2 * MK, BOX_D * MK);
-        c.strokeRect(mx(-4.2), Math.min(my(y0), my(y0 + s * 3.5)), 8.4 * MK, 3.5 * MK);
-        c.beginPath(); c.arc(mx(0), my(y0 + s * 7), 1.6, 0, TAU); c.fill();
-        c.beginPath(); c.arc(mx(0), my(y0 + s * 7), 4 * MK, end ? 0.25 * Math.PI : 1.25 * Math.PI, end ? 0.75 * Math.PI : 1.75 * Math.PI); c.stroke();
+        c.strokeRect(mx(-6), Math.min(my(y0), my(y0 + s * 4.5)), 12 * MK, 4.5 * MK);
+        c.beginPath(); c.arc(mx(0), my(y0 + s * 9), 1.6, 0, TAU); c.fill();
+        c.beginPath(); c.arc(mx(0), my(y0 + s * 9), 6 * MK, end ? 0.25 * Math.PI : 1.25 * Math.PI, end ? 0.75 * Math.PI : 1.75 * Math.PI); c.stroke();
         c.save(); c.beginPath(); c.rect(mx(-FW / 2), my(FL), FW * MK, FL * MK); c.clip();
         for (const sx of [-1, 1]) { c.beginPath(); c.arc(mx(sx * FW / 2), my(y0), MK * 1.1, 0, TAU); c.stroke(); }
         c.restore();
@@ -1567,7 +1612,10 @@
     function renderMatch() {
       const m = M, k = canvas.width / W; ctx.setTransform(k, 0, 0, k, 0, 0);
       ctx.save(); if (m.shake > 0) ctx.translate(rnd(-2, 2) * m.shake * 6, rnd(-2, 2) * m.shake * 6);
-      ctx.drawImage(pitchCv, 0, 0, W, H);
+      const maxOff = PITCH_H - H, fb = m.ball ? (m.ball.dest && !m.ball.owner ? [m.ball.x, (m.ball.y + m.ball.dest[1]) / 2] : [m.ball.x, m.ball.y]) : [0, FL / 2];
+      const want = clamp(FY0 + (FL - fb[1]) * MK - H * 0.52, 0, maxOff);
+      camOff += (want - camOff) * (m.phase === 'intro' ? 1 : 0.1);
+      ctx.drawImage(pitchCv, 0, -camOff, W, PITCH_H);
       drawGoalTop(FL, true);
       const b = m.ball;
       // markers on the grass: the player you control
@@ -1587,11 +1635,16 @@
         ctx.restore();
         if (b.passTo) { const r = b.passTo, pr = 13 + Math.sin(time * 12) * 2.5; ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(mx(r.x), my(r.y), pr, pr * 0.42, 0, 0, TAU); ctx.stroke(); }
       }
+      if (b && b.owner && !b.owner.off) {
+        const o = b.owner, ours = o.team === 0, gx = mx(o.x), gy = my(o.y), pr = 22 + Math.sin(time * 7) * 3;
+        const sg = ctx.createRadialGradient(gx, gy, 2, gx, gy, pr * 1.6); sg.addColorStop(0, ours ? 'rgba(255,224,102,0.75)' : 'rgba(255,107,107,0.6)'); sg.addColorStop(1, 'rgba(255,224,102,0)');
+        ctx.fillStyle = sg; ctx.beginPath(); ctx.ellipse(gx, gy, pr * 1.6, pr * 0.7, 0, 0, TAU); ctx.fill();
+      }
       for (const o of m.players) if (o.team === 0 && !o.off) { ctx.fillStyle = 'rgba(77,171,247,0.38)'; ctx.beginPath(); ctx.ellipse(mx(o.x), my(o.y), 12, 5, 0, 0, TAU); ctx.fill(); }
       // everyone, far first
       const items = m.players.filter(p => !p.gone).map(p => ({ y: p.y, draw: () => {
         const lying = p.down > 0 ? (p.x > 0 ? 1.4 : -1.4) : p.slide > 0 ? (p.vx > 0 ? -1.2 : 1.2) : p.dive > 0 ? (p.x > 0 ? 1.3 : -1.3) : 0;
-        drawMini(p, p.kit, mx(p.x), my(p.y), { lying, gloves: p.gk, sc: 2.15 });
+        drawMini(p, p.kit, mx(p.x), my(p.y), { lying, gloves: p.gk, sc: b && b.owner === p ? 2.45 : 1.95 });
         if (p.yellow && !p.off) { ctx.fillStyle = '#fcc419'; ctx.fillRect(mx(p.x) + 8, my(p.y) - 51, 5, 8); }
         if (p.off) { ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🟥', mx(p.x), my(p.y) - 52); }
       } }));
@@ -1602,9 +1655,20 @@
       if (m.got && m.got.t < 0.8) { m.got.t += 1 / 60; const g = m.got.p, a = 1 - m.got.t / 0.8; ctx.strokeStyle = `rgba(255,224,102,${a})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(mx(g.x), my(g.y), 12 + m.got.t * 30, (12 + m.got.t * 30) * 0.42, 0, 0, TAU); ctx.stroke(); }
       // the controlled player: an arrow and his name
       if (b && b.owner && b.owner.team === 0) {
-        const p = b.owner, x = mx(p.x), y = my(p.y) - 57 + Math.sin(time * 6) * 1.5;
-        ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y - 4); ctx.lineTo(x, y + 1); ctx.closePath(); ctx.fill();
-        ctx.font = 'bold 8px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.strokeText(p.kit.name, x, y - 8); ctx.fillStyle = '#fff'; ctx.fillText(p.kit.name, x, y - 8);
+        const p = b.owner, x = mx(p.x), y = my(p.y) - 62 + Math.sin(time * 6) * 2;
+        ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(x - 7, y - 2); ctx.lineTo(x + 7, y - 2); ctx.lineTo(x, y + 7); ctx.closePath(); ctx.fill();
+        ctx.font = 'bold 11px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const tag = `⚽ ${p.kit.name}`, tw = ctx.measureText(tag).width + 14;
+        ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - tw / 2, y - 21, tw, 16, 8) : ctx.rect(x - tw / 2, y - 21, tw, 16); ctx.fill();
+        ctx.fillStyle = '#3d2a00'; ctx.fillText(tag, x, y - 12.5);
+        // a bubble over every team-mate you can tap; the best one glows yellow
+        if (m.phase === 'play') for (const o of m.players) {
+          if (o.team !== 0 || o === p || o.off || o.gk || o.down > 0) continue;
+          const best = o === m.best, bx = mx(o.x), by = my(o.y) - 56, r = best ? 12 + Math.sin(time * 8) * 1.5 : 9.5;
+          ctx.fillStyle = best ? '#ffd43b' : 'rgba(255,255,255,0.85)'; ctx.strokeStyle = best ? '#e67700' : '#1c7ed6'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(bx, by, r, 0, TAU); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = best ? '#5c3c00' : '#1c7ed6'; ctx.font = `bold ${best ? 11 : 9}px Arial`; ctx.fillText(best ? '👆' : String(o.kit.num), bx, by + 0.5);
+        }
       }
       for (const q of parts) { ctx.globalAlpha = Math.min(1, q.life * 2); ctx.fillStyle = q.c; ctx.beginPath(); ctx.arc(mx(q.x), my(q.y), 2, 0, TAU); ctx.fill(); } ctx.globalAlpha = 1;
       // the finger's path
@@ -1649,12 +1713,12 @@
       const m = M, pulse = Math.sin(time * 5);
       ctx.save(); ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(0, 44, W, H - 44);
       const label = (y, text, bg, fg = '#fff') => { ctx.font = 'bold 15px "Comic Sans MS", sans-serif'; const w = ctx.measureText(text).width + 26; ctx.fillStyle = bg; rr(W / 2 - w / 2, y - 15, w, 30, 15); ctx.fill(); ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, W / 2, y + 1); };
-      label(my(FL - 5), '🥅 שער היריב - בועטים לכאן!', '#e8590c');
-      label(my(46), `יריבים: ${m.oppKit.name} והקבוצה`, 'rgba(255,255,255,0.18)');
-      label(my(14), `💙 אתם: ${m.ourKit.name} והקבוצה (עיגול כחול)`, '#1c7ed6');
-      label(my(4), '🛡️ השער שלכם - שומרים עליו', 'rgba(255,255,255,0.18)');
+      label(Math.max(66, my(FL - 6)), '⬆ שער היריב - בועטים לשם!', '#e8590c');
+      label(my(FL * 0.68), `יריבים: ${m.oppKit.name} והקבוצה`, 'rgba(255,255,255,0.18)');
+      label(my(FL * 0.3), `💙 אתם: ${m.ourKit.name} והקבוצה (עיגול כחול)`, '#1c7ed6');
+      label(Math.min(H - 62, my(5)), '🛡️ השער שלכם (למטה) - שומרים עליו', 'rgba(255,255,255,0.18)');
       // a big arrow up the right side: this is the way we play
-      const ax = W - 34, y0 = my(20), y1 = my(42) - pulse * 4;
+      const ax = W - 34, y0 = my(FL * 0.36), y1 = my(FL * 0.6) - pulse * 4;
       ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(ax, y0); ctx.lineTo(ax, y1); ctx.stroke();
       ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(ax, y1 - 20); ctx.lineTo(ax - 17, y1 + 2); ctx.lineTo(ax + 17, y1 + 2); ctx.closePath(); ctx.fill();
       ctx.save(); ctx.translate(ax - 22, (y0 + y1) / 2); ctx.rotate(-Math.PI / 2); ctx.font = 'bold 12px "Comic Sans MS", sans-serif'; ctx.fillStyle = '#ffd43b'; ctx.textAlign = 'center'; ctx.fillText('משחקים למעלה', 0, 0); ctx.restore();
@@ -1690,7 +1754,7 @@
       $('face').textContent = mood === 'oops' ? '😮' : mood === 'yay' ? '🥳' : '⚽';
     }
     function showMenu() {
-      state = 'menu'; S = null; ball = null; M = null; matchShot = null;
+      state = 'menu'; S = null; ball = null; M = null; matchShot = null; document.body.classList.remove('inmatch');
       $('result').classList.add('hidden'); $('matchMenu').classList.add('hidden'); $('menu').classList.remove('hidden');
       chosen = Math.min(chosen, prog.unlocked - 1);
       buildMenu(); coach('בחרו שלב ובעטו! ⚽');
@@ -1751,6 +1815,8 @@
     $('matchBtn').addEventListener('click', openMatchMenu);
     $('kickoffBtn').addEventListener('click', startMatch);
     $('backBtn').addEventListener('click', showMenu);
+    $('passBtn').addEventListener('click', passButton);
+    $('shootBtn').addEventListener('click', shootButton);
     $('menuBtn').addEventListener('click', showMenu);
     $('restartBtn').addEventListener('click', () => { if (M) startMatch(); else if (S) startStage(stIdx); });
     function updateSoundBtn() { $('soundBtn').innerHTML = `<b>${soundOn ? '🔊' : '🔇'}</b>צליל`; }
