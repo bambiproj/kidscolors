@@ -130,13 +130,13 @@
         <div class="pane" id="stagesPane"><div class="stages" id="stages"></div></div>
         <div class="pane hidden" id="teamPane"><div class="shop team" id="team"></div></div>
         <div class="pane hidden" id="shopPane"><div class="shop" id="shop"></div></div>
-        <div class="row"><button class="play-btn" id="playBtn">▶ לבעוט!</button><button class="play-btn match-btn" id="matchBtn">🏟️ משחק 5 נגד 5</button></div>
+        <div class="row"><button class="play-btn" id="playBtn">▶ לבעוט!</button><button class="play-btn match-btn" id="matchBtn">🏟️ משחק 6 נגד 6</button></div>
         <div class="trophies" id="trophies"></div>
       </div>
 
       <div dir="rtl" class="overlay hidden" id="matchMenu">
         <div class="big">🏟️</div>
-        <h2>משחק 5 נגד 5</h2>
+        <h2>משחק 6 נגד 6</h2>
         <div class="vs" id="vsLine"></div>
         <p>👉 <b>החלקה מהירה</b> מהשחקן אל חבר = מסירה<br>✋ <b>החזיקו את האצבע</b> = השחקן רץ לשם<br>🎯 ברחבה של היריב - בועטים לשער כמו באימון!<br>🛡️ כשליריב יש כדור - הקישו כדי לתקל (זהירות מכרטיסים 🟨🟥)</p>
         <div class="diffs" id="diffs"></div>
@@ -988,10 +988,10 @@
       { name: 'בינוני', icon: '😎', spd: 4.8, tackle: 0.22, ourSave: 0.5, rd: 0.3, kv: 4.8, pr: 0.5, acc: 0.65 },
       { name: 'קשה', icon: '🔥', spd: 5.4, tackle: 0.3, ourSave: 0.4, rd: 0.24, kv: 5.8, pr: 0.6, acc: 0.75 }
     ];
-    const MATES = [['עומר', 1], ['נועם', 4], ['איתי', 5], ['דניאל', 8]];
-    const OPPS = [['רועי', 1], ['גיל', 3], ['טל', 6], ['שי', 11]];
+    const MATES = [['עומר', 1], ['נועם', 4], ['איתי', 5], ['יונתן', 6], ['דניאל', 8]];
+    const OPPS = [['רועי', 1], ['גיל', 3], ['טל', 2], ['בן', 8], ['שי', 11]];
     const SKINS = ['#e8b48a', '#d9a07a', '#c68a5e', '#8d5524', '#f1c9a5', '#a0673f'], HAIRS = ['#1b1b1b', '#5c3c1e', '#3b2412', '#e9c46a', '#1b1b1b'], STYLES = ['short', 'curly', 'short', 'bald', 'gel'];
-    const HOMES = [[0, 1.4, 'gk'], [-7, 12, 'def'], [7, 12, 'def'], [-6, 27, 'fwd'], [6, 27, 'fwd']];
+    const HOMES = [[0, 1.4, 'gk'], [-10, 11, 'def'], [10, 11, 'def'], [0, 20, 'mid'], [-11, 31, 'fwd'], [11, 31, 'fwd']];
     const REF_KIT = { c1: '#212529', c2: '#fcc419', shirt: 'solid', shorts: '#212529', socks: '#212529', skin: '#e3b088', hair: '#5c3c1e', style: 'short', text: '#fcc419', num: '' };
     let M = null, matchShot = null, matchDiff = clamp(load('soccer-match-diff', 0), 0, 2), lastWasMatch = false, pendingOpp = null;
 
@@ -1002,7 +1002,7 @@
     }
     function makeTeam(team, base) {
       return HOMES.map(([hx, hy, role], i) => {
-        const star = i === 4, names = team ? OPPS : MATES;
+        const star = i === HOMES.length - 1, names = team ? OPPS : MATES;
         const kit = { ...base, name: star ? base.name : names[i][0], num: star ? base.num : names[i][1],
           skin: star ? base.skin : SKINS[(i * 2 + team) % SKINS.length], hair: star ? base.hair : HAIRS[(i + team * 2) % HAIRS.length], style: star ? base.style : STYLES[(i + team) % STYLES.length] };
         if (role === 'gk') Object.assign(kit, { c1: team ? '#ff922b' : '#94d82d', c2: '#212529', shirt: 'solid', shorts: '#212529', socks: team ? '#ff922b' : '#94d82d', text: '#1b1b1b' });
@@ -1036,7 +1036,7 @@
     function dead(sec, next, text, sub) { M.phase = 'dead'; M.deadT = sec; M.next = next; if (text) popMsg(text, sub); }
     function popMsg(text, sub = '', color = '#fff') { M.msg = { text, sub, color, t: 0 }; }
     function placeHome(p) {
-      const ry = p.gk ? 1.4 : p.role === 'def' ? 12 : 24;
+      const ry = p.gk ? 1.4 : p.role === 'def' ? 11 : p.role === 'mid' ? 18 : 25;
       p.x = p.team ? -p.hx : p.hx; p.y = p.team ? FL - ry : ry; p.vx = p.vy = 0; p.slide = p.down = p.dive = 0; p.diveX = null; p.face = p.team ? -1 : 1;
     }
     function newBall(x, y) { return { x, y, z: 0, vx: 0, vy: 0, vz: 0, rot: 0, owner: null, last: 0, passTo: null, noPick: null, noPickT: 0, shot: false, tried: new Set(), dest: null }; }
@@ -1114,7 +1114,7 @@
       const L = live();
       for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
         const a = L[i], c = L[j], dx = c.x - a.x, dy = c.y - a.y, d = Math.hypot(dx, dy);
-        if (d < 0.9 && d > 1e-4) { const o = (0.9 - d) / 2, nx = dx / d, ny = dy / d; a.x -= nx * o; a.y -= ny * o; c.x += nx * o; c.y += ny * o; }
+        if (d < 1.3 && d > 1e-4) { const o = (1.3 - d) / 2, nx = dx / d, ny = dy / d; a.x -= nx * o; a.y -= ny * o; c.x += nx * o; c.y += ny * o; }
       }
     }
     function avoidDir(p, gx, gy) {
@@ -1150,14 +1150,25 @@
     }
     function supportTarget(p, ownerTeam) {
       const b = M.ball, by = rel(p.team, b.y), bx = p.team ? -b.x : b.x, attacking = ownerTeam === p.team;
-      let rx = p.hx * 0.9 + bx * 0.3 + Math.sin(time * 0.6 + p.hx) * 1.5, ry;
-      if (p.role === 'def') ry = clamp(by * 0.55 + (attacking ? 6 : 0), 5, attacking ? 36 : 26);
-      else ry = clamp(by * 0.55 + (attacking ? 17 : 9), 14, attacking ? 55 : 40);
-      // forwards make runs ahead of a team-mate with the ball
-      if (attacking && p.role === 'fwd') ry = clamp(Math.max(ry, by + 7), 14, 56);
+      let rx = p.hx + bx * 0.18 + Math.sin(time * 0.6 + p.hx) * 1.2, ry;
+      if (p.role === 'def') ry = clamp(by * 0.5 + (attacking ? 6 : 0), 5, attacking ? 34 : 24);
+      else if (p.role === 'mid') ry = clamp(by * 0.6 + (attacking ? 9 : 4), 10, attacking ? 46 : 34);
+      else ry = clamp(by * 0.55 + (attacking ? 18 : 10), 16, attacking ? 56 : 42);
+      // attackers sprint forward into space so the ball can be passed ahead of them
+      if (attacking && p.role !== 'def') {
+        if (!p.runT || p.runT < time) { p.runT = time + rnd(2.2, 3.8); p.runDY = rnd(7, 14) * (p.role === 'mid' ? 0.6 : 1); p.runDX = rnd(-3, 3); }
+        ry = clamp(Math.max(ry, by + p.runDY), 12, 56); rx = p.hx * 0.9 + p.runDX;
+      } else p.runT = 0;
       // the second defender covers the space between the ball and the goal
-      if (!attacking && p.role === 'def' && ownerTeam !== -1) { ry = Math.max(3, Math.min(ry, by * 0.6)); rx = rx * 0.6 + bx * 0.35; }
-      return [p.team ? -rx : rx, p.team ? FL - ry : ry];
+      if (!attacking && p.role === 'def' && ownerTeam !== -1) { ry = Math.max(3, Math.min(ry, by * 0.6)); rx = rx * 0.7 + bx * 0.25; }
+      let tx = p.team ? -rx : rx, ty = p.team ? FL - ry : ry;
+      // keep a few meters away from team-mates so there is always someone to pass to
+      for (const q of M.players) {
+        if (q === p || q.team !== p.team || q.off || q.gk) continue;
+        const dx = tx - q.x, dy = ty - q.y, d = Math.hypot(dx, dy);
+        if (d < 7 && d > 0.01) { tx += dx / d * (7 - d) * 0.6; ty += dy / d * (7 - d) * 0.6; }
+      }
+      return [clamp(tx, -FW / 2 + 1.5, FW / 2 - 1.5), clamp(ty, 2, FL - 2)];
     }
     function moveRef(dt) {
       const r = M.ref, b = M.ball || { x: 0, y: 30 };
@@ -1211,7 +1222,10 @@
     // passing: the ball rolls to where the team-mate will be
     function passTo(p, q, tx, ty) {
       const b = M.ball;
-      if (q && tx === undefined) { const run = q.gk ? 0 : 2; tx = q.x + (q.team ? 0 : 0) ; ty = q.y + (q.team ? -run : run); }
+      if (q && tx === undefined) {
+        const d0 = Math.hypot(q.x - b.x, q.y - b.y), tt = d0 / clamp(7 + d0 * 0.6, 9, 19), fwd = q.gk ? 0 : (q.team ? -1 : 1) * 1.5;
+        tx = q.x + q.vx * tt * 0.9; ty = q.y + q.vy * tt * 0.9 + fwd;
+      }
       tx = clamp(tx, -FW / 2 + 1, FW / 2 - 1); ty = clamp(ty, 1, FL - 1);
       const dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy) || 1, v = clamp(7 + d * 0.6, 9, 19);
       b.owner = null; b.vx = dx / d * v; b.vy = dy / d * v; b.vz = d > 17 ? 4.2 : 0; b.z = 0.05;
@@ -1519,7 +1533,7 @@
       ctx.restore();
     }
     function drawFieldBall(b) {
-      const x = mx(b.x), y = my(b.y), r = 3.8 + b.z * 0.3;
+      const x = mx(b.x), y = my(b.y), r = 4.4 + b.z * 0.3;
       ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(x + 1 + b.z * 1.5, y + 0.5, r, r * 0.45, 0, 0, TAU); ctx.fill();
       drawBallAt(ctx, x, y - 2.5 - b.z * MK * 0.6, r, prog.ball, b.rot);
     }
@@ -1530,23 +1544,23 @@
       drawGoalTop(FL, true);
       const b = m.ball;
       // markers on the grass: the player you control
-      if (b && b.owner && b.owner.team === 0) { const p = b.owner; ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(mx(p.x), my(p.y), 8, 3.4, 0, 0, TAU); ctx.stroke(); }
-      if (m.ctrlDef && m.phase === 'play') { const p = m.ctrlDef; ctx.strokeStyle = '#74c0fc'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.ellipse(mx(p.x), my(p.y), 8, 3.4, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
+      if (b && b.owner && b.owner.team === 0) { const p = b.owner; ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(mx(p.x), my(p.y), 10, 4, 0, 0, TAU); ctx.stroke(); }
+      if (m.ctrlDef && m.phase === 'play') { const p = m.ctrlDef; ctx.strokeStyle = '#74c0fc'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.ellipse(mx(p.x), my(p.y), 10, 4, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
       if (b && !b.owner && b.dest && b.passTo) { ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.ellipse(mx(b.dest[0]), my(b.dest[1]), 5, 2, 0, 0, TAU); ctx.fill(); }
       // everyone, far first
       const items = m.players.filter(p => !p.gone).map(p => ({ y: p.y, draw: () => {
         const lying = p.down > 0 ? (p.x > 0 ? 1.4 : -1.4) : p.slide > 0 ? (p.vx > 0 ? -1.2 : 1.2) : p.dive > 0 ? (p.x > 0 ? 1.3 : -1.3) : 0;
-        drawMini(p, p.kit, mx(p.x), my(p.y), { lying, gloves: p.gk, sc: 1.3 });
-        if (p.yellow && !p.off) { ctx.fillStyle = '#fcc419'; ctx.fillRect(mx(p.x) + 5, my(p.y) - 31, 3.5, 5); }
+        drawMini(p, p.kit, mx(p.x), my(p.y), { lying, gloves: p.gk, sc: 1.55 });
+        if (p.yellow && !p.off) { ctx.fillStyle = '#fcc419'; ctx.fillRect(mx(p.x) + 6, my(p.y) - 37, 4, 6); }
         if (p.off) { ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🟥', mx(p.x), my(p.y) - 26); }
       } }));
-      items.push({ y: m.ref.y, draw: () => drawMini(m.ref, REF_KIT, mx(m.ref.x), my(m.ref.y), { sc: 1.2 }) });
+      items.push({ y: m.ref.y, draw: () => drawMini(m.ref, REF_KIT, mx(m.ref.x), my(m.ref.y), { sc: 1.4 }) });
       if (b) items.push({ y: b.y - 0.3, draw: () => drawFieldBall(b) });
       items.sort((a, c) => c.y - a.y).forEach(it => it.draw());
       drawGoalTop(0, false);
       // the controlled player: an arrow and his name
       if (b && b.owner && b.owner.team === 0) {
-        const p = b.owner, x = mx(p.x), y = my(p.y) - 36 + Math.sin(time * 6) * 1.5;
+        const p = b.owner, x = mx(p.x), y = my(p.y) - 42 + Math.sin(time * 6) * 1.5;
         ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y - 4); ctx.lineTo(x, y + 1); ctx.closePath(); ctx.fill();
         ctx.font = 'bold 8px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.strokeText(p.kit.name, x, y - 8); ctx.fillStyle = '#fff'; ctx.fillText(p.kit.name, x, y - 8);
       }
