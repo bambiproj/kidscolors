@@ -218,12 +218,12 @@
       { id: 'jeep', name: "ג'יפ שטח ירוק", kind: 'jeep', color: '#2f9e44', price: 160, special: '⛽ חוסך דלק' },
       { id: 'police', name: 'ניידת משטרה', kind: 'police', color: '#f8f9fa', price: 260, special: '🔫 +2 לייזר 🚨' },
       { id: 'race', name: 'מכונית מירוץ', kind: 'race', color: '#1971c2', price: 400, special: '🪙 מטבע כפול' },
-      { id: 'future', name: 'מכונית העתיד', kind: 'future', color: '#7048e8', price: 600, special: '🧲 מגנט קבוע' }
+      { id: 'future', name: 'מכונית העתיד', kind: 'future', color: '#7048e8', price: 600, special: '⚡ ברק אוטומטי' }
     ];
     const UPGRADES = [
       { id: 'fuel', icon: '⛽', name: 'מיכל דלק גדול', desc: 'הדלק מחזיק יותר זמן' },
-      { id: 'laser', icon: '🔫', name: 'לייזר חזק', desc: 'עוד ירייה אחת בתחילת כל מרוץ' },
-      { id: 'magnet', icon: '🧲', name: 'מגנט חזק', desc: 'המגנט עובד יותר זמן' },
+      { id: 'laser', icon: '🔫', name: 'לייזר חזק', desc: 'עוד 2 יריות בתחילת כל מרוץ' },
+      { id: 'magnet', icon: '⚡', name: 'כוחות-על חזקים', desc: 'ברק פוגע ביותר מכוניות, טורבו ורוח ארוכים יותר' },
       { id: 'shield', icon: '🛡️', name: 'מגן', desc: 'מגן ששומר מהתנגשות אחת' }
     ];
     const UP_COST = [40, 90, 160];
@@ -288,6 +288,9 @@
       power() { [523, 784, 1047, 1568].forEach((f, i) => tone(f, .08, 'triangle', i * .05, .09)); },
       lane()  { tone(220, .05, 'triangle', 0, .04); },
       laser() { tone(1800, .25, 'sawtooth', 0, .07, .15); tone(900, .2, 'square', 0, .04, .3); },
+      thunder() { noise(0.9, .45, 1800); tone(70, .6, 'sawtooth', 0, .12, .5); tone(2400, .12, 'square', 0, .05, .3); },
+      turbo() { tone(200, .6, 'sawtooth', 0, .08, 3); noise(.6, .2, 900); },
+      ghost() { tone(600, .5, 'sine', 0, .1, .5); tone(900, .5, 'sine', .05, .06, .5); },
       boom()  { noise(.6, .35, 700); tone(90, .4, 'sine', 0, .2, .4); },
       crash() { noise(.5, .4, 1500); tone(140, .3, 'square', 0, .1, .5); },
       shield(){ tone(600, .3, 'sine', 0, .12, 2); },
@@ -313,28 +316,46 @@
     // ---------- Realistic top-down cars ----------
     // a car body outline, front pointing up; nose = how round the front corners are
     function bodyPath(c, w, h, nose, tail) {
-      const hw = w / 2, hh = h / 2;
+      // smooth curves everywhere: round nose, gently bulging sides at the wheel arches, round tail
+      const hw = w / 2, hh = h / 2, n = Math.min(nose * 1.6, hw * 0.95), t = Math.min(tail * 1.6, hw * 0.9);
       c.beginPath();
-      c.moveTo(-hw + nose, -hh);
-      c.quadraticCurveTo(0, -hh - 3, hw - nose, -hh);
-      c.quadraticCurveTo(hw, -hh, hw, -hh + nose * 1.6);
-      c.lineTo(hw, hh - tail * 1.4);
-      c.quadraticCurveTo(hw, hh, hw - tail, hh);
-      c.quadraticCurveTo(0, hh + 2, -hw + tail, hh);
-      c.quadraticCurveTo(-hw, hh, -hw, hh - tail * 1.4);
-      c.lineTo(-hw, -hh + nose * 1.6);
-      c.quadraticCurveTo(-hw, -hh, -hw + nose, -hh);
+      c.moveTo(0, -hh - 2.5);
+      c.bezierCurveTo(hw * 0.6, -hh - 2.5, hw, -hh + n * 0.25, hw, -hh + n);
+      c.bezierCurveTo(hw + 1.6, -hh * 0.35, hw - 0.8, 0, hw, hh * 0.3);
+      c.bezierCurveTo(hw + 1.4, hh * 0.6, hw, hh - t * 0.6, hw - t * 0.3, hh - t * 0.15);
+      c.bezierCurveTo(hw * 0.6, hh + 2, -hw * 0.6, hh + 2, -hw + t * 0.3, hh - t * 0.15);
+      c.bezierCurveTo(-hw, hh - t * 0.6, -hw - 1.4, hh * 0.6, -hw, hh * 0.3);
+      c.bezierCurveTo(-hw + 0.8, 0, -hw - 1.6, -hh * 0.35, -hw, -hh + n);
+      c.bezierCurveTo(-hw, -hh + n * 0.25, -hw * 0.6, -hh - 2.5, 0, -hh - 2.5);
       c.closePath();
     }
     function paintBody(c, w, h, color, nose, tail) {
       const g = c.createLinearGradient(-w / 2, 0, w / 2, 0);
-      g.addColorStop(0, shade(color, -0.45)); g.addColorStop(0.16, shade(color, -0.1)); g.addColorStop(0.4, shade(color, 0.28));
-      g.addColorStop(0.55, color); g.addColorStop(0.85, shade(color, -0.18)); g.addColorStop(1, shade(color, -0.5));
+      g.addColorStop(0, shade(color, -0.5)); g.addColorStop(0.12, shade(color, -0.12)); g.addColorStop(0.38, shade(color, 0.3));
+      g.addColorStop(0.55, color); g.addColorStop(0.86, shade(color, -0.2)); g.addColorStop(1, shade(color, -0.55));
       bodyPath(c, w, h, nose, tail); c.fillStyle = g; c.fill();
-      c.lineWidth = 1; c.strokeStyle = 'rgba(0,0,0,0.45)'; c.stroke();
+      c.save(); bodyPath(c, w, h, nose, tail); c.clip();
+      // glossy paint: a soft light pool on the hood and a darker rim, like a rounded shape
+      const hl = c.createRadialGradient(-w * 0.12, -h * 0.32, 1, -w * 0.12, -h * 0.32, w * 0.75);
+      hl.addColorStop(0, 'rgba(255,255,255,0.38)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = hl; c.fillRect(-w, -h, w * 2, h * 2);
+      const tl = c.createRadialGradient(w * 0.1, h * 0.38, 1, w * 0.1, h * 0.38, w * 0.6);
+      tl.addColorStop(0, 'rgba(255,255,255,0.16)'); tl.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = tl; c.fillRect(-w, -h, w * 2, h * 2);
+      bodyPath(c, w, h, nose, tail); c.lineWidth = 5; c.strokeStyle = 'rgba(0,0,0,0.2)'; c.stroke();
+      c.restore();
+      bodyPath(c, w, h, nose, tail); c.lineWidth = 1; c.strokeStyle = 'rgba(0,0,0,0.5)'; c.stroke();
+    }
+    // a polygon with rounded corners (windows look curved, not cut out)
+    function roundPoly(c, pts, r) {
+      c.beginPath();
+      const n = pts.length, mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      const m0 = mid(pts[n - 1], pts[0]); c.moveTo(m0[0], m0[1]);
+      for (let i = 0; i < n; i++) { const p = pts[i], q = pts[(i + 1) % n], m = mid(p, q); c.arcTo(p[0], p[1], m[0], m[1], r); }
+      c.closePath();
     }
     function glass(c, pts, light) {
-      c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath();
+      roundPoly(c, pts, 4);
       const ys = pts.map(p => p[1]), g = c.createLinearGradient(0, Math.min(...ys), 0, Math.max(...ys));
       g.addColorStop(0, light ? '#4a6378' : '#1b2633'); g.addColorStop(1, light ? '#20303f' : '#3c536a');
       c.fillStyle = g; c.fill();
@@ -347,7 +368,11 @@
     }
     function wheels(c, w, h, ww = 6, wh = 14, front = 0.62, rear = 0.62, out = 1) {
       c.fillStyle = '#111';
-      for (const sx of [-1, 1]) for (const fy of [-front, rear]) { rr(c, sx * (w / 2 + out) - ww / 2, fy * h / 2 - wh / 2, ww, wh, 2); c.fill(); }
+      for (const sx of [-1, 1]) for (const fy of [-front, rear]) {
+        const x = sx * (w / 2 + out - 1) - ww / 2, y = fy * h / 2 - wh / 2;
+        c.fillStyle = '#111'; rr(c, x, y, ww, wh, ww / 2.2); c.fill();
+        c.fillStyle = 'rgba(255,255,255,0.12)'; for (let k = 2; k < wh - 1; k += 3) c.fillRect(x + 1, y + k, ww - 2, 0.8);
+      }
     }
     function lights(c, w, h, o) {
       const hw = w / 2, hh = h / 2;
@@ -386,7 +411,8 @@
       // roof
       const rg = c.createLinearGradient(-hw, 0, hw, 0);
       rg.addColorStop(0, shade(color, -0.3)); rg.addColorStop(0.45, shade(color, 0.15)); rg.addColorStop(1, shade(color, -0.35));
-      rr(c, -hw + 6.5, Y(f.roof), w - 13, Y(f.rear) - Y(f.roof), 4); c.fillStyle = rg; c.fill();
+      rr(c, -hw + 6.5, Y(f.roof), w - 13, Y(f.rear) - Y(f.roof), 8); c.fillStyle = rg; c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.14)'; rr(c, -hw + 9, Y(f.roof) + 2, (w - 18) * 0.45, Y(f.rear) - Y(f.roof) - 4, 5); c.fill();
       // side windows
       c.fillStyle = '#1b2633';
       for (const sx of [-1, 1]) { c.beginPath(); c.rect(sx > 0 ? hw - 6.5 : -hw + 4.5, Y(f.roof) + 2, 2, Y(f.rear) - Y(f.roof) - 4); c.fill(); }
@@ -535,8 +561,8 @@
         lane: 1, x: laneX(1), tx: laneX(1), hold: 0, tilt: 0, hintT: 3.5,
         hearts: 3 + (car.id === 'taxi' ? 1 : 0), shield: upLv('shield'), inv: 0,
         fuel: 1, fuelRate: (1 / 38) * (1 - 0.15 * upLv('fuel')) * (car.id === 'jeep' ? 0.65 : 1),
-        lasers: 2 + upLv('laser') + (car.id === 'police' ? 2 : 0), beam: 0, beamTo: 0,
-        magnet: car.id === 'future' ? 9999 : 0, coins: 0, coinMul: car.id === 'race' ? 2 : 1,
+        lasers: 5 + upLv('laser') * 2 + (car.id === 'police' ? 3 : 0), beam: 0, beamTo: 0, recharge: 15,
+        turbo: 0, ghost: 0, bolts: [], zapT: car.id === 'future' ? 12 : 0, power: null, coins: 0, coinMul: car.id === 'race' ? 2 : 1,
         traffic: [], items: [], scenery: [], parts: [], marks: [],
         nextCar: 120, nextCoins: 300, nextFuel: 9, nextPower: 14, shake: 0, flash: 0, over: false
       };
@@ -678,6 +704,8 @@
     function hitBox(c, pad = 5) { return { x0: c.x - c.w / 2 + pad, x1: c.x + c.w / 2 - pad, y0: c.y - c.h / 2 + pad, y1: c.y + c.h / 2 - pad }; }
     function overlap(a, b) { return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0; }
     function crash(c) {
+      if (G.ghost > 0) return;                          // a ghost drives right through
+      if (G.turbo > 0) { if (!c.dead) { explode(c); G.shake = 0.25; } return; }   // turbo smashes cars away
       if (G.inv > 0) return;
       // bump the other car out of the way
       c.spin = (c.x < G.x ? -1 : 1) * rnd(3, 6); c.kick = c.x < G.x ? -160 : 160; c.dead = true; c.wreck = 1.2;
@@ -714,11 +742,15 @@
         // speed grows with time; after a crash the car slows down for a moment
         g.slow = Math.min(1, g.slow + dt * 0.35);
         const fuelSlow = g.fuel <= 0 ? 0 : 1;
-        g.speed = Math.min(820, 300 + g.t * 5.5) * g.slow * (fuelSlow ? 1 : 0.3);
+        g.speed = Math.min(820, 300 + g.t * 5.5) * g.slow * (fuelSlow ? 1 : 0.3) * (g.turbo > 0 ? 1.45 : 1);
         g.fuel = Math.max(0, g.fuel - g.fuelRate * dt);
         if (g.fuel <= 0) { g.emptyT = (g.emptyT || 0) + dt; if (g.emptyT > 1.5) gameOver('fuel'); }
         g.inv = Math.max(0, g.inv - dt);
-        if (g.magnet < 9000) g.magnet = Math.max(0, g.magnet - dt);
+        g.turbo = Math.max(0, g.turbo - dt); g.ghost = Math.max(0, g.ghost - dt);
+        // the laser slowly recharges by itself
+        g.recharge -= dt; if (g.recharge <= 0) { g.recharge = 15; g.lasers++; updateLaserBtn(); tone(1200, .08, 'triangle', 0, .05); }
+        // the future car calls down lightning by itself
+        if (g.zapT) { g.zapT -= dt; if (g.zapT <= 0) { g.zapT = 12; lightning(2); } }
         engineSet(g.speed);
       } else g.speed *= Math.pow(0.2, dt);
       const v = g.speed;
@@ -736,7 +768,7 @@
         g.nextCar -= v * dt; if (g.nextCar <= 0) { spawnCar(); g.nextCar = rnd(150, 290) * (1 - Math.min(0.35, g.t / 400)); }
         g.nextCoins -= v * dt; if (g.nextCoins <= 0) { spawnCoins(); g.nextCoins = rnd(450, 800); }
         g.nextFuel -= dt; if (g.nextFuel <= 0) { if (spawnItem('fuel')) g.nextFuel = rnd(7, 9.5); else g.nextFuel = 0.4; }
-        g.nextPower -= dt; if (g.nextPower <= 0) { if (spawnItem(pick(['laser', 'laser', 'magnet', 'shield', g.hearts < 3 ? 'heart' : 'laser']))) g.nextPower = rnd(10, 16); else g.nextPower = 0.5; }
+        g.nextPower -= dt; if (g.nextPower <= 0) { if (spawnItem(pick(['laser', 'laser', 'lightning', 'turbo', 'ghost', 'shield', g.hearts < 3 ? 'heart' : 'lightning']))) g.nextPower = rnd(6, 10); else g.nextPower = 0.5; }
       }
       // traffic: drives slower than us, so it comes down the screen; sometimes changes lane with a blinker
       const pl = playerLanes();
@@ -765,10 +797,6 @@
         if (it.pop) { it.pop -= dt; it.y -= 120 * dt; }
         it.y += v * dt;
         if (state !== 'play' || it.got) continue;
-        if (it.k === 'coin' && g.magnet > 0) {
-          const d = Math.hypot(g.x - it.x, PLAYER_Y - it.y);
-          if (d < 170 + upLv('magnet') * 20) { it.x += (g.x - it.x) * Math.min(1, dt * 7); it.y += (PLAYER_Y - it.y) * Math.min(1, dt * 7); }
-        }
         if (Math.abs(it.x - g.x) < 30 && Math.abs(it.y - PLAYER_Y) < 46) collect(it);
       }
       g.items = g.items.filter(it => !it.got && it.y < H + 40);
@@ -780,15 +808,28 @@
       // tyre marks after a crash, particles
       for (const p of g.parts) { p.life -= dt; p.x += p.vx * dt; p.y += (p.vy + (p.smoke ? v * 0.6 : v * 0.2)) * dt; if (p.smoke) { p.r += dt * 10; p.vx *= 0.98; } }
       g.parts = g.parts.filter(p => p.life > 0);
+      for (const b of g.bolts) b.t -= dt; g.bolts = g.bolts.filter(b => b.t > 0);
+      if (g.power) { g.power.t += dt; if (g.power.t > 1.4) g.power = null; }
       g.beam = Math.max(0, g.beam - dt); g.shake = Math.max(0, g.shake - dt); g.flash = Math.max(0, g.flash - dt);
+    }
+    function popPower(text) { G.power = { text, t: 0 }; }
+    // lightning: bolts from the sky hit the cars ahead of you
+    function lightning(n) {
+      const g = G; if (!g) return;
+      const targets = g.traffic.filter(c => !c.dead && c.y < PLAYER_Y - 50 && c.y > -c.h / 2).sort((a, b) => b.y - a.y).slice(0, n);
+      sfx.thunder(); g.flash = 0.35; g.shake = 0.3;
+      if (!targets.length) g.bolts.push({ x: rnd(ROAD_X + 20, ROAD_X + ROAD_W - 20), y: rnd(80, 300), t: 0.35, seed: Math.random() * 1000 });
+      targets.forEach((c, i) => { g.bolts.push({ x: c.x, y: c.y, t: 0.35 + i * 0.08, seed: Math.random() * 1000 }); setTimeout(() => explode(c), 60 + i * 80); });
     }
     function collect(it) {
       const g = G; it.got = true;
       const burst = (c, n = 8) => { for (let k = 0; k < n; k++) { const a = Math.random() * TAU; g.parts.push({ x: it.x, y: it.y, vx: Math.cos(a) * 110, vy: Math.sin(a) * 110, life: 0.4, r: 2.5, c }); } };
       if (it.k === 'coin') { g.coins += g.coinMul; prog.bank += g.coinMul; sfx.coin(); burst('#ffd43b', 5); if (g.coins % 10 === 0) saveProg(); }
       else if (it.k === 'fuel') { g.fuel = Math.min(1, g.fuel + 0.5); g.emptyT = 0; sfx.fuel(); burst('#ff6b6b'); }
-      else if (it.k === 'laser') { g.lasers++; updateLaserBtn(); sfx.power(); burst('#22e5ff'); }
-      else if (it.k === 'magnet') { if (g.magnet < 9000) g.magnet = 7 + upLv('magnet') * 3; sfx.power(); burst('#e64980'); }
+      else if (it.k === 'laser') { g.lasers += 2; updateLaserBtn(); sfx.power(); burst('#22e5ff'); popPower('🔫 +2 לייזר'); }
+      else if (it.k === 'lightning') { burst('#ffe066', 14); lightning(3 + upLv('magnet')); popPower('⚡ ברק!'); say('ברק!'); }
+      else if (it.k === 'turbo') { g.turbo = 4 + upLv('magnet') * 1.5; sfx.turbo(); burst('#ff922b', 14); popPower('🚀 טורבו!'); say('טורבו!'); }
+      else if (it.k === 'ghost') { g.ghost = 5 + upLv('magnet') * 1.5; sfx.ghost(); burst('#b197fc', 14); popPower('👻 רוח רפאים!'); }
       else if (it.k === 'shield') { g.shield++; sfx.shield(); burst('#74c0fc'); }
       else if (it.k === 'heart') { g.hearts = Math.min(5, g.hearts + 1); sfx.power(); burst('#ff6b6b'); }
     }
@@ -886,8 +927,8 @@
         ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-7, -6); ctx.lineTo(7, 9); ctx.moveTo(7, -6); ctx.lineTo(-7, 9); ctx.stroke();
         ctx.fillStyle = '#fab005'; ctx.fillRect(4, -17, 6, 5); ctx.fillStyle = '#343a40'; ctx.fillRect(-9, -17, 9, 4);
       } else {
-        const glow = { laser: '#22e5ff', magnet: '#f06595', shield: '#74c0fc', heart: '#ff6b6b' }[it.k];
-        const icon = { laser: '⚡', magnet: '🧲', shield: '🛡️', heart: '❤️' }[it.k];
+        const glow = { laser: '#22e5ff', lightning: '#ffd43b', turbo: '#ff922b', ghost: '#b197fc', shield: '#74c0fc', heart: '#ff6b6b' }[it.k];
+        const icon = { laser: '🔫', lightning: '⚡', turbo: '🚀', ghost: '👻', shield: '🛡️', heart: '❤️' }[it.k];
         ctx.shadowColor = glow; ctx.shadowBlur = 16; ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.beginPath(); ctx.arc(0, 0, 14, 0, TAU); ctx.fill(); ctx.shadowBlur = 0;
         ctx.strokeStyle = glow; ctx.lineWidth = 3; ctx.stroke();
@@ -955,14 +996,39 @@
         ctx.restore();
       }
       // the player's car (blinks while protected after a crash)
+      if (g.turbo > 0) {
+        // exhaust flames and speed lines
+        const [pw, ph] = carSize(g.car.kind);
+        for (const sx of [-1, 1]) {
+          const fl = 18 + Math.random() * 14, x = g.x + sx * pw * 0.22, y = PLAYER_Y + ph / 2;
+          const fg = ctx.createLinearGradient(0, y, 0, y + fl); fg.addColorStop(0, '#fff3bf'); fg.addColorStop(0.4, '#ff922b'); fg.addColorStop(1, 'rgba(240,62,62,0)');
+          ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(x - 5, y); ctx.quadraticCurveTo(x, y + fl * 1.2, x + 5, y); ctx.fill();
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
+        for (let k = 0; k < 10; k++) { const x = ROAD_X + ((k * 61 + Math.floor(time * 30) * 17) % ROAD_W), y = (k * 97 + time * 1400) % H; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 70); ctx.stroke(); }
+      }
       if (!(g.inv > 0 && Math.floor(time * 12) % 2 === 0 && g.shield === 0)) {
+        ctx.save(); if (g.ghost > 0) { ctx.globalAlpha = 0.45 + Math.sin(time * 10) * 0.12; ctx.shadowColor = '#b197fc'; ctx.shadowBlur = 20; }
         drawVehicle(g.car.kind, g.car.color, g.x, PLAYER_Y, g.tilt, { t: time, brake: g.slow < 0.9 });
+        ctx.restore();
+      }
+      if (g.turbo > 0) { ctx.save(); ctx.strokeStyle = `rgba(255,146,43,${0.5 + Math.sin(time * 14) * 0.3})`; ctx.lineWidth = 4; ctx.shadowColor = '#ff922b'; ctx.shadowBlur = 16; ctx.beginPath(); ctx.ellipse(g.x, PLAYER_Y - 6, 30, 52, 0, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); ctx.restore(); }
+      // lightning bolts from the sky
+      for (const b of g.bolts) {
+        if (b.t <= 0) continue;
+        let sd = b.seed; const r = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);
+        const pts = [[b.x + (r() - 0.5) * 60, -10]]; const n = 9;
+        for (let k = 1; k <= n; k++) pts.push([b.x + (k < n ? (r() - 0.5) * 34 : 0), -10 + (b.y + 10) * k / n]);
+        ctx.save(); ctx.globalAlpha = Math.min(1, b.t * 4); ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 24; ctx.lineJoin = 'miter';
+        for (const [lw, col] of [[9, 'rgba(255,224,102,0.6)'], [4, '#fff9db'], [1.5, '#ffffff']]) { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
+        // a side branch
+        const [bx, by] = pts[4]; ctx.lineWidth = 2; ctx.strokeStyle = '#fff9db'; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 25, by + 30); ctx.lineTo(bx + 18, by + 55); ctx.stroke();
+        ctx.restore();
       }
       if (g.shield > 0 || (g.inv > 0 && g.slow >= 0.99)) {
         ctx.save(); ctx.strokeStyle = `rgba(116,192,252,${0.6 + Math.sin(time * 8) * 0.25})`; ctx.lineWidth = 3; ctx.shadowColor = '#74c0fc'; ctx.shadowBlur = 12;
         ctx.beginPath(); ctx.ellipse(g.x, PLAYER_Y, 34, 54, 0, 0, TAU); ctx.stroke(); ctx.restore();
       }
-      if (g.magnet > 0) { ctx.save(); ctx.globalAlpha = 0.25 + Math.sin(time * 6) * 0.1; ctx.strokeStyle = '#f06595'; ctx.lineWidth = 2; ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.arc(g.x, PLAYER_Y, 60 + (time * 40) % 40, 0, TAU); ctx.stroke(); ctx.restore(); }
       // particles
       for (const p of g.parts) {
         ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.5));
@@ -1001,7 +1067,16 @@
       ctx.fillStyle = g.fuel < 0.25 ? (low ? '#ff8787' : '#f03e3e') : g.fuel < 0.5 ? '#fab005' : '#40c057';
       if (g.fuel > 0.01) { rr(ctx, 30, 47, Math.max(8, 90 * g.fuel), 8, 4); ctx.fill(); }
       if (g.fuel < 0.25 && state === 'play') { ctx.fillStyle = '#fff'; ctx.font = 'bold 13px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('דלק נגמר! אספו ⛽', W / 2, 78); }
-      if (g.magnet > 0 && g.magnet < 9000) { ctx.font = '14px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('🧲 ' + Math.ceil(g.magnet), 132, 51); }
+      { let px = 132; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff';
+        if (g.turbo > 0) { ctx.fillText('🚀 ' + Math.ceil(g.turbo), px, 51); px += 46; }
+        if (g.ghost > 0) { ctx.fillText('👻 ' + Math.ceil(g.ghost), px, 51); px += 46; } }
+      if (g.power) {
+        const t = g.power.t, sc = Math.min(1, t * 6);
+        ctx.save(); ctx.globalAlpha = Math.min(1, (1.4 - t) * 3); ctx.translate(W / 2, 200 - t * 20); ctx.scale(sc, sc);
+        ctx.font = 'bold 30px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.strokeText(g.power.text, 0, 0); ctx.fillStyle = '#ffe066'; ctx.fillText(g.power.text, 0, 0);
+        ctx.restore();
+      }
       // speedometer dial
       const cx = W - 34, cy = H - 36, kmh = Math.round(g.speed / 4);
       ctx.fillStyle = 'rgba(20,24,30,0.82)'; ctx.beginPath(); ctx.arc(cx, cy, 30, 0, TAU); ctx.fill();
