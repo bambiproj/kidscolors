@@ -984,9 +984,9 @@
     const FW = 40, FL = 60, MK = 8.4, FY0 = 52, BOX_W = 8, BOX_D = 9, GOAL_W = 2.6;
     const mx = x => W / 2 + x * MK, my = y => FY0 + (FL - y) * MK;
     const DIFFS = [
-      { name: 'קל', icon: '🙂', spd: 4.2, tackle: 0.14, ourSave: 0.6, rd: 0.38, kv: 3.8, pr: 0.4, acc: 0.55 },
-      { name: 'בינוני', icon: '😎', spd: 4.8, tackle: 0.22, ourSave: 0.5, rd: 0.3, kv: 4.8, pr: 0.5, acc: 0.65 },
-      { name: 'קשה', icon: '🔥', spd: 5.4, tackle: 0.3, ourSave: 0.4, rd: 0.24, kv: 5.8, pr: 0.6, acc: 0.75 }
+      { name: 'קל', icon: '🙂', pace: 1, spd: 4.2, tackle: 0.14, ourSave: 0.6, rd: 0.38, kv: 3.8, pr: 0.4, acc: 0.55 },
+      { name: 'בינוני', icon: '😎', pace: 1.25, spd: 4.8, tackle: 0.22, ourSave: 0.5, rd: 0.3, kv: 4.8, pr: 0.5, acc: 0.65 },
+      { name: 'קשה', icon: '🔥', pace: 1.45, spd: 5.4, tackle: 0.3, ourSave: 0.4, rd: 0.24, kv: 5.8, pr: 0.6, acc: 0.75 }
     ];
     const MATES = [['עומר', 1], ['נועם', 4], ['איתי', 5], ['יונתן', 6], ['דניאל', 8]];
     const OPPS = [['רועי', 1], ['גיל', 3], ['טל', 2], ['בן', 8], ['שי', 11]];
@@ -1025,7 +1025,7 @@
     }
     function startMatch() {
       const ours = player(), opp = pendingOpp || pickOpp(ours);
-      M = { d: DIFFS[matchDiff], t: 0, dur: 180, half: false, score: [0, 0], phase: 'play', deadT: 0, next: null, msg: null, card: null, cards: [[0, 0], [0, 0]], fouls: 0,
+      M = { d: DIFFS[matchDiff], t: 0, dur: 180 * (DIFFS[matchDiff].pace || 1), half: false, score: [0, 0], phase: 'play', deadT: 0, next: null, msg: null, card: null, cards: [[0, 0], [0, 0]], fouls: 0,
         ourKit: ours, oppKit: opp, players: [...makeTeam(0, ours), ...makeTeam(1, opp)], ball: null, ref: { x: 7, y: 30, vx: 0, vy: 0, ph: 0, face: 1 }, touch: null, shots: [0, 0], shake: 0 };
       matchShot = null; S = null; state = 'match'; lastWasMatch = true; parts = [];
       $('retryBtn').textContent = '🔁 עוד משחק';
@@ -1062,6 +1062,7 @@
 
     // ---------- Update ----------
     function updateMatch(dt) {
+      dt *= M.d.pace || 1;                               // harder levels: the whole match runs faster
       if (M.slow > 0) { M.slow -= dt; dt *= 0.45; }        // our passes play in slow motion, so the child sees them
       // while our player has the ball and the child is thinking, everything moves calmly
       else if (M.phase === 'play' && M.ball && M.ball.owner && M.ball.owner.team === 0 && !(M.touch && M.touch.hold)) dt *= 0.55;
@@ -1096,7 +1097,7 @@
         let tx, ty, spd = p.team ? m.d.spd : 4.9;
         if (p === b.owner) [tx, ty, spd] = carrierTarget(p);
         else if (p.gk) [tx, ty, spd] = keeperTarget(p);
-        else if (b.passTo === p) { const lead = b.dest || [b.x, b.y]; tx = lead[0]; ty = lead[1]; spd += 0.8; }
+        else if (b.passTo === p) { const slow = Math.hypot(b.vx, b.vy) < 6, lead = !slow && b.dest ? b.dest : [b.x + b.vx * 0.3, b.y + b.vy * 0.3]; tx = lead[0]; ty = lead[1]; spd += 0.8; }
         else if (m.touch && m.touch.hold && p === m.ctrlDef) { tx = m.touch.fx; ty = m.touch.fy; spd = 6; }
         else if (ownerTeam !== p.team && chase[p.team] === p) { tx = b.x + b.vx * 0.35; ty = b.y + b.vy * 0.35; spd += 0.3; }
         else [tx, ty] = supportTarget(p, ownerTeam);
@@ -1327,7 +1328,7 @@
         if (Math.hypot(p.x - b.x, p.y - b.y) > reach || b.z > (p.gk ? 2.3 : 1.0)) continue;
         // our passes are easier to complete: an opponent gets one small chance to cut it out
         const ours = b.passTo && b.passTo.team === 0 && p.team === 1;
-        const fast = (Math.hypot(b.vx, b.vy) > 11 || ours) && p !== b.passTo;
+        const sp = Math.hypot(b.vx, b.vy), fast = (sp > 11 || (ours && sp > 5)) && p !== b.passTo;
         if (fast) { if (b.tried.has(p)) continue; b.tried.add(p); if (Math.random() > (ours ? 0.22 : 0.4)) continue; }
         if (b.shot) { b.shot = false; if (!p.gk) { tone(200, .05); popMsg('חסימה! 🛡️', ''); } }
         if (p.team !== b.last && !b.shot && b.passTo && p.team === 0) coach('חטיפה! 💪', 'yay');
