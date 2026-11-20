@@ -115,7 +115,7 @@
     body:not(.racing) .panel { visibility: hidden; }
     .stat { font-size: clamp(0.95rem, 4vw, 1.2rem); }
 
-    .panel { width: min(calc(100vw - 8px), 560px); display: grid; grid-template-columns: 1fr 1.1fr 1fr; gap: 8px; flex: none; direction: ltr; }
+    .panel { width: min(calc(100vw - 8px), 560px); display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; flex: none; direction: ltr; }
     .panel button {
       border: none; border-radius: 16px; background: #fff; color: var(--ink); font: inherit; font-size: 0.8rem;
       height: 62px; box-shadow: 0 5px 0 rgba(0,0,0,0.35); cursor: pointer; line-height: 1.1;
@@ -124,6 +124,10 @@
     .panel button:active, .panel button.down { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
     .panel #laserBtn { background: linear-gradient(180deg, #ff6b6b, #c92a2a); color: #fff; }
     .panel #laserBtn.empty { background: #868e96; }
+    .panel #boltBtn { background: linear-gradient(180deg, #ffe066, #f59f00); color: #5c3c00; }
+    .panel #boltBtn.empty { background: #868e96; color: #fff; }
+    .panel #boltBtn.ready { animation: boltPulse .8s ease-in-out infinite; }
+    @keyframes boltPulse { 50% { box-shadow: 0 0 0 5px rgba(255,224,102,0.7), 0 4px 0 rgba(0,0,0,0.35); transform: scale(1.05); } }
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
   </style>
   <link rel="manifest" href="manifest.json" />
@@ -194,6 +198,7 @@
     <div class="panel">
       <button id="leftBtn"><b>⬅️</b>שמאלה</button>
       <button id="laserBtn"><b>🔫</b><span id="laserTxt">לייזר</span></button>
+      <button id="boltBtn"><b>⚡</b><span id="boltTxt">ברק</span></button>
       <button id="rightBtn"><b>➡️</b>ימינה</button>
     </div>
   </div>
@@ -562,7 +567,7 @@
         hearts: 3 + (car.id === 'taxi' ? 1 : 0), shield: upLv('shield'), inv: 0,
         fuel: 1, fuelRate: (1 / 38) * (1 - 0.15 * upLv('fuel')) * (car.id === 'jeep' ? 0.65 : 1),
         lasers: 5 + upLv('laser') * 2 + (car.id === 'police' ? 3 : 0), beam: 0, beamTo: 0, recharge: 15,
-        turbo: 0, ghost: 0, bolts: [], zapT: car.id === 'future' ? 12 : 0, power: null, coins: 0, coinMul: car.id === 'race' ? 2 : 1,
+        turbo: 0, ghost: 0, bolts: [], zaps: 1, zapT: car.id === 'future' ? 12 : 0, power: null, coins: 0, coinMul: car.id === 'race' ? 2 : 1,
         traffic: [], items: [], scenery: [], parts: [], marks: [],
         nextCar: 120, nextCoins: 300, nextFuel: 9, nextPower: 14, shake: 0, flash: 0, over: false
       };
@@ -570,7 +575,7 @@
       for (let y = -80; y < H + 80; y += 46) addScenery(y);
       state = 'play'; document.body.classList.add('racing');
       ['garage', 'overScreen', 'pauseScreen'].forEach(id => $(id).classList.add('hidden'));
-      updateLaserBtn(); engineOn(); sfx.horn(); say('יאללה, סעו!');
+      updateLaserBtn(); updateBoltBtn(); engineOn(); sfx.horn(); say('יאללה, סעו!');
     }
 
     // ---------- Roadside ----------
@@ -659,10 +664,12 @@
     press('leftBtn', () => G && (G.hold = -1), () => G && G.hold < 0 && (G.hold = 0));
     press('rightBtn', () => G && (G.hold = 1), () => G && G.hold > 0 && (G.hold = 0));
     press('laserBtn', fireLaser);
+    press('boltBtn', fireBolt);
     addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft' || e.key === 'a') { if (G) G.hold = -1; }
       else if (e.key === 'ArrowRight' || e.key === 'd') { if (G) G.hold = 1; }
       else if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); fireLaser(); }
+      else if (e.key === 'b' || e.key === 'ArrowDown') { e.preventDefault(); fireBolt(); }
       else if (e.key === 'Escape' || e.key === 'p') togglePause();
     });
     addEventListener('keyup', e => { if (G && ['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key)) G.hold = 0; });
@@ -812,6 +819,17 @@
       if (g.power) { g.power.t += dt; if (g.power.t > 1.4) g.power = null; }
       g.beam = Math.max(0, g.beam - dt); g.shake = Math.max(0, g.shake - dt); g.flash = Math.max(0, g.flash - dt);
     }
+    function fireBolt() {
+      if (state !== 'play') return;
+      if (G.zaps <= 0) { tone(150, .1, 'square', 0, .06); popPower('אספו ⚡ בדרך'); return; }
+      G.zaps--; updateBoltBtn(); lightning(3 + upLv('magnet')); popPower('⚡ ברק!');
+    }
+    function updateBoltBtn() {
+      const n = G ? G.zaps : 0;
+      $('boltTxt').textContent = G ? `ברק ×${n}` : 'ברק';
+      $('boltBtn').classList.toggle('empty', !!G && n <= 0);
+      $('boltBtn').classList.toggle('ready', !!G && n > 0);
+    }
     function popPower(text) { G.power = { text, t: 0 }; }
     // lightning: bolts from the sky hit the cars ahead of you
     function lightning(n) {
@@ -827,7 +845,7 @@
       if (it.k === 'coin') { g.coins += g.coinMul; prog.bank += g.coinMul; sfx.coin(); burst('#ffd43b', 5); if (g.coins % 10 === 0) saveProg(); }
       else if (it.k === 'fuel') { g.fuel = Math.min(1, g.fuel + 0.5); g.emptyT = 0; sfx.fuel(); burst('#ff6b6b'); }
       else if (it.k === 'laser') { g.lasers += 2; updateLaserBtn(); sfx.power(); burst('#22e5ff'); popPower('🔫 +2 לייזר'); }
-      else if (it.k === 'lightning') { burst('#ffe066', 14); lightning(3 + upLv('magnet')); popPower('⚡ ברק!'); say('ברק!'); }
+      else if (it.k === 'lightning') { burst('#ffe066', 14); g.zaps++; updateBoltBtn(); sfx.power(); popPower('⚡ לחצו על כפתור הברק!'); say('יש ברק! לחצו על הכפתור הצהוב'); }
       else if (it.k === 'turbo') { g.turbo = 4 + upLv('magnet') * 1.5; sfx.turbo(); burst('#ff922b', 14); popPower('🚀 טורבו!'); say('טורבו!'); }
       else if (it.k === 'ghost') { g.ghost = 5 + upLv('magnet') * 1.5; sfx.ghost(); burst('#b197fc', 14); popPower('👻 רוח רפאים!'); }
       else if (it.k === 'shield') { g.shield++; sfx.shield(); burst('#74c0fc'); }
@@ -1074,6 +1092,7 @@
         const t = g.power.t, sc = Math.min(1, t * 6);
         ctx.save(); ctx.globalAlpha = Math.min(1, (1.4 - t) * 3); ctx.translate(W / 2, 200 - t * 20); ctx.scale(sc, sc);
         ctx.font = 'bold 30px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        { const tw = ctx.measureText(g.power.text).width; if (tw > W - 40) ctx.scale((W - 40) / tw, (W - 40) / tw); }
         ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.strokeText(g.power.text, 0, 0); ctx.fillStyle = '#ffe066'; ctx.fillText(g.power.text, 0, 0);
         ctx.restore();
       }
