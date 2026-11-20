@@ -138,7 +138,7 @@
         <div class="big">🏟️</div>
         <h2>משחק 6 נגד 6</h2>
         <div class="vs" id="vsLine"></div>
-        <p>👉 <b>החלקה מהירה</b> מהשחקן אל חבר = מסירה<br>✋ <b>החזיקו את האצבע</b> = השחקן רץ לשם<br>🎯 ברחבה של היריב - בועטים לשער כמו באימון!<br>🛡️ כשליריב יש כדור - הקישו כדי לתקל (זהירות מכרטיסים 🟨🟥)</p>
+        <p>👆 <b>הקישו על חבר</b> (עם עיגול לבן) = מסירה אליו<br>👉 או החליקו מהר לכיוון שלו<br>✋ <b>החזיקו את האצבע</b> = השחקן רץ לשם<br>🎯 הקישו על השער או הגיעו לרחבה - בעיטה כמו באימון!<br>🛡️ כשליריב יש כדור - הקישו כדי לתקל (זהירות מכרטיסים 🟨🟥)</p>
         <div class="diffs" id="diffs"></div>
         <div class="row"><button class="play-btn" id="kickoffBtn">▶ שריקת פתיחה!</button><button class="play-btn alt" id="backBtn">↩ חזרה</button></div>
       </div>
@@ -1031,7 +1031,7 @@
       $('retryBtn').textContent = '🔁 עוד משחק';
       ['menu', 'result', 'matchMenu'].forEach(id => $(id).classList.add('hidden'));
       kickoff(0); sfx.whistle(); crowd(2.5, .2, 700);
-      coach('החלקה מהירה אל חבר = מסירה ⚽ החזיקו אצבע = ריצה. ברחבה - בעיטה לשער! 🎯');
+      coach('הקישו על חבר עם עיגול לבן כדי למסור לו ⚽ החזיקו אצבע = ריצה 🏃');
     }
     function dead(sec, next, text, sub) { M.phase = 'dead'; M.deadT = sec; M.next = next; if (text) popMsg(text, sub); }
     function popMsg(text, sub = '', color = '#fff') { M.msg = { text, sub, color, t: 0 }; }
@@ -1049,7 +1049,8 @@
     }
     function give(p) {
       const b = M.ball; b.owner = p; b.passTo = null; b.shot = false; b.last = p.team; b.z = 0; b.vz = 0; b.dest = null;
-      p.shield = Math.max(p.shield, 0.6); p.hold = 0; p.think = 0.4 + Math.random() * 0.4;
+      p.shield = Math.max(p.shield, 0.6); p.hold = 0; if (M.slow > 0.15) M.slow = 0.15;
+      if (p.team === 0 && !p.gk && M.phase === 'play') M.got = { p, t: 0 }; p.think = 0.4 + Math.random() * 0.4;
       for (const q of M.players) q.diveX = null;
     }
     function nearestTo(team, x, y, field) {
@@ -1061,6 +1062,7 @@
 
     // ---------- Update ----------
     function updateMatch(dt) {
+      if (M.slow > 0) { M.slow -= dt; dt *= 0.45; }        // our passes play in slow motion, so the child sees them
       time += dt;
       const m = M;
       if (m.card) { m.card.t += dt; if (m.card.t > 2.6) m.card = null; }
@@ -1082,7 +1084,7 @@
       // who goes for the ball on each team
       const chase = [0, 1].map(t => nearestTo(t, b.x + b.vx * 0.3, b.y + b.vy * 0.3, true));
       // the defender the child controls when the other team has the ball
-      m.ctrlDef = ownerTeam !== 0 ? chase[0] : null;
+      m.ctrlDef = ownerTeam === 1 || (ownerTeam === -1 && !(b.passTo && b.passTo.team === 0)) ? chase[0] : null;
       for (const p of m.players) {
         if (p.off) continue;
         p.cd = Math.max(0, p.cd - dt); p.shield = Math.max(0, p.shield - dt); p.boost = Math.max(0, p.boost - dt); p.dive = Math.max(0, p.dive - dt);
@@ -1231,6 +1233,7 @@
       b.owner = null; b.vx = dx / d * v; b.vy = dy / d * v; b.vz = d > 17 ? 4.2 : 0; b.z = 0.05;
       b.passTo = q; b.dest = [tx, ty]; b.noPick = p; b.noPickT = 0.35; b.tried = new Set(); b.last = p.team; b.shot = false;
       p.hold = 0; tone(170, .07, 'sine', 0, .2, .7);
+      if (p.team === 0) { M.slow = 1.6; M.passFrom = [b.x, b.y]; }
     }
     function aiPass(p) {
       let best = null, bs = -1e9;
@@ -1317,8 +1320,10 @@
         if (b.shot && p.team === b.last) continue;
         const reach = p.gk ? 1.2 : 0.85;
         if (Math.hypot(p.x - b.x, p.y - b.y) > reach || b.z > (p.gk ? 2.3 : 1.0)) continue;
-        const fast = Math.hypot(b.vx, b.vy) > 11 && p !== b.passTo;
-        if (fast) { if (b.tried.has(p)) continue; b.tried.add(p); if (Math.random() > 0.4) continue; }
+        // our passes are easier to complete: an opponent gets one small chance to cut it out
+        const ours = b.passTo && b.passTo.team === 0 && p.team === 1;
+        const fast = (Math.hypot(b.vx, b.vy) > 11 || ours) && p !== b.passTo;
+        if (fast) { if (b.tried.has(p)) continue; b.tried.add(p); if (Math.random() > (ours ? 0.22 : 0.4)) continue; }
         if (b.shot) { b.shot = false; if (!p.gk) { tone(200, .05); popMsg('חסימה! 🛡️', ''); } }
         if (p.team !== b.last && !b.shot && b.passTo && p.team === 0) coach('חטיפה! 💪', 'yay');
         give(p); return;
@@ -1441,6 +1446,19 @@
       const q = toWorld(e), a = t.pts[Math.max(0, t.pts.length - 8)], first = t.pts[0];
       const dx = q.x - first.x, dy = q.y - first.y, len = Math.hypot(dx, dy), dur = q.t - t.t0;
       const b = M.ball, mine = b.owner && b.owner.team === 0;
+      if (mine && len < 20 && dur < 380) {
+        const f = toField(q), me = b.owner;
+        let best = null, bd = 34;
+        for (const o of M.players) {
+          if (o.team !== 0 || o === me || o.off || o.down > 0) continue;
+          const d = Math.hypot(mx(o.x) - q.x, my(o.y) - 20 - q.y);      // around the body, not just the feet
+          if (d < bd) { bd = d; best = o; }
+        }
+        if (best) return passTo(me, best);
+        if (!me.gk && f.fy > FL - 6 && Math.abs(f.fx) < 9 && me.y >= 32) { popMsg('🎯 בעיטה!', ''); return dead(0.35, () => goShot('open', me)); }
+        if (Math.hypot(f.fx - me.x, f.fy - me.y) > 4) return passTo(me, nearestTo(0, f.fx, f.fy, true), f.fx, f.fy);
+        return;
+      }
       if (mine && len > 26 && (dur < 420 || Math.hypot(q.x - a.x, q.y - a.y) > 30)) {
         // a flick: use the last part of the drag as the direction
         const ddx = dur < 420 ? dx : q.x - a.x, ddy = dur < 420 ? dy : q.y - a.y;
@@ -1533,7 +1551,7 @@
       ctx.restore();
     }
     function drawFieldBall(b) {
-      const x = mx(b.x), y = my(b.y), r = 4.4 + b.z * 0.3;
+      const x = mx(b.x), y = my(b.y), r = 5 + b.z * 0.3;
       ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(x + 1 + b.z * 1.5, y + 0.5, r, r * 0.45, 0, 0, TAU); ctx.fill();
       drawBallAt(ctx, x, y - 2.5 - b.z * MK * 0.6, r, prog.ball, b.rot);
     }
@@ -1544,23 +1562,37 @@
       drawGoalTop(FL, true);
       const b = m.ball;
       // markers on the grass: the player you control
-      if (b && b.owner && b.owner.team === 0) { const p = b.owner; ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(mx(p.x), my(p.y), 10, 4, 0, 0, TAU); ctx.stroke(); }
-      if (m.ctrlDef && m.phase === 'play') { const p = m.ctrlDef; ctx.strokeStyle = '#74c0fc'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.ellipse(mx(p.x), my(p.y), 10, 4, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
-      if (b && !b.owner && b.dest && b.passTo) { ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.ellipse(mx(b.dest[0]), my(b.dest[1]), 5, 2, 0, 0, TAU); ctx.fill(); }
+      if (b && b.owner && b.owner.team === 0) { const p = b.owner; ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(mx(p.x), my(p.y), 12, 5, 0, 0, TAU); ctx.stroke(); }
+      if (m.ctrlDef && m.phase === 'play') { const p = m.ctrlDef; ctx.strokeStyle = '#74c0fc'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.ellipse(mx(p.x), my(p.y), 12, 5, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
+      if (b && b.owner && b.owner.team === 0 && m.phase === 'play') {
+        for (const o of m.players) if (o.team === 0 && o !== b.owner && !o.off && !o.gk) {
+          const pulse = 0.5 + 0.25 * Math.sin(time * 5 + o.hx);
+          ctx.strokeStyle = `rgba(255,255,255,${pulse})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(mx(o.x), my(o.y), 12, 5, 0, 0, TAU); ctx.stroke();
+        }
+      }
+      if (b && !b.owner && b.dest && b.last === 0 && !b.shot) {
+        const [fx, fy] = m.passFrom || [b.x, b.y], tx = mx(b.dest[0]), ty = my(b.dest[1]);
+        ctx.save(); ctx.strokeStyle = 'rgba(255,224,102,0.9)'; ctx.lineWidth = 3; ctx.setLineDash([6, 6]); ctx.lineDashOffset = -time * 40; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(mx(fx), my(fy)); ctx.lineTo(tx, ty); ctx.stroke(); ctx.setLineDash([]);
+        const ang = Math.atan2(ty - my(fy), tx - mx(fx)); ctx.fillStyle = '#ffe066'; ctx.beginPath(); ctx.moveTo(tx + Math.cos(ang) * 8, ty + Math.sin(ang) * 8); ctx.lineTo(tx + Math.cos(ang + 2.5) * 8, ty + Math.sin(ang + 2.5) * 8); ctx.lineTo(tx + Math.cos(ang - 2.5) * 8, ty + Math.sin(ang - 2.5) * 8); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        if (b.passTo) { const r = b.passTo, pr = 13 + Math.sin(time * 12) * 2.5; ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(mx(r.x), my(r.y), pr, pr * 0.42, 0, 0, TAU); ctx.stroke(); }
+      }
       // everyone, far first
       const items = m.players.filter(p => !p.gone).map(p => ({ y: p.y, draw: () => {
         const lying = p.down > 0 ? (p.x > 0 ? 1.4 : -1.4) : p.slide > 0 ? (p.vx > 0 ? -1.2 : 1.2) : p.dive > 0 ? (p.x > 0 ? 1.3 : -1.3) : 0;
-        drawMini(p, p.kit, mx(p.x), my(p.y), { lying, gloves: p.gk, sc: 1.55 });
-        if (p.yellow && !p.off) { ctx.fillStyle = '#fcc419'; ctx.fillRect(mx(p.x) + 6, my(p.y) - 37, 4, 6); }
+        drawMini(p, p.kit, mx(p.x), my(p.y), { lying, gloves: p.gk, sc: 1.85 });
+        if (p.yellow && !p.off) { ctx.fillStyle = '#fcc419'; ctx.fillRect(mx(p.x) + 7, my(p.y) - 44, 4.5, 7); }
         if (p.off) { ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🟥', mx(p.x), my(p.y) - 26); }
       } }));
-      items.push({ y: m.ref.y, draw: () => drawMini(m.ref, REF_KIT, mx(m.ref.x), my(m.ref.y), { sc: 1.4 }) });
+      items.push({ y: m.ref.y, draw: () => drawMini(m.ref, REF_KIT, mx(m.ref.x), my(m.ref.y), { sc: 1.6 }) });
       if (b) items.push({ y: b.y - 0.3, draw: () => drawFieldBall(b) });
       items.sort((a, c) => c.y - a.y).forEach(it => it.draw());
       drawGoalTop(0, false);
+      if (m.got && m.got.t < 0.8) { m.got.t += 1 / 60; const g = m.got.p, a = 1 - m.got.t / 0.8; ctx.strokeStyle = `rgba(255,224,102,${a})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(mx(g.x), my(g.y), 12 + m.got.t * 30, (12 + m.got.t * 30) * 0.42, 0, 0, TAU); ctx.stroke(); }
       // the controlled player: an arrow and his name
       if (b && b.owner && b.owner.team === 0) {
-        const p = b.owner, x = mx(p.x), y = my(p.y) - 42 + Math.sin(time * 6) * 1.5;
+        const p = b.owner, x = mx(p.x), y = my(p.y) - 50 + Math.sin(time * 6) * 1.5;
         ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y - 4); ctx.lineTo(x, y + 1); ctx.closePath(); ctx.fill();
         ctx.font = 'bold 8px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.strokeText(p.kit.name, x, y - 8); ctx.fillStyle = '#fff'; ctx.fillText(p.kit.name, x, y - 8);
       }
