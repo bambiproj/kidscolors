@@ -144,7 +144,7 @@
         <div class="big">🏟️</div>
         <h2>משחק 11 נגד 11</h2>
         <div class="vs" id="vsLine"></div>
-        <p>⚽ <b>כפתור מסירה</b> = מסירה לחבר עם 👆 הצהוב<br>👆 או הקישו על כל חבר עם מספר כחול<br>✋ <b>החזיקו את האצבע</b> = השחקן רץ לשם<br>🎯 הקישו על השער או הגיעו לרחבה - בעיטה כמו באימון!<br>🛡️ כשליריב יש כדור - הקישו כדי לתקל (זהירות מכרטיסים 🟨🟥)</p>
+        <p>⚽ <b>כפתור מסירה</b> = מסירה לחבר עם 👆 הצהוב<br>👆 או הקישו על כל חבר עם מספר כחול<br>🏃 <b>החזיקו את האצבע לפני השחקן</b> = הוא רץ לשם עם הכדור<br>➡️ החברים רצים קדימה (חץ לבן) - מסרו להם!<br>🎯 הקישו על השער או הגיעו לרחבה - בעיטה כמו באימון!<br>🛡️ כשליריב יש כדור - הקישו כדי לתקל (זהירות מכרטיסים 🟨🟥)</p>
         <div class="diffs" id="diffs"></div>
         <div class="row"><button class="play-btn" id="kickoffBtn">▶ שריקת פתיחה!</button><button class="play-btn alt" id="backBtn">↩ חזרה</button></div>
       </div>
@@ -994,9 +994,9 @@
     const PITCH_H = FY0 + FL * MK + 30;
     const mx = x => W / 2 + x * MK, my = y => FY0 + (FL - y) * MK - camOff;
     const DIFFS = [
-      { name: 'קל', icon: '🙂', pace: 1, spd: 4.2, tackle: 0.14, ourSave: 0.6, rd: 0.38, kv: 3.8, pr: 0.4, acc: 0.55 },
-      { name: 'בינוני', icon: '😎', pace: 1.25, spd: 4.8, tackle: 0.22, ourSave: 0.5, rd: 0.3, kv: 4.8, pr: 0.5, acc: 0.65 },
-      { name: 'קשה', icon: '🔥', pace: 1.45, spd: 5.4, tackle: 0.3, ourSave: 0.4, rd: 0.24, kv: 5.8, pr: 0.6, acc: 0.75 }
+      { name: 'קל', icon: '🙂', pace: 1, spd: 4.4, tackle: 0.17, ourSave: 0.6, rd: 0.38, kv: 3.8, pr: 0.4, acc: 0.55 },
+      { name: 'בינוני', icon: '😎', pace: 1.25, spd: 5.0, tackle: 0.3, ourSave: 0.5, rd: 0.3, kv: 4.8, pr: 0.5, acc: 0.65 },
+      { name: 'קשה', icon: '🔥', pace: 1.45, spd: 5.6, tackle: 0.38, ourSave: 0.4, rd: 0.24, kv: 5.8, pr: 0.6, acc: 0.75 }
     ];
     const MATES = [['עומר', 1], ['נועם', 2], ['איתי', 4], ['יונתן', 5], ['דניאל', 3], ['אורי', 6], ['רון', 8], ['עידו', 14], ['אלון', 7], ['גיא', 11]];
     const OPPS = [['רועי', 1], ['גיל', 2], ['טל', 4], ['בן', 5], ['שי', 3], ['עמית', 6], ['ליאור', 8], ['אדם', 14], ['נדב', 7], ['יואב', 11]];
@@ -1041,7 +1041,7 @@
       $('retryBtn').textContent = '🔁 עוד משחק';
       ['menu', 'result', 'matchMenu'].forEach(id => $(id).classList.add('hidden'));
       kickoff(0); updateMatchBtns(); M.phase = 'intro'; M.next = null; M.msg = null; crowd(2.5, .2, 700);
-      coach('⚽ כפתור מסירה = מסירה לחבר עם 👆 · או הקישו על חבר · 🎯 בעיטה ליד השער');
+      coach('🏃 החזיקו אצבע לפני השחקן - הוא ירוץ לשם · ⚽ מסירה לחבר שרץ קדימה · 🎯 בעיטה ליד השער');
     }
     function dead(sec, next, text, sub) { M.phase = 'dead'; M.deadT = sec; M.next = next; if (text) popMsg(text, sub); }
     function popMsg(text, sub = '', color = '#fff') { M.msg = { text, sub, color, t: 0 }; }
@@ -1060,7 +1060,8 @@
     function give(p) {
       const b = M.ball; b.owner = p; b.passTo = null; b.shot = false; b.last = p.team; b.z = 0; b.vz = 0; b.dest = null;
       p.shield = Math.max(p.shield, 0.6); p.hold = 0; if (M.slow > 0.15) M.slow = 0.15;
-      if (p.team === 0 && !p.gk && M.phase === 'play') M.got = { p, t: 0 }; p.think = 0.4 + Math.random() * 0.4;
+      if (p.team === 0 && !p.gk && M.phase === 'play') M.got = { p, t: 0 };
+      if (M.ballTeam !== p.team) { M.ballTeam = p.team; for (const q of M.players) if (q.team === p.team) q.runT = 0; } p.think = 0.4 + Math.random() * 0.4;
       for (const q of M.players) q.diveX = null;
     }
     function nearestTo(team, x, y, field) {
@@ -1075,7 +1076,7 @@
       dt *= M.d.pace || 1;                               // harder levels: the whole match runs faster
       if (M.slow > 0) { M.slow -= dt; dt *= 0.45; }        // our passes play in slow motion, so the child sees them
       // while our player has the ball and the child is thinking, everything moves calmly
-      else if (M.phase === 'play' && M.ball && M.ball.owner && M.ball.owner.team === 0 && !(M.touch && M.touch.hold)) dt *= 0.55;
+      else if (M.phase === 'play' && M.ball && M.ball.owner && M.ball.owner.team === 0 && !(M.touch && M.touch.hold)) dt *= 0.75;
       time += dt;
       const m = M;
       if (m.card) { m.card.t += dt; if (m.card.t > 2.6) m.card = null; }
@@ -1154,9 +1155,9 @@
       const m = M;
       if (p.gk) return [p.x, p.y, 0];
       if (p.team === 0) {
-        if (m.touch && m.touch.hold) return [m.touch.fx, m.touch.fy, 5.6];
+        if (m.touch && m.touch.hold) return [m.touch.fx, m.touch.fy, 6.4];
         const [dx, dy] = avoidDir(p, clamp(p.x * 0.5, -6, 6), FL);
-        return [p.x + dx * 3, p.y + dy * 3, 3.8];
+        return [p.x + dx * 3, p.y + dy * 3, 4.6];
       }
       const [dx, dy] = avoidDir(p, clamp(p.x * 0.5, -6, 6), 0);
       return [p.x + dx * 3, p.y + dy * 3, m.d.spd * 0.95];
@@ -1169,19 +1170,26 @@
     }
     function supportTarget(p, ownerTeam) {
       const b = M.ball, by = rel(p.team, b.y), bx = p.team ? -b.x : b.x, attacking = ownerTeam === p.team;
+      const wide = Math.abs(p.hx) > 10, sideX = Math.sign(p.hx);
       let rx = p.hx + bx * 0.18 + Math.sin(time * 0.6 + p.hx) * 1.2, ry;
-      if (p.role === 'def') ry = clamp(by * 0.5 + (attacking ? 16 : 2), 7, attacking ? 58 : 36);
-      else if (p.role === 'mid') ry = clamp(by * 0.6 + (attacking ? 21 : 8), 16, attacking ? 74 : 52);
-      else ry = clamp(by * 0.55 + (attacking ? 27 : 16), 26, attacking ? 84 : 64);
-      // attackers sprint forward into space so the ball can be passed ahead of them
-      if (attacking && p.role !== 'def') {
-        if (!p.runT || p.runT < time) { p.runT = time + rnd(2.2, 3.8); p.runDY = rnd(10, 20) * (p.role === 'mid' ? 0.6 : 1); p.runDX = rnd(-3, 3); }
-        // when we keep the ball the whole team pushes up: forwards wait high, near the other box
-        const high = p.role === 'fwd' ? 64 + (p.runDY - 10) * 1.0 : 46;
-        ry = clamp(Math.max(ry, by + p.runDY, high), 16, 85); rx = p.hx * 0.9 + p.runDX;
-      } else p.runT = 0;
-      // the second defender covers the space between the ball and the goal
-      if (!attacking && p.role === 'def' && ownerTeam !== -1) { ry = Math.max(3, Math.min(ry, by * 0.6)); rx = rx * 0.7 + bx * 0.25; }
+      if (attacking) {
+        // a real team shape with the ball: centre-backs stay back, full-backs and midfielders push up,
+        // forwards sprint into the space near the other box so there is always a forward pass
+        if (!p.runT || p.runT < time) {
+          p.runT = time + rnd(2.5, 4); p.runDY = rnd(10, 22); p.runDX = rnd(-4, 4);
+          if (p.role !== 'def') p.boost = Math.max(p.boost, 0.9);            // a quick sprint at the start of each run
+        }
+        if (p.role === 'def') { ry = wide ? clamp(by - 4, 12, 64) : clamp(by - 22, 8, 40); rx = wide ? sideX * 17 : p.hx * 1.2; }
+        else if (p.role === 'mid') { ry = clamp(by + p.runDY * 0.55, 22, 74); rx = p.hx * 1.15 + p.runDX * 0.6; }
+        else { ry = clamp(Math.max(by + p.runDY, 64 + p.runDY * 0.6), 30, 84); rx = (p.hx ? sideX * 15 : 0) + p.runDX; }
+      } else {
+        p.runT = 0;
+        if (p.role === 'def') ry = clamp(by * 0.5 + 2, 7, 36);
+        else if (p.role === 'mid') ry = clamp(by * 0.6 + 8, 16, 52);
+        else ry = clamp(by * 0.55 + 16, 26, 64);
+        // the defenders close the space between the ball and the goal
+        if (p.role === 'def' && ownerTeam !== -1) { ry = Math.max(3, Math.min(ry, by * 0.6)); rx = rx * 0.7 + bx * 0.25; }
+      }
       let tx = p.team ? -rx : rx, ty = p.team ? FL - ry : ry;
       // keep a few meters away from team-mates so there is always someone to pass to
       for (const q of M.players) {
@@ -1189,7 +1197,9 @@
         const dx = tx - q.x, dy = ty - q.y, d = Math.hypot(dx, dy);
         if (d < 6.5 && d > 0.01) { tx += dx / d * (6.5 - d) * 0.6; ty += dy / d * (6.5 - d) * 0.6; }
       }
-      return [clamp(tx, -FW / 2 + 1.5, FW / 2 - 1.5), clamp(ty, 2, FL - 2)];
+      tx = clamp(tx, -FW / 2 + 1.5, FW / 2 - 1.5); ty = clamp(ty, 2, FL - 2);
+      p.goal = [tx, ty];
+      return [tx, ty];
     }
     function moveRef(dt) {
       const r = M.ref, b = M.ball || { x: 0, y: 30 };
@@ -1217,7 +1227,7 @@
           p.think = 0.45;
           const [, od] = nearestOpp(p), toGoal = p.y;
           if (toGoal < 13 || (toGoal < 26 && Math.random() < 0.35)) return aiShoot(p, 1);
-          if ((od < 2.2 && Math.random() < 0.35) || Math.random() < 0.04) return aiPass(p);
+          if ((od < 3 && Math.random() < 0.5) || Math.random() < 0.08) return aiPass(p);
         }
       }
       // tackles from the other team
@@ -1481,7 +1491,7 @@
     const toField = q => ({ fx: (q.x - W / 2) / MK, fy: FL - (q.y - FY0) / MK });
     canvas.addEventListener('pointerdown', e => {
       if (state !== 'match' || !M) return;
-      if (M.phase === 'intro') { sfx.whistle(); say('יאללה!'); dead(0.4, null, 'יאללה! ⚽', 'הכדור אצלכם'); coach('⚽ כפתור מסירה = מסירה לחבר עם 👆 · או הקישו על חבר · 🎯 בעיטה ליד השער'); return; }
+      if (M.phase === 'intro') { sfx.whistle(); say('יאללה!'); dead(0.4, null, 'יאללה! ⚽', 'הכדור אצלכם'); coach('🏃 החזיקו אצבע לפני השחקן - הוא ירוץ לשם · ⚽ מסירה לחבר שרץ קדימה · 🎯 בעיטה ליד השער'); return; }
       const q = toWorld(e); M.touch = { id: e.pointerId, pts: [q], t0: q.t, hold: false, ...toField(q) };
       try { canvas.setPointerCapture(e.pointerId); } catch {}
     });
@@ -1641,6 +1651,16 @@
         ctx.fillStyle = sg; ctx.beginPath(); ctx.ellipse(gx, gy, pr * 1.6, pr * 0.7, 0, 0, TAU); ctx.fill();
       }
       for (const o of m.players) if (o.team === 0 && !o.off) { ctx.fillStyle = 'rgba(77,171,247,0.38)'; ctx.beginPath(); ctx.ellipse(mx(o.x), my(o.y), 12, 5, 0, 0, TAU); ctx.fill(); }
+      if (b && b.owner && b.owner.team === 0 && m.phase === 'play') {
+        ctx.save(); ctx.setLineDash([4, 5]); ctx.lineDashOffset = -time * 25; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+        for (const o of m.players) {
+          if (o.team !== 0 || o === b.owner || o.off || o.gk || !o.goal || o.goal[1] - o.y < 5) continue;
+          const x0 = mx(o.x), y0 = my(o.y) - 4, x1 = mx(o.goal[0]), y1 = my(o.goal[1]), a = Math.atan2(y1 - y0, x1 - x0);
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+          ctx.setLineDash([]); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.moveTo(x1 + Math.cos(a) * 6, y1 + Math.sin(a) * 6); ctx.lineTo(x1 + Math.cos(a + 2.5) * 6, y1 + Math.sin(a + 2.5) * 6); ctx.lineTo(x1 + Math.cos(a - 2.5) * 6, y1 + Math.sin(a - 2.5) * 6); ctx.closePath(); ctx.fill(); ctx.setLineDash([4, 5]);
+        }
+        ctx.restore();
+      }
       // everyone, far first
       const items = m.players.filter(p => !p.gone).map(p => ({ y: p.y, draw: () => {
         const lying = p.down > 0 ? (p.x > 0 ? 1.4 : -1.4) : p.slide > 0 ? (p.vx > 0 ? -1.2 : 1.2) : p.dive > 0 ? (p.x > 0 ? 1.3 : -1.3) : 0;
